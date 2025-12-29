@@ -142,6 +142,7 @@ export default function Portfolio() {
       dividend_yield: formData.dividend_yield ? parseFloat(formData.dividend_yield) : null,
       sector: formData.sector || null,
       ceiling_price: formData.ceiling_price ? parseFloat(formData.ceiling_price) : null,
+      portfolio_id: currentPortfolio?.portfolio_id || null,
     };
 
     try {
