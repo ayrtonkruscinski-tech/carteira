@@ -396,7 +396,7 @@ def fetch_investidor10_fundamentals(ticker: str) -> dict:
             if api_response.ok:
                 api_data = api_response.json()
                 
-                # Extract current values from API
+                # Extract current values from API (index 0 = current/TTM)
                 if 'LPA' in api_data and api_data['LPA']:
                     data['lpa'] = api_data['LPA'][0].get('value')
                 if 'VPA' in api_data and api_data['VPA']:
@@ -410,21 +410,27 @@ def fetch_investidor10_fundamentals(ticker: str) -> dict:
                 if 'MARGEM EBITDA' in api_data and api_data['MARGEM EBITDA']:
                     data['ebitda'] = api_data['MARGEM EBITDA'][0].get('value')
                 
-                # Calculate ROE average (last 5 years or available years)
-                if 'ROE' in api_data and api_data['ROE']:
-                    roe_values = [item.get('value') for item in api_data['ROE'][:5] if item.get('value') is not None]
+                # Calculate ROE average (last 5 YEARS - skip index 0 which is current/TTM)
+                # Index 0 = atual/TTM, Index 1-5 = últimos 5 anos
+                if 'ROE' in api_data and len(api_data['ROE']) > 1:
+                    # Skip first item (current), get next 5 historical years
+                    historical_roe = api_data['ROE'][1:6]
+                    roe_values = [item.get('value') for item in historical_roe if item.get('value') is not None and item.get('value') > 0]
                     if roe_values:
                         data['roe'] = round(sum(roe_values) / len(roe_values), 2)
                         data['roe_years'] = len(roe_values)
-                        data['roe_current'] = api_data['ROE'][0].get('value')
+                    data['roe_current'] = api_data['ROE'][0].get('value')
                 
-                # Calculate Payout average (last 5 years or available years)
-                if 'PAYOUT' in api_data and api_data['PAYOUT']:
-                    payout_values = [item.get('value') for item in api_data['PAYOUT'][:5] if item.get('value') is not None and 0 < item.get('value') < 200]  # Filter outliers
+                # Calculate Payout average (last 5 YEARS - skip index 0 which is current/TTM)
+                if 'PAYOUT' in api_data and len(api_data['PAYOUT']) > 1:
+                    # Skip first item (current), get next 5 historical years
+                    historical_payout = api_data['PAYOUT'][1:6]
+                    # Filter outliers: payout should be between 0-100% normally, but allow up to 120% for some cases
+                    payout_values = [item.get('value') for item in historical_payout if item.get('value') is not None and 0 < item.get('value') <= 120]
                     if payout_values:
                         data['payout'] = round(sum(payout_values) / len(payout_values), 2)
                         data['payout_years'] = len(payout_values)
-                        data['payout_current'] = api_data['PAYOUT'][0].get('value')
+                    data['payout_current'] = api_data['PAYOUT'][0].get('value')
         
         # Calculate shares_outstanding from market_cap and current_price if not found
         if not data['shares_outstanding'] and data['market_cap'] and data['current_price'] and data['current_price'] > 0:
