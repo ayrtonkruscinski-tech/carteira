@@ -56,6 +56,8 @@ export default function Portfolio() {
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [stockToDelete, setStockToDelete] = useState(null);
   const [editingStock, setEditingStock] = useState(null);
   const [searchTicker, setSearchTicker] = useState("");
   const [searchResult, setSearchResult] = useState(null);
