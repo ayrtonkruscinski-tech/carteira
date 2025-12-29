@@ -233,19 +233,17 @@ export default function Dividends() {
       filteredDividends = dividends.filter((d) => d.payment_date > todayStr);
     }
 
-    // Filtrar por período - cria uma janela de X meses
+    // Filtrar por período - últimas X semanas/meses
     if (chartPeriodFilter !== "max") {
-      const monthsWindow = parseInt(chartPeriodFilter);
+      const months = parseInt(chartPeriodFilter);
+      const daysBack = months * 30; // 1 mês = 30 dias, 6 meses = 180 dias, etc.
       
-      // Data de início: X meses atrás (início do mês)
-      const startDate = new Date(now.getFullYear(), now.getMonth() - monthsWindow + 1, 1);
-      
-      // Data de fim: X meses à frente (fim do mês)
-      const endDate = new Date(now.getFullYear(), now.getMonth() + monthsWindow + 1, 0);
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysBack);
+      const startStr = startDate.toISOString().split("T")[0];
       
       filteredDividends = filteredDividends.filter((d) => {
-        const paymentDate = new Date(d.payment_date);
-        return paymentDate >= startDate && paymentDate <= endDate;
+        return d.payment_date >= startStr && d.payment_date <= todayStr;
       });
     }
 
