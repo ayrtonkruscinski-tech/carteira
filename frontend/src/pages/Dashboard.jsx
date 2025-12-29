@@ -378,22 +378,46 @@ export default function Dashboard() {
         </div>
 
         {/* Portfolio Evolution Chart */}
-        {portfolioHistory.length > 0 && (
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-primary" />
-                Evolução Patrimonial
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
+        <Card className="bg-card border-border">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              Evolução Patrimonial
+            </CardTitle>
+            <div className="flex gap-1">
+              {PERIOD_OPTIONS.map((option) => (
+                <Button
+                  key={option.value}
+                  variant={evolutionPeriod === option.value ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setEvolutionPeriod(option.value)}
+                  className={evolutionPeriod === option.value 
+                    ? "bg-primary text-primary-foreground" 
+                    : "bg-transparent border-border text-muted-foreground hover:text-foreground"
+                  }
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {portfolioEvolution.length > 0 ? (
+              <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={portfolioHistory}>
+                  <AreaChart data={portfolioEvolution}>
                     <defs>
-                      <linearGradient id="colorPatrimonio" x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient id="colorInvested" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorCurrent" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#00E599" stopOpacity={0.3}/>
                         <stop offset="95%" stopColor="#00E599" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#F59E0B" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
                     <XAxis
@@ -402,14 +426,19 @@ export default function Dashboard() {
                       fontSize={12}
                       tickLine={false}
                       axisLine={false}
-                      tickFormatter={(value) => value.slice(5)}
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        return evolutionPeriod === '1w' || evolutionPeriod === '1m' 
+                          ? date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+                          : date.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
+                      }}
                     />
                     <YAxis
                       stroke="#94A3B8"
                       fontSize={12}
                       tickLine={false}
                       axisLine={false}
-                      tickFormatter={(value) => `R$${(value/1000).toFixed(0)}k`}
+                      tickFormatter={(value) => value >= 1000 ? `R$${(value/1000).toFixed(0)}k` : `R$${value.toFixed(0)}`}
                     />
                     <Tooltip
                       contentStyle={{
@@ -419,24 +448,67 @@ export default function Dashboard() {
                         color: '#E2E8F0',
                       }}
                       labelStyle={{ color: '#94A3B8' }}
-                      itemStyle={{ color: '#E2E8F0' }}
-                      formatter={(value) => [formatCurrency(value), 'Patrimônio']}
-                      labelFormatter={(label) => new Date(label).toLocaleDateString('pt-BR')}
+                      formatter={(value, name) => {
+                        const labels = {
+                          invested: 'Investido',
+                          current: 'Valor Atual',
+                          dividends: 'Dividendos',
+                          total: 'Total (Valor + Div)',
+                        };
+                        return [formatCurrency(value), labels[name] || name];
+                      }}
+                      labelFormatter={(label) => new Date(label).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
                     />
-                    <Line
+                    <Area
                       type="monotone"
-                      dataKey="total_current"
+                      dataKey="invested"
+                      stroke="#3B82F6"
+                      strokeWidth={2}
+                      fill="url(#colorInvested)"
+                      dot={false}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="current"
                       stroke="#00E599"
                       strokeWidth={2}
+                      fill="url(#colorCurrent)"
                       dot={false}
-                      activeDot={{ r: 6, fill: '#00E599' }}
                     />
-                  </LineChart>
+                    <Area
+                      type="monotone"
+                      dataKey="total"
+                      stroke="#F59E0B"
+                      strokeWidth={2}
+                      fill="url(#colorTotal)"
+                      dot={false}
+                    />
+                  </AreaChart>
                 </ResponsiveContainer>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <div className="h-72 flex items-center justify-center text-muted-foreground">
+                <p>Nenhum dado de evolução disponível</p>
+              </div>
+            )}
+            {portfolioEvolution.length > 0 && (
+              <div className="flex justify-center gap-6 mt-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                  <span className="text-muted-foreground">Investido</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-primary"></div>
+                  <span className="text-muted-foreground">Valor Atual</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                  <span className="text-muted-foreground">Total (c/ Dividendos)</span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
