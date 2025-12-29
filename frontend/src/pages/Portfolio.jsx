@@ -664,15 +664,16 @@ export default function Portfolio() {
         </div>
 
         {/* Stocks Grid */}
-        {stocks.length > 0 ? (
+        {groupedStocks.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {stocks.map((stock) => {
+            {groupedStocks.map((stock) => {
               const currentPrice = stock.current_price || stock.average_price;
               const totalValue = stock.quantity * currentPrice;
               const totalInvested = stock.quantity * stock.average_price;
               const gain = totalValue - totalInvested;
               const gainPercent = ((currentPrice / stock.average_price) - 1) * 100;
               const atCeiling = stock.ceiling_price && currentPrice >= stock.ceiling_price;
+              const hasMultipleEntries = stock.entries && stock.entries.length > 1;
 
               return (
                 <Card
@@ -686,6 +687,11 @@ export default function Portfolio() {
                         <CardTitle className="font-mono text-xl text-foreground flex items-center gap-2">
                           {stock.ticker}
                           {atCeiling && <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded">Teto!</span>}
+                          {hasMultipleEntries && (
+                            <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">
+                              {stock.entries.length} lotes
+                            </span>
+                          )}
                         </CardTitle>
                         <p className="text-sm text-muted-foreground">{stock.name}</p>
                       </div>
@@ -714,8 +720,8 @@ export default function Portfolio() {
                   <CardContent>
                     <div className="space-y-3">
                       <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Quantidade</span>
-                        <span className="font-mono text-foreground">{stock.quantity}</span>
+                        <span className="text-sm text-muted-foreground">Quantidade Total</span>
+                        <span className="font-mono text-foreground">{stock.quantity.toFixed(0)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-muted-foreground">Preço Médio</span>
@@ -737,12 +743,20 @@ export default function Portfolio() {
                           </span>
                         </div>
                       )}
-                      {stock.purchase_date && (
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Data Compra</span>
-                          <span className="text-foreground">
-                            {new Date(stock.purchase_date).toLocaleDateString('pt-BR')}
-                          </span>
+                      {/* Mostrar lançamentos individuais se houver múltiplos */}
+                      {hasMultipleEntries && (
+                        <div className="border-t border-border pt-2 mt-2">
+                          <p className="text-xs text-muted-foreground mb-2">Lançamentos:</p>
+                          <div className="space-y-1 max-h-24 overflow-y-auto">
+                            {stock.entries.map((entry, idx) => (
+                              <div key={entry.stock_id} className="text-xs flex justify-between text-muted-foreground">
+                                <span>{entry.quantity} × {formatCurrency(entry.average_price)}</span>
+                                {entry.purchase_date && (
+                                  <span>{new Date(entry.purchase_date).toLocaleDateString('pt-BR')}</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
                       <div className="border-t border-border pt-3">
