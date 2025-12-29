@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Briefcase, Coins, Calculator, Brain, LogOut, Menu, X, Bell, ChevronDown, Plus, Pencil, Trash2 } from "lucide-react";
+import { FloatingSupport } from "./FloatingSupport";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
@@ -383,6 +384,9 @@ export const Layout = ({ children }) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Floating Support Button */}
+      <FloatingSupport />
     </div>
   );
 };
