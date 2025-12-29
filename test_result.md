@@ -315,3 +315,48 @@ agent_communication:
       - Limpar dividendos antigos sincronizados incorretamente
       - Re-sincronizar com a logica correta
       - Verificar se apenas dividendos elegiveis sao criados
+
+  - agent: "main"
+    message: |
+      IMPLEMENTACAO DOS ENDPOINTS DELETE ALL
+      
+      NOVOS ENDPOINTS CRIADOS:
+      1. DELETE /api/dividends/all - Deleta todos os dividendos do usuário
+      2. DELETE /api/portfolio/stocks/all - Deleta todas as ações do usuário
+      
+      FUNCIONALIDADES:
+      - Ambos requerem autenticação
+      - Retornam formato: {message: "X itens excluídos", deleted: number}
+      - DELETE stocks/all também deleta dividendos relacionados (cascade)
+      
+      PRECISA TESTAR:
+      - Verificar autenticação obrigatória
+      - Testar formato de resposta
+      - Verificar cascade deletion
+      - Testar cenários com dados existentes
+
+  - agent: "testing"
+    message: |
+      DELETE ALL ENDPOINTS - TESTE COMPLETO REALIZADO ✅
+      
+      RESULTADOS DOS TESTES:
+      ✅ DELETE /api/dividends/all funcionando perfeitamente
+      ✅ DELETE /api/portfolio/stocks/all funcionando perfeitamente
+      ✅ Ambos endpoints requerem autenticação (401 sem auth)
+      ✅ Formato de resposta correto: {message: "X itens excluídos", deleted: number}
+      ✅ Cascade deletion funcionando (stocks/all também deleta dividendos)
+      
+      PROBLEMA ENCONTRADO E CORRIGIDO:
+      ❌ Inicialmente DELETE /api/portfolio/stocks/all retornava 404
+      🔧 CAUSA: Conflito de rotas - FastAPI interpretava 'all' como stock_id
+      ✅ SOLUÇÃO: Movido endpoint /portfolio/stocks/all ANTES de /portfolio/stocks/{stock_id}
+      
+      CENÁRIOS TESTADOS:
+      1. ✅ DELETE /api/dividends/all - deleta todos os dividendos
+      2. ✅ GET /api/dividends retorna array vazio após delete
+      3. ✅ DELETE /api/portfolio/stocks/all - deleta todas as ações
+      4. ✅ GET /api/portfolio/stocks retorna array vazio após delete
+      5. ✅ Dividendos também são deletados quando stocks são deletados (cascade)
+      6. ✅ Ambos endpoints requerem autenticação
+      
+      DELETE ALL ENDPOINTS: FUNCIONANDO COMPLETAMENTE ✅
