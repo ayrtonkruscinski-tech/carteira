@@ -304,7 +304,9 @@ test_plan:
   current_focus:
     - "Valuation Form Auto-Fill from Investidor10"
     - "Tooltip display fix verification"
-  stuck_tasks: []
+  stuck_tasks: 
+    - "Valuation Form Auto-Fill"
+    - "Tooltip Display Fix"
   test_all: false
   test_priority: "high_first"
   completed_tests:
