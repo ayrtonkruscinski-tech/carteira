@@ -2,13 +2,32 @@ import { useState, useEffect } from "react";
 import { Layout } from "../components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { TrendingUp, TrendingDown, Wallet, PieChart, Coins, BarChart3, RefreshCw, Bell } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
+import { TrendingUp, TrendingDown, Wallet, PieChart, Coins, BarChart3, RefreshCw, Bell, ArrowUpDown } from "lucide-react";
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, LineChart, Line } from "recharts";
 import { toast } from "sonner";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const COLORS = ['#00E599', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+
+const SORT_OPTIONS = [
+  { value: 'ticker', label: 'Ticker (A-Z)' },
+  { value: 'value_desc', label: 'Valor (Maior)' },
+  { value: 'value_asc', label: 'Valor (Menor)' },
+  { value: 'variation_desc', label: 'Variação (Maior)' },
+  { value: 'variation_asc', label: 'Variação (Menor)' },
+  { value: 'profitability_desc', label: 'Rentabilidade (Maior)' },
+  { value: 'profitability_asc', label: 'Rentabilidade (Menor)' },
+  { value: 'portfolio_percent_desc', label: '% Carteira (Maior)' },
+  { value: 'portfolio_percent_asc', label: '% Carteira (Menor)' },
+];
 
 export default function Dashboard() {
   const [summary, setSummary] = useState(null);
