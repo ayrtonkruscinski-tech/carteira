@@ -1061,6 +1061,7 @@ def parse_xlsx(file_bytes: bytes) -> List[dict]:
 def parse_generic_csv(content: str) -> List[dict]:
     """Parse generic CSV format"""
     stocks = []
+    stocks_dict = {}  # For aggregation by ticker
     
     # Try different delimiters
     for delimiter in [',', ';', '\t', '|']:
@@ -1095,7 +1096,13 @@ def parse_generic_csv(content: str) -> List[dict]:
                 return None
             
             ticker_col = find_header('ticker')
-            logger.info(f"Ticker column found: {ticker_col}")
+            name_col = find_header('name')
+            qty_col = find_header('quantity')
+            price_col = find_header('average_price')
+            date_col = find_header('purchase_date')
+            sector_col = find_header('sector')
+            
+            logger.info(f"CSV columns found - Ticker: {ticker_col}, Qty: {qty_col}, Price: {price_col}, Date: {date_col}")
             
             if not ticker_col:
                 continue
@@ -1108,12 +1115,9 @@ def parse_generic_csv(content: str) -> List[dict]:
                     if not ticker or len(ticker) < 4:
                         continue
                     
-                    name_col = find_header('name')
-                    qty_col = find_header('quantity')
-                    price_col = find_header('average_price')
-                    date_col = find_header('purchase_date')
-                    sector_col = find_header('sector')
+                    name = row.get(name_col, ticker) if name_col else ticker
                     
+                    # Parse quantity
                     quantity = 0
                     if qty_col and row.get(qty_col):
                         qty_str = str(row.get(qty_col, '0')).strip()
@@ -1124,6 +1128,7 @@ def parse_generic_csv(content: str) -> List[dict]:
                             qty_str = qty_str.replace(',', '.')
                         quantity = float(qty_str) if qty_str else 0
                     
+                    # Parse price
                     avg_price = 0
                     if price_col and row.get(price_col):
                         price_str = str(row.get(price_col, '0')).strip()
@@ -1136,20 +1141,53 @@ def parse_generic_csv(content: str) -> List[dict]:
                             price_str = price_str.replace(',', '.')
                         avg_price = float(price_str) if price_str else 0
                     
-                    stocks.append({
-                        "ticker": ticker,
-                        "name": row.get(name_col, ticker) if name_col else ticker,
-                        "quantity": quantity,
-                        "average_price": avg_price,
-                        "purchase_date": row.get(date_col) if date_col else None,
-                        "sector": row.get(sector_col) if sector_col else None
-                    })
+                    # Parse purchase date
+                    purchase_date = None
+                    if date_col and row.get(date_col):
+                        date_str = str(row.get(date_col, '')).strip()
+                        if date_str:
+                            # Try different date formats
+                            for fmt in ['%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%d.%m.%Y']:
+                                try:
+                                    parsed_date = datetime.strptime(date_str, fmt)
+                                    purchase_date = parsed_date.strftime('%Y-%m-%d')
+                                    break
+                                except ValueError:
+                                    continue
+                    
+                    sector = row.get(sector_col) if sector_col else None
+                    
+                    # Aggregate by ticker - keep earliest purchase date
+                    if ticker in stocks_dict:
+                        old_qty = stocks_dict[ticker]['quantity']
+                        old_price = stocks_dict[ticker]['average_price']
+                        new_qty = old_qty + quantity
+                        # Calculate weighted average price
+                        if new_qty > 0 and avg_price > 0:
+                            stocks_dict[ticker]['average_price'] = ((old_qty * old_price) + (quantity * avg_price)) / new_qty
+                        stocks_dict[ticker]['quantity'] = new_qty
+                        # Keep earliest purchase date
+                        if purchase_date:
+                            existing_date = stocks_dict[ticker].get('purchase_date')
+                            if not existing_date or purchase_date < existing_date:
+                                stocks_dict[ticker]['purchase_date'] = purchase_date
+                    else:
+                        stocks_dict[ticker] = {
+                            "ticker": ticker,
+                            "name": name,
+                            "quantity": quantity,
+                            "average_price": avg_price,
+                            "purchase_date": purchase_date,
+                            "sector": sector
+                        }
+                        
                 except Exception as e:
                     logger.error(f"Error parsing row: {e}")
                     continue
             
-            if stocks:
-                logger.info(f"Successfully parsed {len(stocks)} stocks")
+            if stocks_dict:
+                stocks = [s for s in stocks_dict.values() if s['quantity'] > 0]
+                logger.info(f"CSV parser found {len(stocks)} stocks after aggregation")
                 break
         except Exception as e:
             logger.error(f"Error with delimiter '{delimiter}': {e}")
