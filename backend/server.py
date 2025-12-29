@@ -282,6 +282,7 @@ def fetch_investidor10_fundamentals(ticker: str) -> dict:
         "p_l": None,  # P/L ratio
         "p_vp": None,  # P/VP ratio
         "roe": None,
+        "payout": None,  # Payout ratio
         "lpa": None,  # Lucro por Ação
         "vpa": None,  # Valor Patrimonial por Ação
         "net_income": None,  # Lucro Líquido
@@ -293,10 +294,13 @@ def fetch_investidor10_fundamentals(ticker: str) -> dict:
         "depreciation": None,
         "capex": None,
         "market_cap": None,  # Valor de mercado
+        "stock_type": "PN" if ticker.upper().endswith("4") else "ON",  # ON (3) ou PN (4)
     }
     
     try:
-        url = f"https://investidor10.com.br/acoes/{ticker.lower()}/"
+        # Use base ticker for company data (remove 3/4 suffix for some searches)
+        base_ticker = ticker.upper()
+        url = f"https://investidor10.com.br/acoes/{base_ticker.lower()}/"
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
@@ -314,26 +318,27 @@ def fetch_investidor10_fundamentals(ticker: str) -> dict:
             if not text:
                 return None
             text = text.strip().replace('R$', '').replace('%', '').strip()
-            # Handle millions/billions
+            # Handle trillions/billions/millions
             multiplier = 1
-            if 'bilh' in text.lower() or text.lower().endswith('bi'):
+            if 'trilh' in text.lower():
+                multiplier = 1000000000000
+                text = re.sub(r'trilh[ãa]o|trilh[õo]es?', '', text, flags=re.IGNORECASE).strip()
+            elif 'bilh' in text.lower() or text.lower().endswith(' bi'):
                 multiplier = 1000000000
-                text = re.sub(r'bilh[õo]es?|bi$', '', text, flags=re.IGNORECASE).strip()
-            elif 'milh' in text.lower() or text.lower().endswith('mi'):
+                text = re.sub(r'bilh[ãa]o|bilh[õo]es?|bi$', '', text, flags=re.IGNORECASE).strip()
+            elif 'milh' in text.lower() or text.lower().endswith(' mi'):
                 multiplier = 1000000
-                text = re.sub(r'milh[õo]es?|mi$', '', text, flags=re.IGNORECASE).strip()
+                text = re.sub(r'milh[ãa]o|milh[õo]es?|mi$', '', text, flags=re.IGNORECASE).strip()
             elif 'mil' in text.lower():
                 multiplier = 1000
                 text = text.lower().replace('mil', '').strip()
             
-            # Parse the number - handle both formats: 1.234,56 and 1,234.56
+            # Parse the number - handle Brazilian format: 1.234,56
             text = text.strip()
             if ',' in text and '.' in text:
-                # Brazilian format: 1.234,56
                 if text.rfind(',') > text.rfind('.'):
                     text = text.replace('.', '').replace(',', '.')
                 else:
-                    # US format: 1,234.56
                     text = text.replace(',', '')
             elif ',' in text:
                 text = text.replace(',', '.')
@@ -345,21 +350,32 @@ def fetch_investidor10_fundamentals(ticker: str) -> dict:
         
         page_text = soup.get_text()
         
-        # Extract financial data using regex patterns on page text
-        # Look for Lucro Líquido (Net Income)
-        lucro_match = re.search(r'lucro\s+(?:no\s+valor\s+de\s+)?R\$\s*([\d.,]+)\s*(Bilh[õo]es?|Milh[õo]es?)?', page_text, re.IGNORECASE)
+        # Extract shares outstanding - look for "Nº total de papeis" pattern
+        shares_patterns = [
+            r'N[ºo°]\s*total\s*de\s*papeis?\s*([\d.,]+)\s*(Bilh[ãõo]|Milh[ãõo]|Trilh[ãõo])',
+            r'total\s*de\s*papeis?\s*([\d.,]+)\s*(Bilh[ãõo]|Milh[ãõo]|Trilh[ãõo])',
+            r'([\d.,]+)\s*(Bilh[ãõo]es?|Milh[ãõo]es?)\s*([\d.,]+)',  # Format: 12,89 Bilhões12.888.732.000
+        ]
+        
+        for pattern in shares_patterns:
+            shares_match = re.search(pattern, page_text, re.IGNORECASE)
+            if shares_match:
+                shares_text = f"{shares_match.group(1)} {shares_match.group(2)}"
+                data['shares_outstanding'] = parse_br_number(shares_text)
+                if data['shares_outstanding']:
+                    break
+        
+        # Extract Net Income from "lucro no valor de R$ X Bilhões"
+        lucro_match = re.search(r'lucro\s+(?:no\s+valor\s+de\s+)?R\$\s*([\d.,]+)\s*(Bilh[ãõo]es?|Milh[ãõo]es?|Trilh[ãõo])?', page_text, re.IGNORECASE)
         if lucro_match:
-            data['net_income'] = parse_br_number(f"{lucro_match.group(1)} {lucro_match.group(2) or ''}")
+            lucro_text = f"{lucro_match.group(1)} {lucro_match.group(2) or ''}"
+            data['net_income'] = parse_br_number(lucro_text)
         
-        # Look for Shares Outstanding (Número de ações)
-        shares_match = re.search(r'([\d.,]+)\s*(Bilh[õo]es?|Milh[õo]es?)\s*(?:de\s+)?(?:a[çc][õo]es|ações)', page_text, re.IGNORECASE)
-        if shares_match:
-            data['shares_outstanding'] = parse_br_number(f"{shares_match.group(1)} {shares_match.group(2)}")
-        
-        # Look for Market Cap (Valor de Mercado)
-        market_match = re.search(r'valor de mercado de\s+R\$\s*([\d.,]+)\s*(Bilh[õo]es?|Milh[õo]es?)?', page_text, re.IGNORECASE)
+        # Extract Market Cap from "valor de mercado de R$ X Bilhões"
+        market_match = re.search(r'valor de mercado de\s+R\$\s*([\d.,]+)\s*(Bilh[ãõo]es?|Milh[ãõo]es?|Trilh[ãõo])?', page_text, re.IGNORECASE)
         if market_match:
-            data['market_cap'] = parse_br_number(f"{market_match.group(1)} {market_match.group(2) or ''}")
+            market_text = f"{market_match.group(1)} {market_match.group(2) or ''}"
+            data['market_cap'] = parse_br_number(market_text)
         
         # Try to get ticker_id from script for API call
         ticker_id = None
@@ -388,36 +404,41 @@ def fetch_investidor10_fundamentals(ticker: str) -> dict:
                     data['p_vp'] = api_data['P/VP'][0].get('value')
                 if 'ROE' in api_data and api_data['ROE']:
                     data['roe'] = api_data['ROE'][0].get('value')
+                if 'PAYOUT' in api_data and api_data['PAYOUT']:
+                    data['payout'] = api_data['PAYOUT'][0].get('value')
                 if 'DIVIDEND YIELD (DY)' in api_data and api_data['DIVIDEND YIELD (DY)']:
                     data['dividend_yield'] = api_data['DIVIDEND YIELD (DY)'][0].get('value')
                 if 'MARGEM EBITDA' in api_data and api_data['MARGEM EBITDA']:
                     data['ebitda'] = api_data['MARGEM EBITDA'][0].get('value')
         
-        # Calculate derived values for Warren Buffett method
-        # If we have LPA and shares_outstanding, calculate net_income
-        if data['lpa'] and data['shares_outstanding'] and not data['net_income']:
-            data['net_income'] = data['lpa'] * data['shares_outstanding']
-        
-        # If we have market_cap and current_price, calculate shares_outstanding
-        if data['market_cap'] and data['current_price'] and not data['shares_outstanding']:
+        # Calculate shares_outstanding from market_cap and current_price if not found
+        if not data['shares_outstanding'] and data['market_cap'] and data['current_price'] and data['current_price'] > 0:
             data['shares_outstanding'] = data['market_cap'] / data['current_price']
         
+        # Calculate net_income from LPA and shares if not found
+        if not data['net_income'] and data['lpa'] and data['shares_outstanding']:
+            data['net_income'] = data['lpa'] * data['shares_outstanding']
+        
+        # Calculate growth rate from ROE and Payout for Buffett method
+        # Growth = ROE × (1 - Payout)
+        if data['roe'] and data['payout']:
+            retention_rate = 1 - (data['payout'] / 100)
+            if retention_rate > 0:
+                data['growth_rate'] = data['roe'] * retention_rate / 100  # Convert to decimal
+                data['dividend_growth_rate'] = data['growth_rate'] * 100  # Store as percentage
+        
         # Estimate depreciation and capex based on typical ratios if not available
-        # For Brazilian companies, D&A is typically 5-10% of revenue, CapEx 5-15%
-        # We'll use conservative estimates
         if data['net_income'] and not data['depreciation']:
-            # Estimate depreciation as ~15% of net income (conservative)
             data['depreciation'] = data['net_income'] * 0.15
         
         if data['net_income'] and not data['capex']:
-            # Estimate capex as ~10% of net income (conservative)
             data['capex'] = data['net_income'] * 0.10
         
-        # Calculate free cash flow if we have the components
+        # Calculate Owner Earnings (Buffett method)
         if data['net_income'] and data['depreciation'] is not None and data['capex'] is not None:
             data['free_cash_flow'] = data['net_income'] + data['depreciation'] - data['capex']
         
-        logger.info(f"Investidor10 fundamentals for {ticker}: price={data['current_price']}, dy={data['dividend_yield']}, p_l={data['p_l']}, net_income={data['net_income']}")
+        logger.info(f"Investidor10 fundamentals for {ticker}: price={data['current_price']}, shares={data['shares_outstanding']}, net_income={data['net_income']}, roe={data['roe']}, payout={data['payout']}")
         
     except Exception as e:
         logger.error(f"Investidor10 fundamentals scraper error for {ticker}: {e}")
