@@ -223,6 +223,16 @@ export default function Dividends() {
               <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
               {syncing ? "Sincronizando..." : "Sincronizar"}
             </Button>
+            <Button
+              data-testid="delete-all-dividends-btn"
+              variant="outline"
+              onClick={() => setDeleteAllDialogOpen(true)}
+              disabled={deleting || dividends.length === 0}
+              className="border-destructive text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Excluir Todos
+            </Button>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button
