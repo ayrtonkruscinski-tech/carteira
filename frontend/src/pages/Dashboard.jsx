@@ -505,48 +505,71 @@ export default function Dashboard() {
 
         {/* Stocks Table */}
         <Card className="bg-card border-border">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <CardTitle>Suas Ações</CardTitle>
+            <div className="flex items-center gap-2">
+              <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[180px] bg-input border-input">
+                  <SelectValue placeholder="Ordenar por" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border">
+                  {SORT_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </CardHeader>
           <CardContent>
-            {stocks.length > 0 ? (
+            {sortedStocks.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full" data-testid="stocks-table">
                   <thead>
                     <tr className="border-b border-border">
                       <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Ticker</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Nome</th>
                       <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Qtd</th>
                       <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">PM</th>
                       <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Atual</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Teto</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Valor</th>
                       <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Variação</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Dividendos</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Rentab.</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">% Cart.</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {stocks.map((stock) => {
-                      const currentPrice = stock.current_price || stock.average_price;
-                      const variation = ((currentPrice / stock.average_price) - 1) * 100;
-                      const atCeiling = stock.ceiling_price && currentPrice >= stock.ceiling_price;
+                    {sortedStocks.map((stock) => {
+                      const atCeiling = stock.ceiling_price && stock.currentPrice >= stock.ceiling_price;
                       return (
                         <tr key={stock.stock_id} className={`border-b border-border/50 hover:bg-muted/30 transition-colors ${atCeiling ? 'bg-accent/5' : ''}`}>
                           <td className="py-3 px-4">
                             <span className="font-mono font-semibold text-foreground">{stock.ticker}</span>
-                            {atCeiling && <span className="ml-2 text-xs text-accent">⚠️ Teto</span>}
+                            {atCeiling && <span className="ml-2 text-xs text-accent">⚠️</span>}
                           </td>
-                          <td className="py-3 px-4 text-muted-foreground">{stock.name}</td>
                           <td className="py-3 px-4 text-right font-mono text-foreground">{stock.quantity}</td>
                           <td className="py-3 px-4 text-right font-mono text-foreground">
                             {formatCurrency(stock.average_price)}
                           </td>
                           <td className="py-3 px-4 text-right font-mono text-foreground">
-                            {formatCurrency(currentPrice)}
+                            {formatCurrency(stock.currentPrice)}
+                          </td>
+                          <td className="py-3 px-4 text-right font-mono text-foreground">
+                            {formatCurrency(stock.currentValue)}
+                          </td>
+                          <td className={`py-3 px-4 text-right font-mono font-medium ${stock.variation >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                            {stock.variation >= 0 ? '+' : ''}{stock.variation.toFixed(2)}%
+                          </td>
+                          <td className="py-3 px-4 text-right font-mono text-accent">
+                            {formatCurrency(stock.dividendsReceived)}
+                          </td>
+                          <td className={`py-3 px-4 text-right font-mono font-medium ${stock.profitability >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                            {stock.profitability >= 0 ? '+' : ''}{stock.profitability.toFixed(2)}%
                           </td>
                           <td className="py-3 px-4 text-right font-mono text-muted-foreground">
-                            {stock.ceiling_price ? formatCurrency(stock.ceiling_price) : '-'}
-                          </td>
-                          <td className={`py-3 px-4 text-right font-mono font-medium ${variation >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                            {variation >= 0 ? '+' : ''}{variation.toFixed(2)}%
+                            {stock.portfolioPercent.toFixed(1)}%
                           </td>
                         </tr>
                       );
