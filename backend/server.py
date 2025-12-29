@@ -559,6 +559,14 @@ async def update_stock(stock_id: str, stock_data: StockUpdate, user: User = Depe
         raise HTTPException(status_code=404, detail="Stock not found")
     return stock
 
+@api_router.delete("/portfolio/stocks/all")
+async def delete_all_stocks(user: User = Depends(get_current_user)):
+    """Delete all stocks for the current user"""
+    result = await db.stocks.delete_many({"user_id": user.user_id})
+    # Also delete related dividends
+    await db.dividends.delete_many({"user_id": user.user_id})
+    return {"message": f"{result.deleted_count} ações excluídas", "deleted": result.deleted_count}
+
 @api_router.delete("/portfolio/stocks/{stock_id}")
 async def delete_stock(stock_id: str, user: User = Depends(get_current_user)):
     result = await db.stocks.delete_one({"stock_id": stock_id, "user_id": user.user_id})
