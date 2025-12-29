@@ -261,12 +261,12 @@ export default function Dividends() {
                   className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-[0_0_15px_rgba(245,158,11,0.3)]"
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Registrar Dividendo
+                  Registrar Provento
                 </Button>
               </DialogTrigger>
             <DialogContent className="bg-card border-border max-w-md">
               <DialogHeader>
-                <DialogTitle className="text-foreground">Registrar Dividendo</DialogTitle>
+                <DialogTitle className="text-foreground">Registrar Provento</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
