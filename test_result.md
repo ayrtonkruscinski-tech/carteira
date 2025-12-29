@@ -302,11 +302,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Valuation Form Auto-Fill from Investidor10"
-    - "Tooltip display fix verification"
-  stuck_tasks: 
-    - "Valuation Form Auto-Fill"
-    - "Tooltip Display Fix"
+    - "Multiple Portfolios Feature"
+    - "Warren Buffett Valuation Pre-fill"
+    - "Dividend payment_date in evolution"
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
   completed_tests:
