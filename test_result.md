@@ -134,6 +134,39 @@ backend:
         agent: "testing"
         comment: "Endpoint testado e funcionando perfeitamente. Teste abrangente realizado: 1) Sync retorna estrutura correta {synced, skipped, total_tickers, message}, 2) Processa múltiplos tickers (10 tickers processados), 3) Prevenção de duplicatas funciona (1353 skipped na segunda chamada), 4) Calcula dividendos baseado em quantidade de ações, 5) Verifica data_com vs purchase_date corretamente. Dividendos existentes: R$14.041,16 total em 170 meses."
 
+  - task: "DELETE /api/dividends/all endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Endpoint DELETE /api/dividends/all implementado para deletar todos os dividendos do usuário."
+      - working: true
+        agent: "testing"
+        comment: "Endpoint testado e funcionando perfeitamente. ✅ Requer autenticação (401 sem auth), ✅ Retorna formato correto {message: 'X dividendos excluídos', deleted: number}, ✅ Deleta todos os dividendos do usuário corretamente."
+
+  - task: "DELETE /api/portfolio/stocks/all endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Endpoint DELETE /api/portfolio/stocks/all implementado para deletar todas as ações do usuário."
+      - working: false
+        agent: "testing"
+        comment: "Endpoint inicialmente falhando com 404 devido a conflito de rotas. FastAPI estava interpretando 'all' como stock_id no endpoint /portfolio/stocks/{stock_id}."
+      - working: true
+        agent: "testing"
+        comment: "CORRIGIDO: Movido endpoint /portfolio/stocks/all ANTES de /portfolio/stocks/{stock_id} para resolver conflito de rotas. ✅ Requer autenticação (401 sem auth), ✅ Retorna formato correto {message: 'X ações excluídas', deleted: number}, ✅ Deleta todas as ações do usuário, ✅ Também deleta dividendos relacionados (cascade deletion)."
+
   - task: "Google Auth"
     implemented: true
     working: true
