@@ -1270,37 +1270,40 @@ async def import_file(file: UploadFile = File(...), user: User = Depends(get_cur
     
     for stock_data in stocks:
         ticker = stock_data["ticker"]
+        purchase_date = stock_data.get("purchase_date")
         
-        # Check if stock already exists
-        existing = await db.stocks.find_one(
-            {"user_id": user.user_id, "ticker": ticker},
-            {"_id": 0}
-        )
+        # Check if stock already exists with same ticker AND purchase_date
+        # This allows multiple entries for the same stock bought on different dates
+        query = {"user_id": user.user_id, "ticker": ticker}
+        if purchase_date:
+            query["purchase_date"] = purchase_date
+        
+        existing = await db.stocks.find_one(query, {"_id": 0})
         
         # Get additional info
         stock_info = BRAZILIAN_STOCKS.get(ticker, {})
         
         if existing:
-            # Update existing stock
+            # Update existing stock (same ticker + same date)
             await db.stocks.update_one(
                 {"stock_id": existing["stock_id"]},
                 {"$set": {
                     "quantity": stock_data["quantity"],
                     "average_price": stock_data["average_price"],
-                    "purchase_date": stock_data.get("purchase_date"),
+                    "purchase_date": purchase_date,
                     "updated_at": datetime.now(timezone.utc).isoformat()
                 }}
             )
             updated += 1
         else:
-            # Create new stock
+            # Create new stock entry
             new_stock = Stock(
                 user_id=user.user_id,
                 ticker=ticker,
                 name=stock_data.get("name") or stock_info.get("name", ticker),
                 quantity=stock_data["quantity"],
                 average_price=stock_data["average_price"],
-                purchase_date=stock_data.get("purchase_date"),
+                purchase_date=purchase_date,
                 sector=stock_data.get("sector") or stock_info.get("sector"),
                 current_price=stock_info.get("current_price"),
                 dividend_yield=stock_info.get("dividend_yield")
