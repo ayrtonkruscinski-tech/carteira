@@ -408,6 +408,18 @@ export default function Portfolio() {
               Exportar
             </Button>
 
+            {/* Delete All Button */}
+            <Button
+              variant="outline"
+              onClick={() => setDeleteAllDialogOpen(true)}
+              disabled={deletingAll || stocks.length === 0}
+              className="border-destructive text-destructive hover:bg-destructive/10"
+              data-testid="delete-all-stocks-btn"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Excluir Todas
+            </Button>
+
             {/* Add Stock Button */}
             <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
               if (!open) resetForm();
