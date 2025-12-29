@@ -222,28 +222,33 @@ export default function Dividends() {
 
   // Filtrar dados do gráfico por status e período
   const filteredChartData = useMemo(() => {
+    const now = new Date();
+    const todayStr = now.toISOString().split("T")[0];
+    
     // Filtrar por status
     let filteredDividends = [...dividends];
     if (chartStatusFilter === "received") {
-      filteredDividends = dividends.filter((d) => d.payment_date <= today);
+      filteredDividends = dividends.filter((d) => d.payment_date <= todayStr);
     } else if (chartStatusFilter === "pending") {
-      filteredDividends = dividends.filter((d) => d.payment_date > today);
+      filteredDividends = dividends.filter((d) => d.payment_date > todayStr);
     }
 
     // Filtrar por período
     if (chartPeriodFilter !== "max") {
       const monthsAgo = parseInt(chartPeriodFilter);
-      const cutoffDate = new Date();
-      cutoffDate.setMonth(cutoffDate.getMonth() - monthsAgo);
-      const cutoffStr = cutoffDate.toISOString().split("T")[0];
-      filteredDividends = filteredDividends.filter((d) => d.payment_date >= cutoffStr);
+      const cutoffDate = new Date(now.getFullYear(), now.getMonth() - monthsAgo + 1, 1);
+      
+      filteredDividends = filteredDividends.filter((d) => {
+        const paymentDate = new Date(d.payment_date);
+        return paymentDate >= cutoffDate;
+      });
     }
 
     // Agrupar por mês
     const byMonth = {};
     filteredDividends.forEach((d) => {
       const month = d.payment_date.substring(0, 7); // YYYY-MM
-      const isReceived = d.payment_date <= today;
+      const isReceived = d.payment_date <= todayStr;
       
       if (!byMonth[month]) {
         byMonth[month] = { month, received: 0, pending: 0 };
@@ -263,7 +268,7 @@ export default function Dividends() {
         ...item,
         monthLabel: new Date(item.month + "-01").toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }),
       }));
-  }, [dividends, chartStatusFilter, chartPeriodFilter, today]);
+  }, [dividends, chartStatusFilter, chartPeriodFilter]);
 
   // Paginação - ordenar por data de pagamento (mais recente primeiro)
   const sortedDividends = [...dividends].sort((a, b) => 
