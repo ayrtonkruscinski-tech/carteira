@@ -14,6 +14,7 @@ import httpx
 import csv
 import io
 import re
+from openpyxl import load_workbook
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
