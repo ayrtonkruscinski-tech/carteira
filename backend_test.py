@@ -285,6 +285,149 @@ class StockFolioAPITester:
         # Test with missing file to check endpoint availability
         return self.run_test("Portfolio CSV Import", "POST", "portfolio/import", 422)
 
+    def test_portfolio_import_with_purchase_date(self):
+        """Test CSV/XLSX import with purchase_date extraction"""
+        print("\n🔍 Testing CSV/XLSX Import with Purchase Date Extraction...")
+        
+        # Step 1: Clear existing stocks to have clean test
+        print("   🗑️  Clearing existing stocks for clean test...")
+        success, _ = self.run_test("Clear Stocks for Import Test", "DELETE", "portfolio/stocks/all", 200)
+        if not success:
+            print("❌ Failed to clear existing stocks")
+            return False
+        
+        # Step 2: Create test CSV content with purchase dates in different formats
+        csv_content = """ticker,name,quantity,average_price,purchase_date,sector
+PETR4,Petrobras PN,100,35.50,15/01/2024,Petróleo
+VALE3,Vale ON,50,62.30,2024-02-20,Mineração
+ITUB4,Itaú Unibanco PN,200,32.80,10/03/2024,Bancos
+PETR4,Petrobras PN,50,40.00,20/01/2024,Petróleo"""
+        
+        # Step 3: Test CSV import by creating a temporary file
+        import tempfile
+        import os
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, encoding='utf-8') as f:
+            f.write(csv_content)
+            temp_file_path = f.name
+        
+        try:
+            # Step 4: Test file upload
+            with open(temp_file_path, 'rb') as f:
+                files = {'file': ('test_portfolio.csv', f, 'text/csv')}
+                headers = {'Authorization': f'Bearer {self.session_token}'}
+                
+                url = f"{self.base_url}/portfolio/import"
+                print(f"   📤 Uploading CSV file to: {url}")
+                
+                response = requests.post(url, files=files, headers=headers, timeout=30)
+                
+                print(f"   📊 Import response status: {response.status_code}")
+                
+                if response.status_code == 200:
+                    import_result = response.json()
+                    print(f"   ✅ Import successful: {import_result}")
+                    
+                    imported = import_result.get('imported', 0)
+                    updated = import_result.get('updated', 0)
+                    total = import_result.get('total', 0)
+                    
+                    print(f"   📊 Import stats: {imported} imported, {updated} updated, {total} total")
+                    
+                    # Step 5: Verify stocks were imported with purchase_date
+                    success, stocks_response = self.run_test("Get Imported Stocks", "GET", "portfolio/stocks", 200)
+                    if not success:
+                        print("❌ Failed to get imported stocks")
+                        return False
+                    
+                    stocks = stocks_response if isinstance(stocks_response, list) else []
+                    print(f"   📊 Found {len(stocks)} stocks after import")
+                    
+                    # Step 6: Verify purchase_date extraction
+                    purchase_dates_found = 0
+                    date_formats_correct = 0
+                    earliest_date_correct = False
+                    
+                    for stock in stocks:
+                        ticker = stock.get('ticker')
+                        purchase_date = stock.get('purchase_date')
+                        quantity = stock.get('quantity', 0)
+                        
+                        print(f"   📊 {ticker}: quantity={quantity}, purchase_date={purchase_date}")
+                        
+                        if purchase_date:
+                            purchase_dates_found += 1
+                            
+                            # Check if date is in YYYY-MM-DD format
+                            if len(purchase_date) == 10 and purchase_date[4] == '-' and purchase_date[7] == '-':
+                                date_formats_correct += 1
+                                print(f"   ✅ {ticker} has correct date format: {purchase_date}")
+                            else:
+                                print(f"   ❌ {ticker} has incorrect date format: {purchase_date}")
+                        else:
+                            print(f"   ❌ {ticker} missing purchase_date")
+                    
+                    # Step 7: Check PETR4 aggregation (should have earliest date and combined quantity)
+                    petr4_stocks = [s for s in stocks if s.get('ticker') == 'PETR4']
+                    if len(petr4_stocks) == 1:
+                        petr4 = petr4_stocks[0]
+                        petr4_quantity = petr4.get('quantity', 0)
+                        petr4_date = petr4.get('purchase_date')
+                        
+                        # Should have combined quantity (100 + 50 = 150)
+                        if petr4_quantity == 150:
+                            print(f"   ✅ PETR4 quantity correctly aggregated: {petr4_quantity}")
+                        else:
+                            print(f"   ❌ PETR4 quantity not aggregated correctly: {petr4_quantity} (expected 150)")
+                        
+                        # Should have earliest date (15/01/2024 -> 2024-01-15)
+                        if petr4_date == "2024-01-15":
+                            earliest_date_correct = True
+                            print(f"   ✅ PETR4 has earliest purchase date: {petr4_date}")
+                        else:
+                            print(f"   ❌ PETR4 date not earliest: {petr4_date} (expected 2024-01-15)")
+                    else:
+                        print(f"   ❌ Expected 1 PETR4 stock after aggregation, found {len(petr4_stocks)}")
+                    
+                    # Step 8: Validate results
+                    print(f"   📊 Purchase dates found: {purchase_dates_found}/{len(stocks)}")
+                    print(f"   📊 Correct date formats: {date_formats_correct}/{purchase_dates_found}")
+                    
+                    if purchase_dates_found >= 3:  # PETR4, VALE3, ITUB4
+                        print("   ✅ Purchase dates extracted successfully")
+                    else:
+                        print("   ❌ Not enough purchase dates extracted")
+                        return False
+                    
+                    if date_formats_correct == purchase_dates_found:
+                        print("   ✅ All dates in correct YYYY-MM-DD format")
+                    else:
+                        print("   ❌ Some dates not in correct format")
+                        return False
+                    
+                    if earliest_date_correct:
+                        print("   ✅ Earliest date correctly kept during aggregation")
+                    else:
+                        print("   ❌ Earliest date not kept during aggregation")
+                        return False
+                    
+                    print("   ✅ CSV/XLSX import with purchase_date test completed successfully")
+                    return True
+                    
+                else:
+                    print(f"   ❌ Import failed with status {response.status_code}")
+                    try:
+                        error_data = response.json()
+                        print(f"   Error: {error_data}")
+                    except:
+                        print(f"   Error: {response.text}")
+                    return False
+                    
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+
     def test_portfolio_export_csv(self):
         """Test CSV export endpoint"""
         return self.run_test("Portfolio CSV Export", "GET", "portfolio/export/csv", 200)
