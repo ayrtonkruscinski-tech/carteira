@@ -123,6 +123,12 @@ export const PortfolioProvider = ({ children }) => {
   );
 };
 
+// Hook that returns null if not inside provider (safe version)
+export const usePortfolioSafe = () => {
+  return useContext(PortfolioContext);
+};
+
+// Hook that throws if not inside provider
 export const usePortfolio = () => {
   const context = useContext(PortfolioContext);
   if (!context) {
