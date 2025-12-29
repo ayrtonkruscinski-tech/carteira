@@ -346,14 +346,14 @@ export default function Dividends() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <Card className="bg-card border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Total Recebido</p>
                   <p className="text-2xl font-bold font-mono text-accent" data-testid="total-dividends">
-                    {formatCurrency(summary?.total || 0)}
+                    {formatCurrency(totalReceived)}
                   </p>
                 </div>
                 <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
@@ -367,10 +367,27 @@ export default function Dividends() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
+                  <p className="text-sm text-muted-foreground mb-1">A Receber</p>
+                  <p className="text-2xl font-bold font-mono text-blue-400">
+                    {formatCurrency(totalPending)}
+                  </p>
+                </div>
+                <div className="w-12 h-12 rounded-lg bg-blue-400/10 flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-blue-400" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-border">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
                   <p className="text-sm text-muted-foreground mb-1">Registros</p>
                   <p className="text-2xl font-bold font-mono text-foreground">
                     {dividends.length}
                   </p>
+                  <p className="text-xs text-muted-foreground">{receivedDividends.length} recebidos / {pendingDividends.length} a receber</p>
                 </div>
                 <div className="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center">
                   <TrendingUp className="w-6 h-6 text-secondary" />
@@ -387,7 +404,7 @@ export default function Dividends() {
                   <p className="text-2xl font-bold font-mono text-primary">
                     {formatCurrency(
                       summary?.by_month?.length > 0
-                        ? summary.total / summary.by_month.length
+                        ? totalReceived / summary.by_month.length
                         : 0
                     )}
                   </p>
