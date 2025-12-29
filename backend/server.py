@@ -750,22 +750,40 @@ def parse_cei_csv(content: str) -> List[dict]:
                 # Handle encoding issues
                 h_normalized = h_lower.replace('ã', 'a').replace('ç', 'c').replace('í', 'i').replace('ú', 'u').replace('á', 'a').replace('é', 'e').replace('ó', 'o')
                 
-                if 'produto' in h_normalized or 'ativo' in h_normalized:
-                    produto_col = h
-                elif 'codigo' in h_normalized or 'código' in h_normalized:
-                    produto_col = h
-                elif 'quantidade' in h_normalized or 'qtd' in h_normalized:
-                    qtd_col = h
-                elif 'preco' in h_normalized or 'preço' in h_normalized or 'unitario' in h_normalized or 'unitário' in h_normalized:
-                    preco_col = h
-                elif 'medio' in h_normalized or 'médio' in h_normalized:
-                    preco_col = h
-                # Look for date columns
+                # Look for ticker/code column - check for "Código de Negociação" first
+                if produto_col is None:
+                    if 'codigo' in h_normalized and 'negociacao' in h_normalized:
+                        produto_col = h
+                    elif 'codigo' in h_normalized or 'código' in h_normalized:
+                        produto_col = h
+                    elif 'produto' in h_normalized or 'ativo' in h_normalized:
+                        produto_col = h
+                    elif 'ticker' in h_normalized or 'papel' in h_normalized:
+                        produto_col = h
+                
+                # Look for quantity column
+                if qtd_col is None:
+                    if 'quantidade' in h_normalized or 'qtd' in h_normalized:
+                        qtd_col = h
+                
+                # Look for price column
+                if preco_col is None:
+                    if 'preco' in h_normalized or 'preço' in h_normalized:
+                        preco_col = h
+                    elif 'unitario' in h_normalized or 'unitário' in h_normalized:
+                        preco_col = h
+                    elif 'medio' in h_normalized or 'médio' in h_normalized:
+                        preco_col = h
+                
+                # Look for date columns - "Data do Negócio"
                 if data_col is None:
-                    if 'data' in h_normalized and ('compra' in h_normalized or 'aquisicao' in h_normalized or 'negociacao' in h_normalized):
-                        data_col = h
-                    elif h_normalized in ['data', 'date', 'dt']:
-                        data_col = h
+                    if 'data' in h_normalized:
+                        if 'negocio' in h_normalized or 'negociacao' in h_normalized:
+                            data_col = h
+                        elif 'compra' in h_normalized or 'aquisicao' in h_normalized:
+                            data_col = h
+                        elif h_normalized in ['data', 'date', 'dt', 'data do negocio']:
+                            data_col = h
             
             logger.info(f"CEI columns found - Produto: {produto_col}, Qtd: {qtd_col}, Preco: {preco_col}, Data: {data_col}")
             
