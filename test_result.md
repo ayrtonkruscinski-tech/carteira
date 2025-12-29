@@ -239,27 +239,33 @@ backend:
 frontend:
   - task: "Valuation Form Auto-Fill"
     implemented: true
-    working: "NA"
+    working: false
     file: "/app/frontend/src/pages/Valuation.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Implementado fetchValuationData() que chama /api/stocks/valuation-data/{ticker} e preenche formulário. Precisa testar com login Google."
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL ISSUE: Cannot test valuation form auto-fill due to Google Auth requirement. Backend API /api/stocks/valuation-data/PETR4 is working perfectly (returns current_price: 30.41, dividend_per_share: 3.26, dividend_yield: 10.7% as expected). However, frontend requires Google authentication which cannot be automated. Manual testing would be needed to verify: 1) Form auto-fill functionality, 2) Toast message display, 3) Field pre-population with correct values."
 
   - task: "Tooltip Display Fix"
     implemented: true
-    working: "NA"
+    working: false
     file: "/app/frontend/src/pages/Valuation.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "TooltipProvider adicionado envolvendo toda a página. Precisa verificar se tooltips aparecem corretamente."
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL ISSUE: Cannot test tooltip functionality due to Google Auth requirement. The valuation page is protected by ProtectedRoute component which requires authentication via /api/auth/me endpoint. Tooltips implementation appears correct in code (TooltipProvider wrapping page, HelpCircle icons with Tooltip components), but cannot be verified without authentication. Manual testing required."
 
   - task: "Dividends Sync Button"
     implemented: true
