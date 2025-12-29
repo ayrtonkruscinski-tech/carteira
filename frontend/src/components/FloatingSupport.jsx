@@ -9,7 +9,7 @@ import {
 } from "./ui/dialog";
 import { toast } from "sonner";
 
-const SUPPORT_EMAIL = "ayrton.kruscinski@hotmail.com";
+const SUPPORT_EMAIL = "ayrtonkruscinski@hotmail.com";
 const PIX_KEYS = [
   { label: "Celular", key: "+5547988607103", icon: "📱" },
   { label: "PicPay (Aleatória)", key: "5c435619-f86c-4e64-8f49-8f36b4a4004b", icon: "🎲" },
