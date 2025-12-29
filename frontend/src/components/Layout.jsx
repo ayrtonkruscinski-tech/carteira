@@ -37,6 +37,20 @@ export const Layout = ({ children }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [alertCount, setAlertCount] = useState(0);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [newPortfolioName, setNewPortfolioName] = useState("");
+  const [editingPortfolio, setEditingPortfolio] = useState(null);
+  
+  // Portfolio context - may be null if not wrapped in provider
+  let portfolioContext = null;
+  try {
+    portfolioContext = usePortfolio();
+  } catch {
+    // Not wrapped in provider, that's fine for some pages
+  }
+  
+  const { portfolios = [], currentPortfolio, selectPortfolio, createPortfolio, updatePortfolio, deletePortfolio } = portfolioContext || {};
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -81,6 +95,47 @@ export const Layout = ({ children }) => {
       console.error('Logout error:', error);
     }
     navigate('/');
+  };
+
+  const handleCreatePortfolio = async () => {
+    if (!newPortfolioName.trim() || !createPortfolio) return;
+    const portfolio = await createPortfolio(newPortfolioName.trim());
+    if (portfolio) {
+      toast.success(`Carteira "${portfolio.name}" criada!`);
+      selectPortfolio(portfolio);
+      setNewPortfolioName("");
+      setIsCreateDialogOpen(false);
+    } else {
+      toast.error("Erro ao criar carteira");
+    }
+  };
+
+  const handleEditPortfolio = async () => {
+    if (!editingPortfolio || !editingPortfolio.name.trim() || !updatePortfolio) return;
+    const updated = await updatePortfolio(editingPortfolio.portfolio_id, { name: editingPortfolio.name.trim() });
+    if (updated) {
+      toast.success("Carteira atualizada!");
+      setIsEditDialogOpen(false);
+      setEditingPortfolio(null);
+    } else {
+      toast.error("Erro ao atualizar carteira");
+    }
+  };
+
+  const handleDeletePortfolio = async (portfolio) => {
+    if (!deletePortfolio) return;
+    if (portfolio.is_default) {
+      toast.error("Não é possível excluir a carteira padrão");
+      return;
+    }
+    if (window.confirm(`Excluir carteira "${portfolio.name}"? Todas as ações e dividendos serão removidos.`)) {
+      const success = await deletePortfolio(portfolio.portfolio_id);
+      if (success) {
+        toast.success("Carteira excluída!");
+      } else {
+        toast.error("Erro ao excluir carteira");
+      }
+    }
   };
 
   return (
