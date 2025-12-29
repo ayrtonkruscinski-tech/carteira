@@ -261,6 +261,8 @@ test_plan:
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
+  completed_tests:
+    - "Dividend Sync with F Suffix Fix"
 
 agent_communication:
   - agent: "main"
