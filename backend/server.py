@@ -405,14 +405,26 @@ def fetch_investidor10_fundamentals(ticker: str) -> dict:
                     data['p_l'] = api_data['P/L'][0].get('value')
                 if 'P/VP' in api_data and api_data['P/VP']:
                     data['p_vp'] = api_data['P/VP'][0].get('value')
-                if 'ROE' in api_data and api_data['ROE']:
-                    data['roe'] = api_data['ROE'][0].get('value')
-                if 'PAYOUT' in api_data and api_data['PAYOUT']:
-                    data['payout'] = api_data['PAYOUT'][0].get('value')
                 if 'DIVIDEND YIELD (DY)' in api_data and api_data['DIVIDEND YIELD (DY)']:
                     data['dividend_yield'] = api_data['DIVIDEND YIELD (DY)'][0].get('value')
                 if 'MARGEM EBITDA' in api_data and api_data['MARGEM EBITDA']:
                     data['ebitda'] = api_data['MARGEM EBITDA'][0].get('value')
+                
+                # Calculate ROE average (last 5 years or available years)
+                if 'ROE' in api_data and api_data['ROE']:
+                    roe_values = [item.get('value') for item in api_data['ROE'][:5] if item.get('value') is not None]
+                    if roe_values:
+                        data['roe'] = round(sum(roe_values) / len(roe_values), 2)
+                        data['roe_years'] = len(roe_values)
+                        data['roe_current'] = api_data['ROE'][0].get('value')
+                
+                # Calculate Payout average (last 5 years or available years)
+                if 'PAYOUT' in api_data and api_data['PAYOUT']:
+                    payout_values = [item.get('value') for item in api_data['PAYOUT'][:5] if item.get('value') is not None and 0 < item.get('value') < 200]  # Filter outliers
+                    if payout_values:
+                        data['payout'] = round(sum(payout_values) / len(payout_values), 2)
+                        data['payout_years'] = len(payout_values)
+                        data['payout_current'] = api_data['PAYOUT'][0].get('value')
         
         # Calculate shares_outstanding from market_cap and current_price if not found
         if not data['shares_outstanding'] and data['market_cap'] and data['current_price'] and data['current_price'] > 0:
