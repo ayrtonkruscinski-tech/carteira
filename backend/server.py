@@ -724,9 +724,8 @@ async def create_portfolio_snapshot(user: User = Depends(get_current_user)):
 # ==================== IMPORT CEI/B3 ====================
 
 def parse_cei_csv(content: str) -> List[dict]:
-    """Parse CEI/B3 CSV export file"""
+    """Parse CEI/B3 CSV export file - keeps each purchase as separate record"""
     stocks = []
-    stocks_dict = {}  # Para agregar por ticker
     
     # Try both delimiters
     for delimiter in [';', ',']:
