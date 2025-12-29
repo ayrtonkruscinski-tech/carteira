@@ -144,6 +144,49 @@ class StockFolioAPITester:
         """Test auth/me endpoint"""
         return self.run_test("Get Current User", "GET", "auth/me", 200)
 
+    def test_portfolio_import_csv(self):
+        """Test CSV import endpoint"""
+        # Test with empty file to check endpoint availability
+        return self.run_test("Portfolio CSV Import", "POST", "portfolio/import/csv", 400)
+
+    def test_portfolio_export_csv(self):
+        """Test CSV export endpoint"""
+        return self.run_test("Portfolio CSV Export", "GET", "portfolio/export/csv", 200)
+
+    def test_portfolio_refresh_prices(self):
+        """Test refresh prices endpoint"""
+        return self.run_test("Refresh Portfolio Prices", "POST", "portfolio/refresh-prices", 200)
+
+    def test_portfolio_snapshot(self):
+        """Test portfolio snapshot creation"""
+        return self.run_test("Create Portfolio Snapshot", "POST", "portfolio/snapshot", 200)
+
+    def test_portfolio_history(self):
+        """Test portfolio history retrieval"""
+        return self.run_test("Get Portfolio History", "GET", "portfolio/history", 200)
+
+    def test_alerts_get(self):
+        """Test get alerts endpoint"""
+        return self.run_test("Get Alerts", "GET", "alerts", 200)
+
+    def test_alerts_count(self):
+        """Test get unread alerts count"""
+        return self.run_test("Get Unread Alerts Count", "GET", "alerts/count", 200)
+
+    def test_alerts_mark_read(self, alert_id="test_alert_123"):
+        """Test mark alert as read"""
+        return self.run_test("Mark Alert as Read", "PUT", f"alerts/{alert_id}/read", 404)  # 404 expected for non-existent alert
+
+    def test_stock_search_with_source(self, ticker="PETR4"):
+        """Test stock search with source field"""
+        success, response = self.run_test(f"Stock Search with Source - {ticker}", "GET", f"stocks/search/{ticker}", 200)
+        if success and response:
+            if 'source' in response:
+                print(f"   ✅ Source field present: {response['source']}")
+            else:
+                print(f"   ⚠️  Source field missing in response")
+        return success, response
+
 def main():
     print("🚀 Starting StockFolio API Tests")
     print("=" * 50)
