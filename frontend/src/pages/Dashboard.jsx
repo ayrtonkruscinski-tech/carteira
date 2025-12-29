@@ -117,6 +117,63 @@ export default function Dashboard() {
     color: COLORS[index % COLORS.length],
   }));
 
+  // Calculate total portfolio value for percentage calculations
+  const totalPortfolioValue = stocks.reduce((sum, stock) => {
+    return sum + stock.quantity * (stock.current_price || stock.average_price);
+  }, 0);
+
+  // Enrich stocks with calculated metrics
+  const enrichedStocks = stocks.map(stock => {
+    const currentPrice = stock.current_price || stock.average_price;
+    const investedValue = stock.quantity * stock.average_price;
+    const currentValue = stock.quantity * currentPrice;
+    const variation = ((currentPrice / stock.average_price) - 1) * 100;
+    const gain = currentValue - investedValue;
+    const dividendsReceived = stockDividends[stock.ticker] || 0;
+    const totalReturn = gain + dividendsReceived;
+    const profitability = investedValue > 0 ? (totalReturn / investedValue) * 100 : 0;
+    const portfolioPercent = totalPortfolioValue > 0 ? (currentValue / totalPortfolioValue) * 100 : 0;
+
+    return {
+      ...stock,
+      currentPrice,
+      investedValue,
+      currentValue,
+      variation,
+      gain,
+      dividendsReceived,
+      totalReturn,
+      profitability,
+      portfolioPercent,
+    };
+  });
+
+  // Sort stocks based on selected criteria
+  const sortedStocks = [...enrichedStocks].sort((a, b) => {
+    switch (sortBy) {
+      case 'ticker':
+        return a.ticker.localeCompare(b.ticker);
+      case 'value_desc':
+        return b.currentValue - a.currentValue;
+      case 'value_asc':
+        return a.currentValue - b.currentValue;
+      case 'variation_desc':
+        return b.variation - a.variation;
+      case 'variation_asc':
+        return a.variation - b.variation;
+      case 'profitability_desc':
+        return b.profitability - a.profitability;
+      case 'profitability_asc':
+        return a.profitability - b.profitability;
+      case 'portfolio_percent_desc':
+        return b.portfolioPercent - a.portfolioPercent;
+      case 'portfolio_percent_asc':
+        return a.portfolioPercent - b.portfolioPercent;
+      default:
+        return 0;
+    }
+  });
+
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
