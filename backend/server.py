@@ -558,7 +558,16 @@ async def refresh_portfolio_prices(user: User = Depends(get_current_user)):
     # Save portfolio snapshot
     await save_portfolio_snapshot(user.user_id)
     
-    return {"updated": updated, "total": len(stocks), "alerts_created": alerts_created}
+    result = {
+        "updated": updated, 
+        "total": len(stocks), 
+        "alerts_created": alerts_created,
+        "source": "tradingview"
+    }
+    if errors:
+        result["errors"] = errors
+    
+    return result
 
 # ==================== PORTFOLIO HISTORY ====================
 
