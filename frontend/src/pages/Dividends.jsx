@@ -547,7 +547,7 @@ export default function Dividends() {
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={filteredChartData}>
                       <XAxis
-                        dataKey="month"
+                        dataKey="monthLabel"
                         stroke="#94A3B8"
                         fontSize={12}
                         tickLine={false}
