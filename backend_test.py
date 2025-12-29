@@ -6,7 +6,7 @@ from datetime import datetime
 class StockFolioAPITester:
     def __init__(self, base_url="https://acoes-dashboard.preview.emergentagent.com/api"):
         self.base_url = base_url
-        self.session_token = "test_session_1766981906244"  # From MongoDB test user creation
+        self.session_token = "demo_session_token_123"  # Updated to use demo session token
         self.tests_run = 0
         self.tests_passed = 0
         self.test_results = []
