@@ -12,7 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
-import { Brain, Send, Sparkles, Search, Clock } from "lucide-react";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../components/ui/tabs";
+import { Brain, Send, Sparkles, Search, Clock, Briefcase, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -21,8 +27,11 @@ export default function Analysis() {
   const [stocks, setStocks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
+  const [analyzingPortfolio, setAnalyzingPortfolio] = useState(false);
   const [analysis, setAnalysis] = useState(null);
+  const [portfolioAnalysis, setPortfolioAnalysis] = useState(null);
   const [history, setHistory] = useState([]);
+  const [activeTab, setActiveTab] = useState("stock");
   const [formData, setFormData] = useState({
     ticker: "",
     current_price: "",
@@ -38,6 +47,11 @@ export default function Analysis() {
     const savedHistory = localStorage.getItem("analysis_history");
     if (savedHistory) {
       setHistory(JSON.parse(savedHistory));
+    }
+    // Load portfolio analysis from localStorage
+    const savedPortfolioAnalysis = localStorage.getItem("portfolio_analysis");
+    if (savedPortfolioAnalysis) {
+      setPortfolioAnalysis(JSON.parse(savedPortfolioAnalysis));
     }
   }, []);
 
@@ -132,8 +146,42 @@ export default function Analysis() {
     }
   };
 
+  const handleAnalyzePortfolio = async () => {
+    setAnalyzingPortfolio(true);
+
+    try {
+      const response = await fetch(`${API}/analysis/portfolio`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPortfolioAnalysis(data);
+        localStorage.setItem("portfolio_analysis", JSON.stringify(data));
+        toast.success("Análise da carteira gerada com sucesso!");
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || "Erro ao gerar análise da carteira");
+      }
+    } catch (error) {
+      toast.error("Erro ao conectar com o servidor");
+      console.error("Portfolio analysis error:", error);
+    } finally {
+      setAnalyzingPortfolio(false);
+    }
+  };
+
   const loadFromHistory = (item) => {
     setAnalysis(item);
+  };
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
   };
 
   if (loading) {
@@ -157,7 +205,22 @@ export default function Analysis() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Tabs for Stock vs Portfolio Analysis */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2 bg-muted">
+            <TabsTrigger value="stock" className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              Ação Individual
+            </TabsTrigger>
+            <TabsTrigger value="portfolio" className="flex items-center gap-2">
+              <Briefcase className="w-4 h-4" />
+              Carteira Completa
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Stock Analysis Tab */}
+          <TabsContent value="stock" className="mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form */}
           <Card className="bg-card border-border lg:col-span-1">
             <CardHeader>
