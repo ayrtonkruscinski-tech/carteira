@@ -196,13 +196,23 @@ export default function Dividends() {
     }).format(value);
   };
 
-  // Separar dividendos recebidos e a receber
+  // Separar proventos recebidos e a receber
   const today = new Date().toISOString().split("T")[0];
   const receivedDividends = dividends.filter((d) => d.payment_date <= today);
   const pendingDividends = dividends.filter((d) => d.payment_date > today);
   
   const totalReceived = receivedDividends.reduce((acc, d) => acc + d.amount, 0);
   const totalPending = pendingDividends.reduce((acc, d) => acc + d.amount, 0);
+
+  // Paginação - ordenar por data de pagamento (mais recente primeiro)
+  const sortedDividends = [...dividends].sort((a, b) => 
+    new Date(b.payment_date) - new Date(a.payment_date)
+  );
+  const totalPages = Math.ceil(sortedDividends.length / ITEMS_PER_PAGE);
+  const paginatedDividends = sortedDividends.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   if (loading) {
     return (
@@ -220,8 +230,8 @@ export default function Dividends() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Dividendos</h1>
-            <p className="text-muted-foreground">Acompanhe seus proventos recebidos</p>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Proventos</h1>
+            <p className="text-muted-foreground">Acompanhe seus proventos recebidos e a receber</p>
           </div>
           <div className="flex gap-2">
             <Button
