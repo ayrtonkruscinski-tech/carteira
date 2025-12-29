@@ -224,29 +224,37 @@ export default function Portfolio() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Validar extensão
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      toast.error('Por favor, selecione um arquivo CSV');
+      return;
+    }
+
     setImporting(true);
-    const formData = new FormData();
-    formData.append('file', file);
+    const formDataObj = new FormData();
+    formDataObj.append('file', file);
 
     try {
       const response = await fetch(`${API}/portfolio/import/csv`, {
         method: 'POST',
         credentials: 'include',
-        body: formData,
+        body: formDataObj,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        toast.success(data.message);
+      const data = await response.json().catch(() => null);
+      
+      if (response.ok && data) {
+        toast.success(data.message || 'Importação concluída!');
         fetchStocks();
         setIsImportDialogOpen(false);
+      } else if (response.status === 401) {
+        toast.error('Sessão expirada. Faça login novamente.');
       } else {
-        const error = await response.json();
-        toast.error(error.detail || 'Erro ao importar arquivo');
+        toast.error(data?.detail || `Erro ao importar arquivo (${response.status})`);
       }
     } catch (error) {
-      toast.error('Erro ao importar arquivo');
       console.error('Import error:', error);
+      toast.error('Erro de conexão ao importar arquivo');
     } finally {
       setImporting(false);
       if (fileInputRef.current) {
