@@ -42,13 +42,8 @@ export const Layout = ({ children }) => {
   const [newPortfolioName, setNewPortfolioName] = useState("");
   const [editingPortfolio, setEditingPortfolio] = useState(null);
   
-  // Portfolio context - may be null if not wrapped in provider
-  let portfolioContext = null;
-  try {
-    portfolioContext = usePortfolio();
-  } catch {
-    // Not wrapped in provider, that's fine for some pages
-  }
+  // Portfolio context - returns null if not wrapped in provider
+  const portfolioContext = usePortfolioSafe();
   
   const { portfolios = [], currentPortfolio, selectPortfolio, createPortfolio, updatePortfolio, deletePortfolio } = portfolioContext || {};
 
