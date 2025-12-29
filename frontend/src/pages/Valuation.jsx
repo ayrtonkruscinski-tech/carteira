@@ -63,42 +63,52 @@ export default function Valuation() {
     }
   };
 
-  const handleStockSelect = (ticker) => {
+  const handleStockSelect = async (ticker) => {
     const stock = stocks.find((s) => s.ticker === ticker);
     if (stock) {
-      const estimatedDividend = stock.dividend_yield && stock.current_price
-        ? (stock.current_price * stock.dividend_yield) / 100
-        : "";
-
       setFormData({
         ...formData,
         ticker: stock.ticker,
         current_price: stock.current_price?.toString() || "",
-        dividend_per_share: estimatedDividend ? estimatedDividend.toFixed(2) : "",
+        dividend_per_share: "",
       });
+      // Fetch detailed valuation data
+      await fetchValuationData(stock.ticker);
+    }
+  };
+
+  const fetchValuationData = async (ticker) => {
+    setSearching(true);
+    try {
+      const response = await fetch(`${API}/stocks/valuation-data/${ticker}`, {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setFormData((prev) => ({
+          ...prev,
+          ticker: data.ticker,
+          current_price: data.current_price?.toString() || prev.current_price,
+          dividend_per_share: data.dividend_per_share?.toString() || prev.dividend_per_share,
+          dividend_growth_rate: data.dividend_growth_rate?.toString() || prev.dividend_growth_rate,
+          net_income: data.net_income ? (data.net_income / 1000000).toFixed(0) : prev.net_income,
+          depreciation: data.depreciation ? (data.depreciation / 1000000).toFixed(0) : prev.depreciation,
+          capex: data.capex ? (data.capex / 1000000).toFixed(0) : prev.capex,
+          free_cash_flow: data.free_cash_flow ? (data.free_cash_flow / 1000000).toFixed(0) : prev.free_cash_flow,
+          shares_outstanding: data.shares_outstanding ? (data.shares_outstanding / 1000000).toFixed(0) : prev.shares_outstanding,
+        }));
+        toast.success(`Dados de ${ticker} carregados do Investidor10`);
+      }
+    } catch (error) {
+      console.error("Fetch valuation data error:", error);
+    } finally {
+      setSearching(false);
     }
   };
 
   const handleSearch = async () => {
     if (!formData.ticker) return;
-    try {
-      const response = await fetch(`${API}/stocks/search/${formData.ticker}`);
-      if (response.ok) {
-        const data = await response.json();
-        const estimatedDividend = data.dividend_yield && data.current_price
-          ? (data.current_price * data.dividend_yield) / 100
-          : "";
-
-        setFormData({
-          ...formData,
-          ticker: data.ticker,
-          current_price: data.current_price?.toString() || formData.current_price,
-          dividend_per_share: estimatedDividend ? estimatedDividend.toFixed(2) : formData.dividend_per_share,
-        });
-      }
-    } catch (error) {
-      console.error("Search error:", error);
-    }
+    await fetchValuationData(formData.ticker.toUpperCase());
   };
 
   const handleCalculate = async (e) => {
