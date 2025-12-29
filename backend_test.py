@@ -313,6 +313,140 @@ class StockFolioAPITester:
         """Test mark alert as read"""
         return self.run_test("Mark Alert as Read", "PUT", f"alerts/{alert_id}/read", 404)  # 404 expected for non-existent alert
 
+    def test_delete_all_dividends(self):
+        """Test DELETE /api/dividends/all endpoint"""
+        return self.run_test("Delete All Dividends", "DELETE", "dividends/all", 200)
+
+    def test_delete_all_stocks(self):
+        """Test DELETE /api/portfolio/stocks/all endpoint"""
+        return self.run_test("Delete All Stocks", "DELETE", "portfolio/stocks/all", 200)
+
+    def test_delete_all_endpoints_comprehensive(self):
+        """Test the new DELETE ALL endpoints comprehensively"""
+        print("\n🔍 Testing DELETE ALL Endpoints Comprehensively...")
+        
+        # Step 1: Add some test data first
+        print("   📈 Setting up test data...")
+        
+        # Add a test stock
+        stock_data = {
+            "ticker": "VALE3",
+            "name": "Vale ON",
+            "quantity": 50,
+            "average_price": 62.30,
+            "purchase_date": "2024-01-01",
+            "sector": "Mineração",
+            "current_price": 65.00,
+            "dividend_yield": 8.2
+        }
+        success, add_response = self.run_test("Add Test Stock for DELETE", "POST", "portfolio/stocks", 200, stock_data)
+        if not success:
+            print("❌ Failed to add test stock")
+            return False
+        
+        stock_id = add_response.get('stock_id')
+        print(f"   ✅ Added test stock with ID: {stock_id}")
+        
+        # Add a test dividend
+        dividend_data = {
+            "stock_id": stock_id,
+            "ticker": "VALE3",
+            "amount": 2.50,
+            "payment_date": "2025-01-15",
+            "type": "dividendo"
+        }
+        success, div_response = self.run_test("Add Test Dividend for DELETE", "POST", "dividends", 200, dividend_data)
+        if not success:
+            print("❌ Failed to add test dividend")
+            return False
+        
+        print(f"   ✅ Added test dividend with ID: {div_response.get('dividend_id')}")
+        
+        # Step 2: Verify data exists
+        success, stocks_before = self.run_test("Get Stocks Before DELETE", "GET", "portfolio/stocks", 200)
+        if not success:
+            print("❌ Failed to get stocks before delete")
+            return False
+        
+        success, dividends_before = self.run_test("Get Dividends Before DELETE", "GET", "dividends", 200)
+        if not success:
+            print("❌ Failed to get dividends before delete")
+            return False
+        
+        stocks_count_before = len(stocks_before) if isinstance(stocks_before, list) else 0
+        dividends_count_before = len(dividends_before) if isinstance(dividends_before, list) else 0
+        
+        print(f"   📊 Before DELETE: {stocks_count_before} stocks, {dividends_count_before} dividends")
+        
+        # Step 3: Test DELETE /api/dividends/all
+        print("   🗑️  Testing DELETE /api/dividends/all...")
+        success, delete_div_response = self.run_test("Delete All Dividends", "DELETE", "dividends/all", 200)
+        if not success:
+            print("❌ Failed to delete all dividends")
+            return False
+        
+        # Validate response structure
+        if 'message' not in delete_div_response or 'deleted' not in delete_div_response:
+            print("❌ DELETE dividends response missing required fields")
+            return False
+        
+        deleted_dividends = delete_div_response.get('deleted', 0)
+        print(f"   ✅ Deleted {deleted_dividends} dividends")
+        
+        # Verify dividends are gone
+        success, dividends_after = self.run_test("Get Dividends After DELETE", "GET", "dividends", 200)
+        if not success:
+            print("❌ Failed to get dividends after delete")
+            return False
+        
+        dividends_count_after = len(dividends_after) if isinstance(dividends_after, list) else 0
+        if dividends_count_after == 0:
+            print("   ✅ All dividends successfully deleted")
+        else:
+            print(f"   ❌ Still {dividends_count_after} dividends remaining")
+            return False
+        
+        # Step 4: Test DELETE /api/portfolio/stocks/all
+        print("   🗑️  Testing DELETE /api/portfolio/stocks/all...")
+        success, delete_stocks_response = self.run_test("Delete All Stocks", "DELETE", "portfolio/stocks/all", 200)
+        if not success:
+            print("❌ Failed to delete all stocks")
+            return False
+        
+        # Validate response structure
+        if 'message' not in delete_stocks_response or 'deleted' not in delete_stocks_response:
+            print("❌ DELETE stocks response missing required fields")
+            return False
+        
+        deleted_stocks = delete_stocks_response.get('deleted', 0)
+        print(f"   ✅ Deleted {deleted_stocks} stocks")
+        
+        # Verify stocks are gone
+        success, stocks_after = self.run_test("Get Stocks After DELETE", "GET", "portfolio/stocks", 200)
+        if not success:
+            print("❌ Failed to get stocks after delete")
+            return False
+        
+        stocks_count_after = len(stocks_after) if isinstance(stocks_after, list) else 0
+        if stocks_count_after == 0:
+            print("   ✅ All stocks successfully deleted")
+        else:
+            print(f"   ❌ Still {stocks_count_after} stocks remaining")
+            return False
+        
+        # Step 5: Verify cascade deletion (dividends should also be deleted when stocks are deleted)
+        print("   🔄 Verifying cascade deletion...")
+        success, final_dividends = self.run_test("Get Final Dividends Check", "GET", "dividends", 200)
+        if success:
+            final_div_count = len(final_dividends) if isinstance(final_dividends, list) else 0
+            if final_div_count == 0:
+                print("   ✅ Cascade deletion working - no orphaned dividends")
+            else:
+                print(f"   ⚠️  Found {final_div_count} dividends after stock deletion")
+        
+        print("   ✅ DELETE ALL endpoints test completed successfully")
+        return True
+
     def test_stock_search_with_source(self, ticker="PETR4"):
         """Test stock search with source field"""
         success, response = self.run_test(f"Stock Search with Source - {ticker}", "GET", f"stocks/search/{ticker}", 200)
