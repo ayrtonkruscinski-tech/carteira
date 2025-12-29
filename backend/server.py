@@ -561,7 +561,7 @@ def parse_generic_csv(content: str) -> List[dict]:
     stocks = []
     
     # Try different delimiters
-    for delimiter in [',', ';', '\t']:
+    for delimiter in [',', ';', '\t', '|']:
         try:
             reader = csv.DictReader(io.StringIO(content), delimiter=delimiter)
             headers = reader.fieldnames
@@ -569,31 +569,41 @@ def parse_generic_csv(content: str) -> List[dict]:
             if not headers:
                 continue
             
-            # Map common header variations
+            logger.info(f"CSV headers found with delimiter '{delimiter}': {headers}")
+            
+            # Map common header variations (case insensitive)
             header_map = {
-                'ticker': ['ticker', 'codigo', 'código', 'symbol', 'ativo'],
-                'name': ['name', 'nome', 'empresa', 'description'],
-                'quantity': ['quantity', 'quantidade', 'qtd', 'qtde', 'shares'],
-                'average_price': ['average_price', 'preco_medio', 'preço_médio', 'avg_price', 'cost'],
-                'purchase_date': ['purchase_date', 'data_compra', 'date', 'data'],
-                'sector': ['sector', 'setor', 'industry']
+                'ticker': ['ticker', 'codigo', 'código', 'symbol', 'ativo', 'papel', 'acao', 'ação', 'code', 'stock'],
+                'name': ['name', 'nome', 'empresa', 'description', 'descricao', 'descrição', 'produto', 'ativo'],
+                'quantity': ['quantity', 'quantidade', 'qtd', 'qtde', 'shares', 'qty', 'quant'],
+                'average_price': ['average_price', 'preco_medio', 'preço_médio', 'avg_price', 'cost', 'preco', 'preço', 'pm', 'custo', 'valor'],
+                'purchase_date': ['purchase_date', 'data_compra', 'date', 'data', 'dt_compra'],
+                'sector': ['sector', 'setor', 'industry', 'segmento']
             }
             
             def find_header(key):
                 for h in headers:
-                    h_lower = h.lower().strip()
+                    h_lower = h.lower().strip().replace(' ', '_').replace('-', '_')
                     if h_lower in header_map[key]:
                         return h
+                    # Also check if header contains any of the keywords
+                    for keyword in header_map[key]:
+                        if keyword in h_lower:
+                            return h
                 return None
             
             ticker_col = find_header('ticker')
+            logger.info(f"Ticker column found: {ticker_col}")
+            
             if not ticker_col:
                 continue
             
             for row in reader:
                 try:
                     ticker = row.get(ticker_col, '').strip().upper()
-                    if not ticker:
+                    # Remove common suffixes and clean ticker
+                    ticker = re.sub(r'[^A-Z0-9]', '', ticker)
+                    if not ticker or len(ticker) < 4:
                         continue
                     
                     name_col = find_header('name')
@@ -604,11 +614,25 @@ def parse_generic_csv(content: str) -> List[dict]:
                     
                     quantity = 0
                     if qty_col and row.get(qty_col):
-                        quantity = float(str(row.get(qty_col, '0')).replace('.', '').replace(',', '.'))
+                        qty_str = str(row.get(qty_col, '0')).strip()
+                        # Handle Brazilian number format (1.000,50 -> 1000.50)
+                        if ',' in qty_str and '.' in qty_str:
+                            qty_str = qty_str.replace('.', '').replace(',', '.')
+                        elif ',' in qty_str:
+                            qty_str = qty_str.replace(',', '.')
+                        quantity = float(qty_str) if qty_str else 0
                     
                     avg_price = 0
                     if price_col and row.get(price_col):
-                        avg_price = float(str(row.get(price_col, '0')).replace('.', '').replace(',', '.'))
+                        price_str = str(row.get(price_col, '0')).strip()
+                        # Remove currency symbols
+                        price_str = re.sub(r'[R$\s]', '', price_str)
+                        # Handle Brazilian number format
+                        if ',' in price_str and '.' in price_str:
+                            price_str = price_str.replace('.', '').replace(',', '.')
+                        elif ',' in price_str:
+                            price_str = price_str.replace(',', '.')
+                        avg_price = float(price_str) if price_str else 0
                     
                     stocks.append({
                         "ticker": ticker,
@@ -623,8 +647,10 @@ def parse_generic_csv(content: str) -> List[dict]:
                     continue
             
             if stocks:
+                logger.info(f"Successfully parsed {len(stocks)} stocks")
                 break
-        except:
+        except Exception as e:
+            logger.error(f"Error with delimiter '{delimiter}': {e}")
             continue
     
     return stocks
