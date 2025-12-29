@@ -1836,12 +1836,26 @@ def parse_generic_csv(content: str) -> List[dict]:
     return stocks
 
 @api_router.post("/portfolio/import")
-async def import_file(file: UploadFile = File(...), user: User = Depends(get_current_user)):
+async def import_file(file: UploadFile = File(...), portfolio_id: Optional[str] = Form(None), user: User = Depends(get_current_user)):
     """Import stocks from CSV or XLSX file"""
     content = await file.read()
     filename = file.filename or ""
     
-    logger.info(f"Importing file: {filename}, size: {len(content)} bytes")
+    logger.info(f"Importing file: {filename}, size: {len(content)} bytes, portfolio_id: {portfolio_id}")
+    
+    # Get or create default portfolio if no portfolio_id provided
+    if not portfolio_id:
+        default_portfolio = await db.portfolios.find_one({"user_id": user.user_id, "is_default": True})
+        if not default_portfolio:
+            # Create default portfolio
+            new_portfolio = Portfolio(user_id=user.user_id, name="Minha Carteira", is_default=True)
+            doc = new_portfolio.model_dump()
+            doc["created_at"] = doc["created_at"].isoformat()
+            doc["updated_at"] = doc["updated_at"].isoformat()
+            await db.portfolios.insert_one(doc)
+            portfolio_id = new_portfolio.portfolio_id
+        else:
+            portfolio_id = default_portfolio.get("portfolio_id")
     
     stocks = []
     
