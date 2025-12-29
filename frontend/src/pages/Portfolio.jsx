@@ -81,10 +81,13 @@ export default function Portfolio() {
   // Get current portfolio
   const portfolioContext = usePortfolioSafe();
   const currentPortfolio = portfolioContext?.currentPortfolio;
+  const portfolioLoading = portfolioContext?.loading;
 
   useEffect(() => {
-    fetchStocks();
-  }, [currentPortfolio?.portfolio_id]);
+    if (!portfolioLoading) {
+      fetchStocks();
+    }
+  }, [currentPortfolio?.portfolio_id, portfolioLoading]);
 
   const fetchStocks = async () => {
     try {
