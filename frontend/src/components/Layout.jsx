@@ -1,7 +1,25 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Briefcase, Coins, Calculator, Brain, LogOut, Menu, X, Bell } from "lucide-react";
+import { LayoutDashboard, Briefcase, Coins, Calculator, Brain, LogOut, Menu, X, Bell, ChevronDown, Plus, Pencil, Trash2 } from "lucide-react";
 import { Button } from "./ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "./ui/dialog";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { toast } from "sonner";
+import { usePortfolio } from "../context/PortfolioContext";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
