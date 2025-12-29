@@ -9,7 +9,7 @@ from openpyxl import Workbook
 def test_xlsx_import_with_dates():
     """Test XLSX import with purchase_date extraction"""
     
-    base_url = "https://investhub-16.preview.emergentagent.com/api"
+    base_url = "https://valutrack-1.preview.emergentagent.com/api"
     headers = {'Authorization': 'Bearer demo_session_token_123'}
     
     print("🔍 Testing XLSX Import with Purchase Date Extraction...")

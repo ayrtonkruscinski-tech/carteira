@@ -8,7 +8,7 @@ import json
 def test_csv_import_with_dates():
     """Test CSV import with purchase_date extraction"""
     
-    base_url = "https://investhub-16.preview.emergentagent.com/api"
+    base_url = "https://valutrack-1.preview.emergentagent.com/api"
     headers = {'Authorization': 'Bearer demo_session_token_123'}
     
     print("🔍 Testing CSV Import with Purchase Date Extraction...")
