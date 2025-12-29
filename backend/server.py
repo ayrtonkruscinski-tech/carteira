@@ -947,6 +947,9 @@ async def get_stocks(user: User = Depends(get_current_user), portfolio_id: Optio
     query = {"user_id": user.user_id}
     if portfolio_id:
         query["portfolio_id"] = portfolio_id
+    else:
+        # If no portfolio_id specified, get all stocks (for backwards compatibility)
+        pass
     stocks = await db.stocks.find(query, {"_id": 0}).to_list(1000)
     return stocks
 
