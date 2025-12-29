@@ -660,11 +660,14 @@ async def import_csv(file: UploadFile = File(...), user: User = Depends(get_curr
     """Import stocks from CSV file (CEI/B3 or generic format)"""
     content = await file.read()
     
+    logger.info(f"Importing CSV file: {file.filename}, size: {len(content)} bytes")
+    
     # Try different encodings
     content_str = None
-    for encoding in ['utf-8-sig', 'utf-8', 'latin-1', 'cp1252']:
+    for encoding in ['utf-8-sig', 'utf-8', 'latin-1', 'cp1252', 'iso-8859-1']:
         try:
             content_str = content.decode(encoding)
+            logger.info(f"Successfully decoded with {encoding}")
             break
         except:
             continue
@@ -672,15 +675,24 @@ async def import_csv(file: UploadFile = File(...), user: User = Depends(get_curr
     if not content_str:
         raise HTTPException(status_code=400, detail="Não foi possível ler o arquivo. Codificação não suportada.")
     
+    # Log first few lines for debugging
+    lines = content_str.split('\n')[:3]
+    logger.info(f"First lines of CSV: {lines}")
+    
     # Try CEI format first
     stocks = parse_cei_csv(content_str)
+    logger.info(f"CEI parser found {len(stocks)} stocks")
     
     # If no stocks found, try generic format
     if not stocks:
         stocks = parse_generic_csv(content_str)
+        logger.info(f"Generic parser found {len(stocks)} stocks")
     
     if not stocks:
-        raise HTTPException(status_code=400, detail="Não foi possível ler o arquivo. Verifique se o CSV contém colunas: ticker, quantity, average_price")
+        raise HTTPException(
+            status_code=400, 
+            detail="Não foi possível ler o arquivo. O CSV deve conter uma coluna 'ticker' (ou 'codigo', 'ativo', 'papel'). Exemplo: ticker,quantidade,preco_medio"
+        )
     
     imported = 0
     updated = 0
