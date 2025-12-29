@@ -42,6 +42,8 @@ export default function Valuation() {
     net_income: "",
     depreciation: "",
     capex: "",
+    roe: "",
+    payout: "",
   });
 
   useEffect(() => {
