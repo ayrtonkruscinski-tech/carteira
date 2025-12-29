@@ -224,7 +224,43 @@ backend:
         agent: "testing"
         comment: "COMPREHENSIVE TEST PASSED ✅ - Updated import and dividend sync functionality working perfectly: 1) Clean test environment setup successful, 2) Multiple stock scenarios tested (PETR4 on 2024-01-15 qty=50, PETR4 on 2024-01-15 qty=50, PETR4 on 2024-06-01 qty=30, VALE3 on 2024-03-01 qty=100), 3) Stock grouping verified - each POST creates separate records as expected, 4) Dividend sync successful (65 synced, 390 skipped, 2 tickers), 5) Purchase date eligibility working correctly (Jan purchase: 57 eligible dividends, Jun purchase: 53 eligible dividends), 6) F suffix removal confirmed (no F suffixes in dividend tickers), 7) Duplicate prevention working (second sync: 0 synced, 455 skipped). All expected results achieved."
 
+  - task: "GET /api/stocks/valuation-data/{ticker} endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Endpoint testado via curl. Retorna dados fundamentalistas do Investidor10 corretamente para PETR4: current_price=30.41, dividend_per_share=3.26, dividend_yield=10.7, p_l=5.05, etc."
+
 frontend:
+  - task: "Valuation Form Auto-Fill"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Valuation.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implementado fetchValuationData() que chama /api/stocks/valuation-data/{ticker} e preenche formulário. Precisa testar com login Google."
+
+  - task: "Tooltip Display Fix"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Valuation.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "TooltipProvider adicionado envolvendo toda a página. Precisa verificar se tooltips aparecem corretamente."
+
   - task: "Dividends Sync Button"
     implemented: true
     working: true
