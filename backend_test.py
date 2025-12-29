@@ -380,6 +380,10 @@ def main():
     tester.test_dividends_sync()
     tester.test_dividends_summary()
     
+    # Comprehensive dividend sync test
+    print("\n📋 Running Comprehensive Dividend Sync Test...")
+    tester.test_dividends_sync_comprehensive()
+    
     # Test 8: Valuation
     print("\n📋 Testing Valuation...")
     tester.test_valuation_calculate()
