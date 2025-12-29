@@ -106,27 +106,33 @@ user_problem_statement: |
 backend:
   - task: "Investidor10 Dividend Scraper"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Scraper implementado e testado localmente com python -c. Encontrou 126 dividendos para PETR4."
+      - working: true
+        agent: "testing"
+        comment: "Scraper testado e funcionando. Logs mostram scraping bem-sucedido: 'Investidor10: Found 126 dividends for PETR4', 'Found 398 dividends for BBDC4', etc. Scraper está extraindo dados corretamente do site investidor10.com.br."
 
   - task: "POST /api/dividends/sync endpoint"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Endpoint criado. Verifica data_com vs purchase_date, calcula valor total (valor_por_ação * quantidade), evita duplicatas."
+      - working: true
+        agent: "testing"
+        comment: "Endpoint testado e funcionando perfeitamente. Teste abrangente realizado: 1) Sync retorna estrutura correta {synced, skipped, total_tickers, message}, 2) Processa múltiplos tickers (10 tickers processados), 3) Prevenção de duplicatas funciona (1353 skipped na segunda chamada), 4) Calcula dividendos baseado em quantidade de ações, 5) Verifica data_com vs purchase_date corretamente. Dividendos existentes: R$14.041,16 total em 170 meses."
 
   - task: "Google Auth"
     implemented: true
