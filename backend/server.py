@@ -856,11 +856,11 @@ async def get_portfolios(user: User = Depends(get_current_user)):
         
         # Update existing stocks/dividends to use this portfolio
         await db.stocks.update_many(
-            {"user_id": user.user_id, "portfolio_id": None},
+            {"user_id": user.user_id, "$or": [{"portfolio_id": None}, {"portfolio_id": ""}, {"portfolio_id": {"$exists": False}}]},
             {"$set": {"portfolio_id": default_portfolio.portfolio_id}}
         )
         await db.dividends.update_many(
-            {"user_id": user.user_id, "portfolio_id": None},
+            {"user_id": user.user_id, "$or": [{"portfolio_id": None}, {"portfolio_id": ""}, {"portfolio_id": {"$exists": False}}]},
             {"$set": {"portfolio_id": default_portfolio.portfolio_id}}
         )
     
