@@ -386,6 +386,48 @@ def fetch_tradingview_quote(ticker: str) -> dict:
     
     return None
 
+# ==================== YAHOO FINANCE INTEGRATION (PRIMARY) ====================
+
+async def fetch_yahoo_finance_quote(ticker: str) -> dict:
+    """Fetch real-time quote from Yahoo Finance - PRIMARY SOURCE"""
+    # Yahoo Finance uses .SA suffix for Brazilian stocks
+    yahoo_ticker = f"{ticker}.SA"
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{yahoo_ticker}"
+    
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        async with httpx.AsyncClient() as http_client:
+            resp = await http_client.get(url, headers=headers, timeout=10.0)
+            data = resp.json()
+            
+            if 'chart' in data and 'result' in data['chart'] and data['chart']['result']:
+                result = data['chart']['result'][0]
+                meta = result.get('meta', {})
+                
+                price = meta.get('regularMarketPrice', 0)
+                previous_close = meta.get('previousClose', 0)
+                
+                if price and price > 0:
+                    change = price - previous_close if previous_close else 0
+                    change_percent = (change / previous_close * 100) if previous_close else 0
+                    
+                    return {
+                        "ticker": ticker,
+                        "price": round(price, 2),
+                        "change": round(change, 2),
+                        "change_percent": round(change_percent, 2),
+                        "previous_close": previous_close,
+                        "source": "yahoo_finance"
+                    }
+                    
+    except Exception as e:
+        logger.error(f"Yahoo Finance error for {ticker}: {e}")
+    
+    return None
+
 # ==================== ALPHA VANTAGE INTEGRATION (BACKUP) ====================
 
 async def fetch_alpha_vantage_quote(ticker: str) -> dict:
