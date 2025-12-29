@@ -176,6 +176,9 @@ export default function Portfolio() {
       if (response.ok) {
         toast.success("Ação removida com sucesso!");
         fetchStocks();
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || "Erro ao remover ação");
       }
     } catch (error) {
       toast.error("Erro ao remover ação");
