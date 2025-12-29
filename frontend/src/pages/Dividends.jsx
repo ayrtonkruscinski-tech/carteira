@@ -45,6 +45,7 @@ export default function Dividends() {
     payment_date: "",
     type: "dividendo",
   });
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     fetchData();
