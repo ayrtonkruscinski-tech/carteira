@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Briefcase, Coins, Calculator, Brain, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, Briefcase, Coins, Calculator, Brain, LogOut, Menu, X, Bell } from "lucide-react";
 import { Button } from "./ui/button";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
