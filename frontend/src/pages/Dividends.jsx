@@ -547,57 +547,104 @@ export default function Dividends() {
           </Card>
         </div>
 
-        {/* Dividends List */}
+        {/* Proventos List */}
         <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle>Histórico de Dividendos</CardTitle>
+            <CardTitle>Histórico de Proventos</CardTitle>
           </CardHeader>
           <CardContent>
             {dividends.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full" data-testid="dividends-table">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Data</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Ticker</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Tipo</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Valor</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dividends
-                      .sort((a, b) => new Date(b.payment_date) - new Date(a.payment_date))
-                      .map((dividend) => (
-                        <tr
-                          key={dividend.dividend_id}
-                          className="border-b border-border/50 hover:bg-muted/30 transition-colors"
-                        >
-                          <td className="py-3 px-4 font-mono text-foreground">
-                            {new Date(dividend.payment_date).toLocaleDateString("pt-BR")}
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="font-mono font-semibold text-foreground">
-                              {dividend.ticker}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground capitalize">
-                              {dividend.type}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-right font-mono font-semibold text-accent">
-                            {formatCurrency(dividend.amount)}
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full" data-testid="dividends-table">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Data Pgto</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Ticker</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Tipo</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
+                        <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Valor</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedDividends.map((dividend) => {
+                        const isPaid = dividend.payment_date <= today;
+                        return (
+                          <tr
+                            key={dividend.dividend_id}
+                            className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                          >
+                            <td className="py-3 px-4 font-mono text-foreground">
+                              {new Date(dividend.payment_date).toLocaleDateString("pt-BR")}
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="font-mono font-semibold text-foreground">
+                                {dividend.ticker}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground capitalize">
+                                {dividend.type}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className={`text-xs px-2 py-1 rounded-full ${
+                                isPaid 
+                                  ? "bg-accent/20 text-accent" 
+                                  : "bg-blue-500/20 text-blue-400"
+                              }`}>
+                                {isPaid ? "Recebido" : "A Receber"}
+                              </span>
+                            </td>
+                            <td className={`py-3 px-4 text-right font-mono font-semibold ${
+                              isPaid ? "text-accent" : "text-blue-400"
+                            }`}>
+                              {formatCurrency(dividend.amount)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+                    <p className="text-sm text-muted-foreground">
+                      Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1} a {Math.min(currentPage * ITEMS_PER_PAGE, dividends.length)} de {dividends.length} proventos
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="border-border"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                      <span className="text-sm text-muted-foreground px-2">
+                        Página {currentPage} de {totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="border-border"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-12 text-muted-foreground">
                 <Coins className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>Nenhum dividendo registrado</p>
-                <p className="text-sm mt-2">Clique em &quot;Registrar Dividendo&quot; para começar</p>
+                <p>Nenhum provento registrado</p>
+                <p className="text-sm mt-2">Clique em &quot;Registrar Provento&quot; para começar</p>
               </div>
             )}
           </CardContent>
@@ -608,9 +655,9 @@ export default function Dividends() {
       <AlertDialog open={deleteAllDialogOpen} onOpenChange={setDeleteAllDialogOpen}>
         <AlertDialogContent className="bg-card border-border">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-foreground">Excluir todos os dividendos?</AlertDialogTitle>
+            <AlertDialogTitle className="text-foreground">Excluir todos os proventos?</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
-              Esta ação não pode ser desfeita. Todos os {dividends.length} registros de dividendos serão permanentemente excluídos.
+              Esta ação não pode ser desfeita. Todos os {dividends.length} registros de proventos serão permanentemente excluídos.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
