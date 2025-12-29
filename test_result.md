@@ -552,3 +552,33 @@ agent_communication:
       4. Valuation calculation (requires authentication for /api/valuation/calculate)
       
       RECOMMENDATION: Main agent should provide instructions for manual testing or implement a test authentication bypass for development purposes.
+
+  - agent: "main"
+    message: |
+      IMPLEMENTAÇÃO DE 3 NOVAS FUNCIONALIDADES:
+      
+      1. PRÉ-PREENCHIMENTO WARREN BUFFETT (Valuation):
+         - Scraper melhorado para buscar: LPA, VPA, Lucro Líquido, Shares Outstanding
+         - Estima Depreciação (~15% do Lucro) e CapEx (~10% do Lucro)
+         - Calcula Free Cash Flow automaticamente
+         - Testado via curl: PETR4 retorna Lucro Líquido R$77.99 Bi, Deprec R$11.69 Bi, CapEx R$7.79 Bi
+      
+      2. MÚLTIPLAS CARTEIRAS:
+         - Novo modelo Portfolio no backend
+         - Endpoints: GET/POST/PUT/DELETE /api/portfolios
+         - Stocks e Dividends agora têm portfolio_id
+         - Dropdown no header para trocar de carteira
+         - Dialogs para criar/editar/excluir carteiras
+         - Carteira padrão criada automaticamente
+      
+      3. DIVIDENDOS NA EVOLUÇÃO PATRIMONIAL:
+         - Endpoint /api/portfolio/evolution atualizado
+         - Usa payment_date (data de pagamento) em vez de data_com
+         - Apenas dividendos já pagos (payment_date <= hoje) são considerados
+      
+      PRECISA TESTAR:
+      - Login com Google
+      - Verificar dropdown de carteiras no header
+      - Criar nova carteira e alternar entre elas
+      - Verificar pré-preenchimento do Warren Buffett no Valuation
+      - Verificar que dividendos na evolução usam data de pagamento
