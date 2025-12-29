@@ -682,10 +682,22 @@ def parse_xlsx(file_bytes: bytes) -> List[dict]:
                 h_lower = h.lower().strip()
                 # Normalize accented characters
                 h_normalized = h_lower.replace('ã', 'a').replace('ç', 'c').replace('í', 'i').replace('é', 'e').replace('ú', 'u').replace('á', 'a').replace('ó', 'o')
-                for keyword in header_map[key]:
-                    keyword_normalized = keyword.replace('ã', 'a').replace('ç', 'c').replace('í', 'i').replace('é', 'e').replace('ú', 'u').replace('á', 'a').replace('ó', 'o')
-                    if keyword_normalized in h_normalized:
+                
+                # For ticker, prefer exact matches first
+                if key == 'ticker':
+                    # Check exact match first
+                    if h_normalized in ['produto', 'ticker', 'codigo', 'ativo', 'papel', 'symbol']:
                         return idx
+                    # Then check if starts with keyword
+                    for keyword in header_map[key]:
+                        keyword_normalized = keyword.replace('ã', 'a').replace('ç', 'c').replace('í', 'i').replace('é', 'e').replace('ú', 'u').replace('á', 'a').replace('ó', 'o')
+                        if h_normalized.startswith(keyword_normalized):
+                            return idx
+                else:
+                    for keyword in header_map[key]:
+                        keyword_normalized = keyword.replace('ã', 'a').replace('ç', 'c').replace('í', 'i').replace('é', 'e').replace('ú', 'u').replace('á', 'a').replace('ó', 'o')
+                        if keyword_normalized in h_normalized:
+                            return idx
             return None
         
         ticker_idx = find_col_idx('ticker')
