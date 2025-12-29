@@ -206,6 +206,31 @@ export default function Portfolio() {
     setDeleteDialogOpen(true);
   };
 
+  const handleDeleteAllStocks = async () => {
+    setDeletingAll(true);
+    try {
+      const response = await fetch(`${API}/portfolio/stocks/all`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast.success(result.message || "Todas as ações foram excluídas!");
+        fetchStocks();
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || "Erro ao excluir ações");
+      }
+    } catch (error) {
+      console.error("Error deleting all stocks:", error);
+      toast.error("Erro ao excluir ações");
+    } finally {
+      setDeletingAll(false);
+      setDeleteAllDialogOpen(false);
+    }
+  };
+
   const handleEdit = (stock) => {
     setEditingStock(stock);
     setFormData({
