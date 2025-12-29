@@ -609,7 +609,7 @@ def fetch_tradingview_quote(ticker: str) -> dict:
 # ==================== YAHOO FINANCE INTEGRATION (PRIMARY) ====================
 
 async def fetch_yahoo_finance_quote(ticker: str) -> dict:
-    """Fetch real-time quote from Yahoo Finance - PRIMARY SOURCE"""
+    """Fetch real-time quote from Yahoo Finance - PRIMARY SOURCE with K8s-friendly error handling"""
     # Yahoo Finance uses .SA suffix for Brazilian stocks
     yahoo_ticker = f"{ticker}.SA"
     url = f"https://query1.finance.yahoo.com/v8/finance/chart/{yahoo_ticker}"
@@ -619,8 +619,9 @@ async def fetch_yahoo_finance_quote(ticker: str) -> dict:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
         
-        async with httpx.AsyncClient() as http_client:
-            resp = await http_client.get(url, headers=headers, timeout=10.0)
+        # Use longer timeout and connection pooling for K8s environment
+        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=10.0)) as http_client:
+            resp = await http_client.get(url, headers=headers)
             data = resp.json()
             
             if 'chart' in data and 'result' in data['chart'] and data['chart']['result']:
@@ -642,9 +643,12 @@ async def fetch_yahoo_finance_quote(ticker: str) -> dict:
                         "previous_close": previous_close,
                         "source": "yahoo_finance"
                     }
-                    
+    except httpx.ConnectError:
+        logger.debug(f"Yahoo Finance connection error for {ticker} - network may be restricted")
+    except httpx.TimeoutException:
+        logger.debug(f"Yahoo Finance timeout for {ticker}")
     except Exception as e:
-        logger.error(f"Yahoo Finance error for {ticker}: {e}")
+        logger.debug(f"Yahoo Finance unavailable for {ticker}: {type(e).__name__}")
     
     return None
 
