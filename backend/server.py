@@ -1898,6 +1898,143 @@ Seja direto e use no máximo 200 palavras."""
         logger.error(f"Analysis error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/analysis/portfolio")
+async def analyze_portfolio(user: User = Depends(get_current_user)):
+    """Analyze the entire portfolio using AI"""
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        
+        api_key = os.environ.get("EMERGENT_LLM_KEY")
+        if not api_key:
+            raise HTTPException(status_code=500, detail="LLM key not configured")
+        
+        # Get user's stocks
+        stocks = await db.stocks.find({"user_id": user.user_id}, {"_id": 0}).to_list(1000)
+        dividends = await db.dividends.find({"user_id": user.user_id}, {"_id": 0}).to_list(10000)
+        
+        if not stocks:
+            raise HTTPException(status_code=400, detail="Nenhuma ação na carteira para analisar")
+        
+        # Aggregate stocks by ticker
+        portfolio_summary = {}
+        total_invested = 0
+        total_current = 0
+        
+        for stock in stocks:
+            ticker = stock["ticker"]
+            invested = stock["quantity"] * stock["average_price"]
+            current = stock["quantity"] * (stock.get("current_price") or stock["average_price"])
+            
+            if ticker not in portfolio_summary:
+                portfolio_summary[ticker] = {
+                    "ticker": ticker,
+                    "name": stock.get("name", ticker),
+                    "sector": stock.get("sector", "Não informado"),
+                    "quantity": 0,
+                    "invested": 0,
+                    "current": 0,
+                    "current_price": stock.get("current_price"),
+                    "average_price": 0,
+                }
+            
+            portfolio_summary[ticker]["quantity"] += stock["quantity"]
+            portfolio_summary[ticker]["invested"] += invested
+            portfolio_summary[ticker]["current"] += current
+            total_invested += invested
+            total_current += current
+        
+        # Calculate averages and percentages
+        for ticker, data in portfolio_summary.items():
+            data["average_price"] = data["invested"] / data["quantity"] if data["quantity"] > 0 else 0
+            data["gain_percent"] = ((data["current"] / data["invested"]) - 1) * 100 if data["invested"] > 0 else 0
+            data["portfolio_percent"] = (data["current"] / total_current) * 100 if total_current > 0 else 0
+        
+        # Calculate dividends by ticker
+        dividends_by_ticker = {}
+        total_dividends = 0
+        for div in dividends:
+            ticker = div["ticker"]
+            dividends_by_ticker[ticker] = dividends_by_ticker.get(ticker, 0) + div["amount"]
+            total_dividends += div["amount"]
+        
+        # Build portfolio description
+        portfolio_desc = []
+        for ticker, data in sorted(portfolio_summary.items(), key=lambda x: -x[1]["current"]):
+            div_received = dividends_by_ticker.get(ticker, 0)
+            portfolio_desc.append(
+                f"- {ticker} ({data['sector']}): {data['quantity']} ações, "
+                f"PM R${data['average_price']:.2f}, Atual R${data.get('current_price', 0):.2f}, "
+                f"Rendimento {data['gain_percent']:+.1f}%, "
+                f"Peso {data['portfolio_percent']:.1f}%, "
+                f"Dividendos recebidos R${div_received:.2f}"
+            )
+        
+        total_gain = total_current - total_invested
+        total_gain_percent = ((total_current / total_invested) - 1) * 100 if total_invested > 0 else 0
+        total_return = total_gain + total_dividends
+        total_return_percent = (total_return / total_invested) * 100 if total_invested > 0 else 0
+        
+        prompt = f"""Analise esta carteira de ações brasileiras de forma completa e estratégica:
+
+RESUMO DA CARTEIRA:
+- Total Investido: R$ {total_invested:,.2f}
+- Valor Atual: R$ {total_current:,.2f}
+- Ganho de Capital: R$ {total_gain:,.2f} ({total_gain_percent:+.1f}%)
+- Dividendos Recebidos: R$ {total_dividends:,.2f}
+- Retorno Total: R$ {total_return:,.2f} ({total_return_percent:+.1f}%)
+- Número de Ativos: {len(portfolio_summary)}
+
+COMPOSIÇÃO:
+{chr(10).join(portfolio_desc)}
+
+Por favor, forneça uma análise completa em português incluindo:
+
+1. **DIVERSIFICAÇÃO**: Avalie a diversificação setorial e de ativos. A carteira está bem diversificada?
+
+2. **CONCENTRAÇÃO**: Identifique riscos de concentração excessiva em algum ativo ou setor.
+
+3. **QUALIDADE DOS ATIVOS**: Comente sobre a qualidade geral das empresas na carteira.
+
+4. **PONTOS FORTES**: Quais são os pontos fortes desta carteira?
+
+5. **PONTOS DE ATENÇÃO**: Quais aspectos merecem atenção ou podem ser melhorados?
+
+6. **SUGESTÕES**: Dê 2-3 sugestões práticas para otimizar a carteira.
+
+7. **NOTA GERAL**: Dê uma nota de 0 a 10 para a carteira e justifique brevemente.
+
+Seja objetivo e direto, use linguagem acessível."""
+
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"portfolio_analysis_{user.user_id}",
+            system_message="Você é um consultor financeiro especializado em análise de carteiras de ações brasileiras. Forneça análises estratégicas, objetivas e acionáveis."
+        ).with_model("openai", "gpt-4o-mini")
+        
+        response = await chat.send_message(UserMessage(text=prompt))
+        
+        return {
+            "analysis": response,
+            "summary": {
+                "total_invested": round(total_invested, 2),
+                "total_current": round(total_current, 2),
+                "total_gain": round(total_gain, 2),
+                "total_gain_percent": round(total_gain_percent, 2),
+                "total_dividends": round(total_dividends, 2),
+                "total_return": round(total_return, 2),
+                "total_return_percent": round(total_return_percent, 2),
+                "stocks_count": len(portfolio_summary),
+            },
+            "generated_at": datetime.now(timezone.utc).isoformat()
+        }
+    except ImportError:
+        raise HTTPException(status_code=500, detail="LLM integration not available")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Portfolio analysis error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/")
 async def root():
     return {"message": "Stock Portfolio API"}
