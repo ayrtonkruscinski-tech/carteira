@@ -696,6 +696,37 @@ async def get_stock_quote(ticker: str):
     
     raise HTTPException(status_code=404, detail="Stock not found")
 
+@api_router.get("/stocks/valuation-data/{ticker}")
+async def get_valuation_data(ticker: str):
+    """Get fundamental data for valuation from Investidor10 and other sources"""
+    ticker_upper = ticker.upper()
+    
+    # Get fundamentals from Investidor10
+    fundamentals = fetch_investidor10_fundamentals(ticker_upper)
+    
+    # Get current price from Yahoo Finance (most reliable)
+    yahoo_data = await fetch_yahoo_finance_quote(ticker_upper)
+    if yahoo_data and yahoo_data["price"] > 0:
+        fundamentals["current_price"] = yahoo_data["price"]
+    
+    # Get dividend info from dividend history
+    dividends = fetch_investidor10_dividends(ticker_upper)
+    if dividends:
+        # Calculate annual dividend (sum of last 12 months)
+        annual_dividend = sum(d["valor"] for d in dividends[:12])
+        fundamentals["dividend_per_share"] = round(annual_dividend, 2)
+        
+        # Calculate dividend yield
+        if fundamentals["current_price"] and fundamentals["current_price"] > 0:
+            fundamentals["dividend_yield"] = round((annual_dividend / fundamentals["current_price"]) * 100, 2)
+    
+    # Add base info
+    base_info = BRAZILIAN_STOCKS.get(ticker_upper, {})
+    fundamentals["name"] = base_info.get("name", f"Ação {ticker_upper}")
+    fundamentals["sector"] = base_info.get("sector", "Outros")
+    
+    return fundamentals
+
 # ==================== PORTFOLIO ROUTES ====================
 
 @api_router.get("/portfolio/stocks")
