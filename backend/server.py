@@ -1168,10 +1168,12 @@ async def refresh_portfolio_prices(user: User = Depends(get_current_user)):
         "total": len(stocks),
         "unique_tickers": len(unique_tickers),
         "alerts_created": alerts_created,
-        "source": "tradingview/alpha_vantage"
+        "source": "yahoo_finance/tradingview/cache",
+        "cached_prices": cached_prices
     }
     if errors:
         result["errors"] = list(set(errors))  # Remove duplicates
+        result["message"] = "Algumas cotações podem estar indisponíveis temporariamente"
     
     return result
 
