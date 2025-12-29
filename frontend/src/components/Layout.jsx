@@ -282,6 +282,26 @@ export const Layout = ({ children }) => {
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-border">
             <nav className="px-4 py-3 space-y-1">
+              {/* Mobile Portfolio Selector */}
+              {portfolioContext && portfolios.length > 0 && (
+                <div className="px-4 py-2 mb-2">
+                  <Label className="text-xs text-muted-foreground mb-2 block">Carteira</Label>
+                  <select
+                    value={currentPortfolio?.portfolio_id || ""}
+                    onChange={(e) => {
+                      const portfolio = portfolios.find(p => p.portfolio_id === e.target.value);
+                      if (portfolio) selectPortfolio(portfolio);
+                    }}
+                    className="w-full bg-input border-input rounded-md px-3 py-2 text-sm"
+                  >
+                    {portfolios.map((p) => (
+                      <option key={p.portfolio_id} value={p.portfolio_id}>
+                        {p.name} ({p.stocks_count || 0} ações)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path;
@@ -310,6 +330,64 @@ export const Layout = ({ children }) => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
+
+      {/* Create Portfolio Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Nova Carteira</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="portfolio-name">Nome da Carteira</Label>
+              <Input
+                id="portfolio-name"
+                value={newPortfolioName}
+                onChange={(e) => setNewPortfolioName(e.target.value)}
+                placeholder="Ex: Dividendos, Crescimento..."
+                onKeyDown={(e) => e.key === "Enter" && handleCreatePortfolio()}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCreatePortfolio} disabled={!newPortfolioName.trim()}>
+              Criar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Portfolio Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Editar Carteira</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-portfolio-name">Nome da Carteira</Label>
+              <Input
+                id="edit-portfolio-name"
+                value={editingPortfolio?.name || ""}
+                onChange={(e) => setEditingPortfolio(prev => prev ? { ...prev, name: e.target.value } : null)}
+                placeholder="Nome da carteira"
+                onKeyDown={(e) => e.key === "Enter" && handleEditPortfolio()}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleEditPortfolio} disabled={!editingPortfolio?.name?.trim()}>
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
