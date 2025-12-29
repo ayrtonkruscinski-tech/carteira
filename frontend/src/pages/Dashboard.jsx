@@ -29,24 +29,50 @@ const SORT_OPTIONS = [
   { value: 'portfolio_percent_asc', label: '% Carteira (Menor)' },
 ];
 
+const PERIOD_OPTIONS = [
+  { value: '1w', label: 'Semanal' },
+  { value: '1m', label: 'Mensal' },
+  { value: '12m', label: '12 Meses' },
+  { value: '5y', label: '5 Anos' },
+  { value: 'max', label: 'Máximo' },
+];
+
 export default function Dashboard() {
   const [summary, setSummary] = useState(null);
   const [stocks, setStocks] = useState([]);
   const [dividendSummary, setDividendSummary] = useState(null);
   const [portfolioHistory, setPortfolioHistory] = useState([]);
+  const [portfolioEvolution, setPortfolioEvolution] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [sortBy, setSortBy] = useState('ticker');
   const [stockDividends, setStockDividends] = useState({});
+  const [evolutionPeriod, setEvolutionPeriod] = useState('1m');
 
   useEffect(() => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    fetchEvolution();
+  }, [evolutionPeriod]);
+
+  const fetchEvolution = async () => {
+    try {
+      const response = await fetch(`${API}/portfolio/evolution?period=${evolutionPeriod}`, { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        setPortfolioEvolution(data);
+      }
+    } catch (error) {
+      console.error('Error fetching evolution:', error);
+    }
+  };
+
   const fetchData = async () => {
     try {
-      const [summaryRes, stocksRes, dividendsRes, historyRes, alertsRes, allDividendsRes] = await Promise.all([
+      const [summaryRes, stocksRes, dividendsRes, historyRes, alertsRes, allDividendsRes, evolutionRes] = await Promise.all([
         fetch(`${API}/portfolio/summary`, { credentials: 'include' }),
         fetch(`${API}/portfolio/stocks`, { credentials: 'include' }),
         fetch(`${API}/dividends/summary`, { credentials: 'include' }),
