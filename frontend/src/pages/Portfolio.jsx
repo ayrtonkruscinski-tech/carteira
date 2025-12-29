@@ -30,6 +30,7 @@ import {
 } from "../components/ui/select";
 import { Plus, Trash2, Edit2, Search, Briefcase, Upload, Download, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { usePortfolioSafe } from "../context/PortfolioContext";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
