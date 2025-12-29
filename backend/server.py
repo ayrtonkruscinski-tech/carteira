@@ -1806,6 +1806,41 @@ async def calculate_valuation(data: ValuationRequest, user: User = Depends(get_c
             "recommendation": "Comprar" if dcf_price > data.current_price else "Aguardar"
         }
     
+    # Método Warren Buffett (Owner Earnings)
+    # Owner Earnings = Lucro Líquido + Depreciação - CapEx
+    # Valor Intrínseco = Owner Earnings * (8.5 + 2g) onde g = taxa de crescimento
+    # Aplicamos margem de segurança de 25%
+    if data.net_income and data.depreciation is not None and data.capex is not None and data.shares_outstanding:
+        owner_earnings = data.net_income + data.depreciation - data.capex
+        
+        # Usar taxa de crescimento fornecida ou padrão de 5%
+        growth_rate_percent = (data.growth_rate or 0.05) * 100
+        
+        # Fórmula de Benjamin Graham adaptada por Buffett
+        # Valor Intrínseco = Owner Earnings * (8.5 + 2g)
+        # onde 8.5 é o P/L base para empresa sem crescimento
+        # e g é a taxa de crescimento esperada em %
+        intrinsic_multiplier = 8.5 + (2 * growth_rate_percent)
+        intrinsic_value = owner_earnings * intrinsic_multiplier
+        
+        # Preço por ação
+        buffett_price_raw = intrinsic_value / data.shares_outstanding
+        
+        # Aplicar margem de segurança de 25% (comprar com desconto)
+        margin_of_safety = 0.25
+        buffett_price = buffett_price_raw * (1 - margin_of_safety)
+        
+        results["buffett"] = {
+            "name": "Método Warren Buffett",
+            "description": "Owner Earnings com Margem de Segurança",
+            "owner_earnings": round(owner_earnings, 2),
+            "intrinsic_value": round(buffett_price_raw, 2),
+            "ceiling_price": round(buffett_price, 2),
+            "margin_of_safety": f"{margin_of_safety * 100:.0f}%",
+            "upside": round((buffett_price / data.current_price - 1) * 100, 2),
+            "recommendation": "Comprar" if buffett_price > data.current_price else "Aguardar"
+        }
+    
     return {
         "ticker": data.ticker,
         "current_price": data.current_price,
