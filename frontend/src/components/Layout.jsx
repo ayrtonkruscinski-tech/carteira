@@ -176,7 +176,68 @@ export const Layout = ({ children }) => {
             </nav>
 
             {/* User Menu */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
+              {/* Portfolio Selector Dropdown */}
+              {portfolioContext && portfolios.length > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2 max-w-[180px]">
+                      <Briefcase className="w-4 h-4 text-primary flex-shrink-0" />
+                      <span className="truncate">{currentPortfolio?.name || "Carteira"}</span>
+                      <ChevronDown className="w-4 h-4 flex-shrink-0" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    {portfolios.map((portfolio) => (
+                      <DropdownMenuItem
+                        key={portfolio.portfolio_id}
+                        onClick={() => selectPortfolio(portfolio)}
+                        className={`flex items-center justify-between ${
+                          currentPortfolio?.portfolio_id === portfolio.portfolio_id ? "bg-primary/10" : ""
+                        }`}
+                      >
+                        <span className="truncate">{portfolio.name}</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-muted-foreground">{portfolio.stocks_count || 0}</span>
+                          {!portfolio.is_default && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingPortfolio({ ...portfolio });
+                                  setIsEditDialogOpen(true);
+                                }}
+                              >
+                                <Pencil className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeletePortfolio(portfolio);
+                                }}
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setIsCreateDialogOpen(true)}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Nova Carteira
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              
               {/* Alert Bell */}
               {alertCount > 0 && (
                 <Link to="/dashboard" className="relative">
