@@ -48,6 +48,23 @@ class User(BaseModel):
     picture: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class Portfolio(BaseModel):
+    portfolio_id: str = Field(default_factory=lambda: f"port_{uuid.uuid4().hex[:12]}")
+    user_id: str
+    name: str
+    description: Optional[str] = None
+    is_default: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class PortfolioCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+class PortfolioUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+
 class UserSession(BaseModel):
     user_id: str
     session_token: str
