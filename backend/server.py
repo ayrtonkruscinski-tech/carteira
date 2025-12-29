@@ -350,10 +350,28 @@ BRAZILIAN_STOCKS = {
 async def search_stock(ticker: str):
     ticker_upper = ticker.upper()
     
-    # Try Alpha Vantage first
+    # Try TradingView first (most reliable for Brazilian stocks)
+    tv_data = fetch_tradingview_quote(ticker_upper)
+    if tv_data and tv_data["price"] > 0:
+        base_info = BRAZILIAN_STOCKS.get(ticker_upper, {})
+        return {
+            "ticker": ticker_upper,
+            "name": base_info.get("name", f"Ação {ticker_upper}"),
+            "sector": base_info.get("sector", "Outros"),
+            "current_price": tv_data["price"],
+            "dividend_yield": base_info.get("dividend_yield"),
+            "change": tv_data["change"],
+            "change_percent": tv_data["change_percent"],
+            "high": tv_data.get("high"),
+            "low": tv_data.get("low"),
+            "volume": tv_data.get("volume"),
+            "recommendation": tv_data.get("recommendation"),
+            "source": "tradingview"
+        }
+    
+    # Fallback to Alpha Vantage
     av_data = await fetch_alpha_vantage_quote(ticker_upper)
     if av_data and av_data["price"] > 0:
-        # Get additional info from our database
         base_info = BRAZILIAN_STOCKS.get(ticker_upper, {})
         return {
             "ticker": ticker_upper,
@@ -366,7 +384,7 @@ async def search_stock(ticker: str):
             "source": "alpha_vantage"
         }
     
-    # Fallback to mock data
+    # Fallback to cache data
     if ticker_upper in BRAZILIAN_STOCKS:
         return {**BRAZILIAN_STOCKS[ticker_upper], "source": "cache"}
     
@@ -381,9 +399,15 @@ async def search_stock(ticker: str):
 
 @api_router.get("/stocks/quote/{ticker}")
 async def get_stock_quote(ticker: str):
-    """Get real-time quote for a stock"""
+    """Get real-time quote for a stock from TradingView"""
     ticker_upper = ticker.upper()
     
+    # Try TradingView first
+    tv_data = fetch_tradingview_quote(ticker_upper)
+    if tv_data and tv_data["price"] > 0:
+        return tv_data
+    
+    # Fallback to Alpha Vantage
     av_data = await fetch_alpha_vantage_quote(ticker_upper)
     if av_data:
         return av_data
