@@ -244,6 +244,98 @@ async def logout(request: Request, response: Response):
     response.delete_cookie(key="session_token", path="/")
     return {"message": "Logged out"}
 
+# ==================== INVESTIDOR10 SCRAPER ====================
+
+def fetch_investidor10_dividends(ticker: str) -> List[dict]:
+    """Fetch dividend history from Investidor10"""
+    dividends = []
+    
+    try:
+        url = f"https://investidor10.com.br/acoes/{ticker.lower()}/"
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+        
+        response = requests.get(url, headers=headers, timeout=15)
+        
+        if response.status_code != 200:
+            logger.error(f"Investidor10 returned status {response.status_code} for {ticker}")
+            return []
+        
+        soup = BeautifulSoup(response.content, 'lxml')
+        
+        # Find dividend table - look for table with "data com" header
+        tables = soup.find_all('table')
+        
+        for table in tables:
+            headers_row = table.find('tr')
+            if not headers_row:
+                continue
+                
+            headers_text = [th.get_text(strip=True).lower() for th in headers_row.find_all(['th', 'td'])]
+            
+            # Check if this is the dividend table
+            if 'data com' in headers_text or 'data ex' in headers_text:
+                # Find column indices
+                tipo_idx = next((i for i, h in enumerate(headers_text) if 'tipo' in h), None)
+                data_com_idx = next((i for i, h in enumerate(headers_text) if 'data com' in h or 'data ex' in h), None)
+                pagamento_idx = next((i for i, h in enumerate(headers_text) if 'pagamento' in h or 'data pag' in h), None)
+                valor_idx = next((i for i, h in enumerate(headers_text) if 'valor' in h), None)
+                
+                if data_com_idx is None or valor_idx is None:
+                    continue
+                
+                # Parse rows (skip header)
+                rows = table.find_all('tr')[1:]
+                
+                for row in rows:
+                    cells = row.find_all(['td', 'th'])
+                    if len(cells) <= max(filter(None, [tipo_idx, data_com_idx, pagamento_idx, valor_idx])):
+                        continue
+                    
+                    try:
+                        tipo = cells[tipo_idx].get_text(strip=True) if tipo_idx is not None else "Dividendo"
+                        data_com_str = cells[data_com_idx].get_text(strip=True) if data_com_idx is not None else ""
+                        pagamento_str = cells[pagamento_idx].get_text(strip=True) if pagamento_idx is not None else ""
+                        valor_str = cells[valor_idx].get_text(strip=True) if valor_idx is not None else "0"
+                        
+                        # Parse date (DD/MM/YYYY -> YYYY-MM-DD)
+                        data_com = None
+                        if data_com_str and '/' in data_com_str:
+                            parts = data_com_str.split('/')
+                            if len(parts) == 3:
+                                data_com = f"{parts[2]}-{parts[1]}-{parts[0]}"
+                        
+                        data_pagamento = None
+                        if pagamento_str and '/' in pagamento_str:
+                            parts = pagamento_str.split('/')
+                            if len(parts) == 3:
+                                data_pagamento = f"{parts[2]}-{parts[1]}-{parts[0]}"
+                        
+                        # Parse value (handle Brazilian format)
+                        valor_str = valor_str.replace('.', '').replace(',', '.')
+                        valor = float(valor_str) if valor_str else 0
+                        
+                        if data_com and valor > 0:
+                            dividends.append({
+                                "tipo": tipo,
+                                "data_com": data_com,
+                                "data_pagamento": data_pagamento,
+                                "valor": round(valor, 8)
+                            })
+                    except Exception as e:
+                        logger.error(f"Error parsing dividend row: {e}")
+                        continue
+                
+                break  # Found the dividend table, no need to continue
+        
+        logger.info(f"Investidor10: Found {len(dividends)} dividends for {ticker}")
+        
+    except Exception as e:
+        logger.error(f"Investidor10 scraper error for {ticker}: {e}")
+    
+    return dividends
+
 # ==================== TRADINGVIEW INTEGRATION ====================
 
 def fetch_tradingview_quote(ticker: str) -> dict:
