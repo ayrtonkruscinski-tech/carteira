@@ -675,23 +675,19 @@ async def refresh_portfolio_prices(user: User = Depends(get_current_user)):
                 {"$set": {"current_price": new_price, "updated_at": datetime.now(timezone.utc).isoformat()}}
             )
             updated += 1
-            else:
-                errors.append(stock["ticker"])
-        except Exception as e:
-            logger.error(f"Error updating {stock['ticker']}: {e}")
-            errors.append(stock["ticker"])
     
     # Save portfolio snapshot
     await save_portfolio_snapshot(user.user_id)
     
     result = {
         "updated": updated, 
-        "total": len(stocks), 
+        "total": len(stocks),
+        "unique_tickers": len(unique_tickers),
         "alerts_created": alerts_created,
-        "source": "tradingview"
+        "source": "tradingview/alpha_vantage"
     }
     if errors:
-        result["errors"] = errors
+        result["errors"] = list(set(errors))  # Remove duplicates
     
     return result
 
