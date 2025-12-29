@@ -863,43 +863,50 @@ def parse_generic_csv(content: str) -> List[dict]:
     
     return stocks
 
-@api_router.post("/portfolio/import/csv")
-async def import_csv(file: UploadFile = File(...), user: User = Depends(get_current_user)):
-    """Import stocks from CSV file (CEI/B3 or generic format)"""
+@api_router.post("/portfolio/import")
+async def import_file(file: UploadFile = File(...), user: User = Depends(get_current_user)):
+    """Import stocks from CSV or XLSX file"""
     content = await file.read()
+    filename = file.filename or ""
     
-    logger.info(f"Importing CSV file: {file.filename}, size: {len(content)} bytes")
+    logger.info(f"Importing file: {filename}, size: {len(content)} bytes")
     
-    # Try different encodings
-    content_str = None
-    for encoding in ['utf-8-sig', 'utf-8', 'latin-1', 'cp1252', 'iso-8859-1']:
-        try:
-            content_str = content.decode(encoding)
-            logger.info(f"Successfully decoded with {encoding}")
-            break
-        except:
-            continue
+    stocks = []
     
-    if not content_str:
-        raise HTTPException(status_code=400, detail="Não foi possível ler o arquivo. Codificação não suportada.")
-    
-    # Log first few lines for debugging
-    lines = content_str.split('\n')[:3]
-    logger.info(f"First lines of CSV: {lines}")
-    
-    # Try CEI format first
-    stocks = parse_cei_csv(content_str)
-    logger.info(f"CEI parser found {len(stocks)} stocks")
-    
-    # If no stocks found, try generic format
-    if not stocks:
-        stocks = parse_generic_csv(content_str)
-        logger.info(f"Generic parser found {len(stocks)} stocks")
+    # Check if it's an Excel file
+    if filename.lower().endswith('.xlsx') or filename.lower().endswith('.xls'):
+        stocks = parse_xlsx(content)
+    else:
+        # Try to parse as CSV
+        content_str = None
+        for encoding in ['utf-8-sig', 'utf-8', 'latin-1', 'cp1252', 'iso-8859-1']:
+            try:
+                content_str = content.decode(encoding)
+                logger.info(f"Successfully decoded with {encoding}")
+                break
+            except:
+                continue
+        
+        if not content_str:
+            raise HTTPException(status_code=400, detail="Não foi possível ler o arquivo. Codificação não suportada.")
+        
+        # Log first few lines for debugging
+        lines = content_str.split('\n')[:3]
+        logger.info(f"First lines of file: {lines}")
+        
+        # Try CEI format first
+        stocks = parse_cei_csv(content_str)
+        logger.info(f"CEI parser found {len(stocks)} stocks")
+        
+        # If no stocks found, try generic format
+        if not stocks:
+            stocks = parse_generic_csv(content_str)
+            logger.info(f"Generic parser found {len(stocks)} stocks")
     
     if not stocks:
         raise HTTPException(
             status_code=400, 
-            detail="Não foi possível ler o arquivo. O CSV deve conter uma coluna 'ticker' (ou 'codigo', 'ativo', 'papel'). Exemplo: ticker,quantidade,preco_medio"
+            detail="Não foi possível ler o arquivo. Verifique se contém uma coluna 'ticker' ou 'produto'. Formatos aceitos: CSV, XLSX"
         )
     
     imported = 0
