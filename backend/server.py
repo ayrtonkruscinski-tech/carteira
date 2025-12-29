@@ -495,35 +495,65 @@ async def get_portfolio_summary(user: User = Depends(get_current_user)):
 
 @api_router.post("/portfolio/refresh-prices")
 async def refresh_portfolio_prices(user: User = Depends(get_current_user)):
-    """Refresh all stock prices from Alpha Vantage"""
+    """Refresh all stock prices from TradingView"""
     stocks = await db.stocks.find({"user_id": user.user_id}, {"_id": 0}).to_list(1000)
     updated = 0
     alerts_created = 0
+    errors = []
     
     for stock in stocks:
-        av_data = await fetch_alpha_vantage_quote(stock["ticker"])
-        if av_data and av_data["price"] > 0:
-            new_price = av_data["price"]
+        try:
+            # Try TradingView first
+            tv_data = fetch_tradingview_quote(stock["ticker"])
+            new_price = None
+            source = None
             
-            # Check for ceiling price alerts
-            if stock.get("ceiling_price") and new_price >= stock["ceiling_price"]:
-                alert = Alert(
-                    user_id=user.user_id,
-                    stock_id=stock["stock_id"],
-                    ticker=stock["ticker"],
-                    alert_type="ceiling_reached",
-                    message=f"{stock['ticker']} atingiu o preço teto! Atual: R${new_price:.2f}, Teto: R${stock['ceiling_price']:.2f}"
+            if tv_data and tv_data["price"] > 0:
+                new_price = tv_data["price"]
+                source = "tradingview"
+            else:
+                # Fallback to Alpha Vantage
+                av_data = await fetch_alpha_vantage_quote(stock["ticker"])
+                if av_data and av_data["price"] > 0:
+                    new_price = av_data["price"]
+                    source = "alpha_vantage"
+            
+            if new_price:
+                # Check for ceiling price alerts
+                if stock.get("ceiling_price") and new_price >= stock["ceiling_price"]:
+                    # Check if alert already exists for today
+                    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+                    existing_alert = await db.alerts.find_one({
+                        "user_id": user.user_id,
+                        "stock_id": stock["stock_id"],
+                        "alert_type": "ceiling_reached",
+                        "created_at": {"$regex": f"^{today}"}
+                    })
+                    
+                    if not existing_alert:
+                        alert = Alert(
+                            user_id=user.user_id,
+                            stock_id=stock["stock_id"],
+                            ticker=stock["ticker"],
+                            alert_type="ceiling_reached",
+                            message=f"{stock['ticker']} atingiu o preço teto! Atual: R${new_price:.2f}, Teto: R${stock['ceiling_price']:.2f}"
+                        )
+                        alert_doc = alert.model_dump()
+                        alert_doc["created_at"] = alert_doc["created_at"].isoformat()
+                        await db.alerts.insert_one(alert_doc)
+                        alerts_created += 1
+                
+                await db.stocks.update_one(
+                    {"stock_id": stock["stock_id"]},
+                    {"$set": {"current_price": new_price, "updated_at": datetime.now(timezone.utc).isoformat()}}
                 )
-                alert_doc = alert.model_dump()
-                alert_doc["created_at"] = alert_doc["created_at"].isoformat()
-                await db.alerts.insert_one(alert_doc)
-                alerts_created += 1
-            
-            await db.stocks.update_one(
-                {"stock_id": stock["stock_id"]},
-                {"$set": {"current_price": new_price, "updated_at": datetime.now(timezone.utc).isoformat()}}
-            )
-            updated += 1
+                updated += 1
+                logger.info(f"Updated {stock['ticker']}: R${new_price:.2f} (source: {source})")
+            else:
+                errors.append(stock["ticker"])
+        except Exception as e:
+            logger.error(f"Error updating {stock['ticker']}: {e}")
+            errors.append(stock["ticker"])
     
     # Save portfolio snapshot
     await save_portfolio_snapshot(user.user_id)
