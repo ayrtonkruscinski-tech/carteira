@@ -1358,25 +1358,32 @@ async def sync_dividends(user: User = Depends(get_current_user)):
                 for stock in user_stocks:
                     purchase_date = stock.get("purchase_date")
                     
-                    # If no purchase date, assume user always held it
-                    user_held_on_data_com = True
-                    if purchase_date:
-                        try:
-                            # Parse dates for comparison
-                            if isinstance(purchase_date, str):
-                                purchase_dt = datetime.strptime(purchase_date, "%Y-%m-%d").date()
-                            else:
-                                purchase_dt = purchase_date
-                            
-                            data_com_dt = datetime.strptime(data_com, "%Y-%m-%d").date()
-                            
-                            # User must have purchased BEFORE or ON the data_com to be eligible
-                            user_held_on_data_com = purchase_dt <= data_com_dt
-                        except Exception as e:
-                            logger.error(f"Date parsing error for {ticker}: {e}")
-                            user_held_on_data_com = True  # Default to eligible if date parsing fails
+                    # If no purchase date is set, skip this dividend (we can't verify eligibility)
+                    if not purchase_date:
+                        logger.info(f"Skipping dividend for {ticker}: no purchase_date set for stock")
+                        skipped += 1
+                        continue
+                    
+                    try:
+                        # Parse dates for comparison
+                        if isinstance(purchase_date, str):
+                            purchase_dt = datetime.strptime(purchase_date, "%Y-%m-%d").date()
+                        else:
+                            purchase_dt = purchase_date
+                        
+                        data_com_dt = datetime.strptime(data_com, "%Y-%m-%d").date()
+                        
+                        # User must have purchased BEFORE the data_com to be eligible
+                        # Stocks bought ON or AFTER the data_com do NOT receive the dividend
+                        user_held_on_data_com = purchase_dt < data_com_dt
+                        
+                    except Exception as e:
+                        logger.error(f"Date parsing error for {ticker}: {e}")
+                        skipped += 1
+                        continue
                     
                     if not user_held_on_data_com:
+                        logger.debug(f"Skipping dividend for {ticker}: purchased {purchase_date} >= data_com {data_com}")
                         skipped += 1
                         continue
                     
