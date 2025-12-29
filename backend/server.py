@@ -299,6 +299,11 @@ def fetch_investidor10_dividends(ticker: str) -> List[dict]:
                         pagamento_str = cells[pagamento_idx].get_text(strip=True) if pagamento_idx is not None else ""
                         valor_str = cells[valor_idx].get_text(strip=True) if valor_idx is not None else "0"
                         
+                        # Skip provisioned dividends (not yet confirmed)
+                        if 'provisionado' in pagamento_str.lower() or 'provisionado' in tipo.lower():
+                            logger.debug(f"Skipping provisioned dividend for {ticker}: {tipo}")
+                            continue
+                        
                         # Parse date (DD/MM/YYYY -> YYYY-MM-DD)
                         data_com = None
                         if data_com_str and '/' in data_com_str:
