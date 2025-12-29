@@ -37,6 +37,10 @@ export default function Valuation() {
     free_cash_flow: "",
     shares_outstanding: "",
     growth_rate: "5",
+    // Campos para método Buffett
+    net_income: "",
+    depreciation: "",
+    capex: "",
   });
 
   useEffect(() => {
