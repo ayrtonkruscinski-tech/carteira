@@ -634,6 +634,7 @@ def main():
     # Test 5: New Portfolio Features
     print("\n📋 Testing New Portfolio Features...")
     tester.test_portfolio_import_csv()
+    tester.test_portfolio_import_with_purchase_date()  # New comprehensive test
     tester.test_portfolio_export_csv()
     tester.test_portfolio_refresh_prices()
     tester.test_portfolio_snapshot()
