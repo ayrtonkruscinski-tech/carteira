@@ -396,6 +396,82 @@ export default function Valuation() {
                     </div>
                   </div>
 
+                  {/* Warren Buffett Parameters */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium text-muted-foreground">Método Warren Buffett (Opcional)</h4>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="net_income" className="flex items-center gap-1">
+                          Lucro Líq (mi)
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <HelpCircle className="w-3 h-3 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-popover border-border">
+                              Lucro Líquido anual em milhões
+                            </TooltipContent>
+                          </Tooltip>
+                        </Label>
+                        <Input
+                          id="net_income"
+                          type="number"
+                          step="0.01"
+                          value={formData.net_income}
+                          onChange={(e) => setFormData({ ...formData, net_income: e.target.value })}
+                          className="bg-input border-input font-mono"
+                          placeholder="Ex: 5000"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="depreciation" className="flex items-center gap-1">
+                          Deprec (mi)
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <HelpCircle className="w-3 h-3 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-popover border-border">
+                              Depreciação e Amortização em milhões
+                            </TooltipContent>
+                          </Tooltip>
+                        </Label>
+                        <Input
+                          id="depreciation"
+                          type="number"
+                          step="0.01"
+                          value={formData.depreciation}
+                          onChange={(e) => setFormData({ ...formData, depreciation: e.target.value })}
+                          className="bg-input border-input font-mono"
+                          placeholder="Ex: 800"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="capex" className="flex items-center gap-1">
+                          CapEx (mi)
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <HelpCircle className="w-3 h-3 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-popover border-border">
+                              Capital Expenditure em milhões
+                            </TooltipContent>
+                          </Tooltip>
+                        </Label>
+                        <Input
+                          id="capex"
+                          type="number"
+                          step="0.01"
+                          value={formData.capex}
+                          onChange={(e) => setFormData({ ...formData, capex: e.target.value })}
+                          className="bg-input border-input font-mono"
+                          placeholder="Ex: 600"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Owner Earnings = Lucro Líquido + Depreciação - CapEx. Margem de segurança de 25% aplicada.
+                    </p>
+                  </div>
+
                   <Button
                     type="submit"
                     disabled={calculating}
