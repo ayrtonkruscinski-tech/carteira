@@ -178,8 +178,6 @@ export default function Portfolio() {
   };
 
   const handleDelete = async (stockId) => {
-    if (!window.confirm("Tem certeza que deseja remover esta ação?")) return;
-
     try {
       const response = await fetch(`${API}/portfolio/stocks/${stockId}`, {
         method: "DELETE",
@@ -195,7 +193,15 @@ export default function Portfolio() {
     } catch (error) {
       toast.error("Erro ao remover ação");
       console.error("Error deleting stock:", error);
+    } finally {
+      setDeleteDialogOpen(false);
+      setStockToDelete(null);
     }
+  };
+
+  const confirmDelete = (stock) => {
+    setStockToDelete(stock);
+    setDeleteDialogOpen(true);
   };
 
   const handleEdit = (stock) => {
