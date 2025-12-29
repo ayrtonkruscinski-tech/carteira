@@ -674,3 +674,40 @@ agent_communication:
       ✅ Logs do backend mostram funcionamento normal
       
       CONCLUSÃO: Todas as 3 funcionalidades estão implementadas corretamente e funcionando conforme especificação. Teste manual com Google Auth necessário para validação completa da UI.
+
+  - agent: "main"
+    message: |
+      CORREÇÕES IMPLEMENTADAS:
+      
+      1. TOOLTIPS CORRIGIDOS:
+         - Alterado tooltip.jsx para usar cores fixas (bg-zinc-900, text-zinc-100)
+         - Antes: bg-primary text-primary-foreground (invisível em tema escuro)
+      
+      2. AÇÕES (MILHÕES) - WARREN BUFFETT:
+         - Corrigido scraper para buscar "Nº total de papeis" do Investidor10
+         - PETR4: 12.89 bilhões de ações (antes estava pegando market_cap/price = 404 bi)
+         - Adicionado logs para debug
+      
+      3. ROE E PAYOUT:
+         - Adicionados campos ROE e Payout no formulário de Valuation
+         - Frontend envia para backend no cálculo
+         - Crescimento calculado como: ROE × (1 - Payout)
+      
+      4. MÉTODO WARREN BUFFETT - DCF CORRETO:
+         - Projeta Owner Earnings por 10 anos
+         - Taxa de crescimento = ROE × (1 - Payout)
+         - Valor Terminal com perpetuidade 3%
+         - Margem de segurança 25%
+      
+      5. DIVIDENDOS - SEPARAÇÃO RECEBIDOS/A RECEBER:
+         - Página de Dividendos agora mostra:
+           * Total Recebido (dividendos com payment_date <= hoje)
+           * A Receber (dividendos com payment_date > hoje)
+           * Contagem separada
+      
+      6. EVOLUÇÃO PATRIMONIAL:
+         - Código já usa payment_date corretamente (linha 1200-1206)
+         - Apenas dividendos com payment_date <= today são incluídos
+      
+      TESTES VIA CURL:
+      - PETR4: Ações 12.89 bi, Lucro 77.99 bi, ROE 18.33%, Payout 61%
