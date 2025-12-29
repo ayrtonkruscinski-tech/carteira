@@ -31,6 +31,7 @@ import {
 import { Plus, Coins, TrendingUp, RefreshCw, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { usePortfolioSafe } from "../context/PortfolioContext";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
