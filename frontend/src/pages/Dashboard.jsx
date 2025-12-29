@@ -396,6 +396,9 @@ export default function Dashboard() {
           </Card>
         </div>
 
+        {/* Ad Banner */}
+        <AdBannerHorizontal />
+
         {/* Portfolio Evolution Chart */}
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
