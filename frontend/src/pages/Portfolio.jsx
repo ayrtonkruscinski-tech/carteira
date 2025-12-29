@@ -783,6 +783,30 @@ export default function Portfolio() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Delete All Stocks Confirmation Dialog */}
+        <AlertDialog open={deleteAllDialogOpen} onOpenChange={setDeleteAllDialogOpen}>
+          <AlertDialogContent className="bg-card border-border">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-foreground">Excluir todas as ações?</AlertDialogTitle>
+              <AlertDialogDescription className="text-muted-foreground">
+                Esta ação não pode ser desfeita. Todas as {stocks.length} ações e seus dividendos associados serão permanentemente excluídos.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="bg-muted text-muted-foreground hover:bg-muted/80">
+                Cancelar
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteAllStocks}
+                disabled={deletingAll}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deletingAll ? "Excluindo..." : "Excluir Todas"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );
