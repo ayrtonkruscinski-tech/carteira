@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
-import { Plus, Coins, TrendingUp, RefreshCw, Trash2 } from "lucide-react";
+import { Plus, Coins, TrendingUp, RefreshCw, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
@@ -36,11 +36,13 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const COLORS = ['#00E599', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
-const DIVIDEND_TYPES = [
+const PROVENTO_TYPES = [
   { value: "dividendo", label: "Dividendo" },
   { value: "jcp", label: "JCP (Juros sobre Capital Próprio)" },
   { value: "rendimento", label: "Rendimento" },
 ];
+
+const ITEMS_PER_PAGE = 10;
 
 export default function Dividends() {
   const [dividends, setDividends] = useState([]);
@@ -48,6 +50,7 @@ export default function Dividends() {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [formData, setFormData] = useState({
     stock_id: "",
     ticker: "",
