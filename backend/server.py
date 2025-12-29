@@ -251,6 +251,127 @@ async def logout(request: Request, response: Response):
 
 # ==================== INVESTIDOR10 SCRAPER ====================
 
+def fetch_investidor10_fundamentals(ticker: str) -> dict:
+    """Fetch fundamental data from Investidor10 for valuation"""
+    data = {
+        "ticker": ticker.upper(),
+        "current_price": None,
+        "dividend_per_share": None,
+        "dividend_yield": None,
+        "p_l": None,  # P/L ratio
+        "p_vp": None,  # P/VP ratio
+        "roe": None,
+        "net_income": None,  # Lucro Líquido
+        "ebitda": None,
+        "net_revenue": None,
+        "free_cash_flow": None,
+        "shares_outstanding": None,
+        "dividend_growth_rate": 5.0,  # Default
+        "depreciation": None,
+        "capex": None,
+    }
+    
+    try:
+        url = f"https://investidor10.com.br/acoes/{ticker.lower()}/"
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+        
+        response = requests.get(url, headers=headers, timeout=15)
+        
+        if response.status_code != 200:
+            logger.error(f"Investidor10 fundamentals returned status {response.status_code} for {ticker}")
+            return data
+        
+        soup = BeautifulSoup(response.content, 'lxml')
+        
+        # Helper function to parse Brazilian numbers
+        def parse_br_number(text):
+            if not text:
+                return None
+            text = text.strip().replace('R$', '').replace('%', '').strip()
+            # Handle millions/billions
+            multiplier = 1
+            if 'bi' in text.lower():
+                multiplier = 1000000000
+                text = text.lower().replace('bi', '').strip()
+            elif 'mi' in text.lower():
+                multiplier = 1000000
+                text = text.lower().replace('mi', '').strip()
+            elif 'mil' in text.lower():
+                multiplier = 1000
+                text = text.lower().replace('mil', '').strip()
+            
+            # Parse the number
+            text = text.replace('.', '').replace(',', '.')
+            try:
+                return float(text) * multiplier
+            except:
+                return None
+        
+        # Look for indicators in the page
+        # Find all cards/cells with indicators
+        cells = soup.find_all(['div', 'span', 'td'], class_=lambda x: x and ('cell' in str(x).lower() or 'value' in str(x).lower() or 'indicator' in str(x).lower()))
+        
+        # Try to find specific values using text patterns
+        text_content = soup.get_text()
+        
+        # Find price
+        price_elem = soup.find('div', class_='_card-body')
+        if price_elem:
+            price_text = price_elem.get_text()
+            if 'R$' in price_text:
+                import re
+                price_match = re.search(r'R\$\s*([\d.,]+)', price_text)
+                if price_match:
+                    data['current_price'] = parse_br_number(price_match.group(1))
+        
+        # Look for indicator cards/tables
+        indicator_cards = soup.find_all(['div', 'section'], class_=lambda x: x and 'indicator' in str(x).lower())
+        
+        # Parse all spans/divs looking for key indicators
+        all_elements = soup.find_all(['span', 'div', 'td'])
+        
+        indicator_map = {
+            'dy': 'dividend_yield',
+            'dividend yield': 'dividend_yield',
+            'p/l': 'p_l',
+            'p/vp': 'p_vp',
+            'roe': 'roe',
+            'lucro líquido': 'net_income',
+            'lucro liquido': 'net_income',
+            'ebitda': 'ebitda',
+            'receita líquida': 'net_revenue',
+            'receita liquida': 'net_revenue',
+            'div. por ação': 'dividend_per_share',
+            'dividendo por ação': 'dividend_per_share',
+        }
+        
+        for i, elem in enumerate(all_elements):
+            elem_text = elem.get_text(strip=True).lower()
+            
+            for key, field in indicator_map.items():
+                if key in elem_text and data[field] is None:
+                    # Try to find the value in the next sibling or parent
+                    value_elem = elem.find_next_sibling() or elem.find_parent()
+                    if value_elem:
+                        value_text = value_elem.get_text(strip=True)
+                        parsed_value = parse_br_number(value_text)
+                        if parsed_value is not None:
+                            data[field] = parsed_value
+                            break
+        
+        # Calculate dividend per share from DY and price if not found
+        if data['dividend_per_share'] is None and data['dividend_yield'] and data['current_price']:
+            data['dividend_per_share'] = (data['dividend_yield'] / 100) * data['current_price']
+        
+        logger.info(f"Investidor10 fundamentals for {ticker}: price={data['current_price']}, dy={data['dividend_yield']}, p_l={data['p_l']}")
+        
+    except Exception as e:
+        logger.error(f"Investidor10 fundamentals scraper error for {ticker}: {e}")
+    
+    return data
+
 def fetch_investidor10_dividends(ticker: str) -> List[dict]:
     """Fetch dividend history from Investidor10"""
     dividends = []
