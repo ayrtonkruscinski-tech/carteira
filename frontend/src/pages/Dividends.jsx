@@ -221,13 +221,13 @@ export default function Dividends() {
   const totalPending = pendingDividends.reduce((acc, d) => acc + d.amount, 0);
 
   // Filtrar dados do gráfico por status e período
-  const getFilteredChartData = () => {
+  const filteredChartData = useMemo(() => {
     // Filtrar por status
-    let filteredDividends = dividends;
+    let filteredDividends = [...dividends];
     if (chartStatusFilter === "received") {
-      filteredDividends = receivedDividends;
+      filteredDividends = dividends.filter((d) => d.payment_date <= today);
     } else if (chartStatusFilter === "pending") {
-      filteredDividends = pendingDividends;
+      filteredDividends = dividends.filter((d) => d.payment_date > today);
     }
 
     // Filtrar por período
@@ -261,11 +261,9 @@ export default function Dividends() {
       .sort((a, b) => a.month.localeCompare(b.month))
       .map((item) => ({
         ...item,
-        month: new Date(item.month + "-01").toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }),
+        monthLabel: new Date(item.month + "-01").toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }),
       }));
-  };
-
-  const filteredChartData = getFilteredChartData();
+  }, [dividends, chartStatusFilter, chartPeriodFilter, today]);
 
   // Paginação - ordenar por data de pagamento (mais recente primeiro)
   const sortedDividends = [...dividends].sort((a, b) => 
