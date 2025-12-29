@@ -259,3 +259,25 @@ agent_communication:
       - Scraper extrai dados do investidor10.com.br com sucesso
       
       BACKEND DIVIDEND SYNC: FUNCIONANDO COMPLETAMENTE ✅
+
+  - agent: "testing"
+    message: |
+      FRONTEND DIVIDENDS SYNC BUTTON - ANÁLISE DE CÓDIGO COMPLETA ✅
+      
+      VERIFICAÇÃO DO CÓDIGO:
+      ✅ Sync button implementado com data-testid="sync-dividends-btn" (linha 180)
+      ✅ Botão "Registrar Dividendo" presente com data-testid="add-dividend-btn" (linha 192)
+      ✅ Loading state correto: "Sincronizando..." com ícone spinning (linha 186-187)
+      ✅ Disabled quando syncing=true ou stocks.length=0 (linha 183)
+      ✅ Toast feedback implementado com sonner (linhas 132-138)
+      ✅ Chama POST /api/dividends/sync corretamente (linha 125-128)
+      ✅ Atualiza dados após sync com fetchData() (linha 139)
+      ✅ Total dividends display com data-testid="total-dividends" (linha 300)
+      ✅ Dividends table com data-testid="dividends-table" (linha 473)
+      
+      LIMITAÇÃO DE TESTE:
+      ❌ Não foi possível testar funcionalmente devido ao Emergent Google Auth
+      - App redireciona para landing page quando não autenticado (comportamento correto)
+      - Emergent-managed OAuth requer login real que não pode ser automatizado
+      
+      CONCLUSÃO: Implementação do sync button está CORRETA e COMPLETA ✅
