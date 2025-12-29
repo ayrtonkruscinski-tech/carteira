@@ -207,12 +207,14 @@ export default function Valuation() {
                           <SelectValue placeholder="Selecione ou digite" />
                         </SelectTrigger>
                         <SelectContent className="bg-popover border-border">
-                          {/* Agrupar ações por ticker para lista menor */}
-                          {[...new Map(stocks.map(s => [s.ticker, s])).values()].map((stock) => (
-                            <SelectItem key={stock.ticker} value={stock.ticker}>
-                              {stock.ticker} - {stock.name}
-                            </SelectItem>
-                          ))}
+                          {/* Agrupar ações por ticker e ordenar alfabeticamente */}
+                          {[...new Map(stocks.map(s => [s.ticker, s])).values()]
+                            .sort((a, b) => a.ticker.localeCompare(b.ticker))
+                            .map((stock) => (
+                              <SelectItem key={stock.ticker} value={stock.ticker}>
+                                {stock.ticker} - {stock.name}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                       <Input
