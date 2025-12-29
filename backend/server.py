@@ -564,7 +564,7 @@ def fetch_investidor10_dividends(ticker: str) -> List[dict]:
 # ==================== TRADINGVIEW INTEGRATION ====================
 
 def fetch_tradingview_quote(ticker: str) -> dict:
-    """Fetch real-time quote from TradingView"""
+    """Fetch real-time quote from TradingView - with improved error handling for K8s"""
     try:
         handler = TA_Handler(
             symbol=ticker,
@@ -601,7 +601,8 @@ def fetch_tradingview_quote(ticker: str) -> dict:
             "source": "tradingview"
         }
     except Exception as e:
-        logger.error(f"TradingView error for {ticker}: {e}")
+        # Log at debug level to avoid flooding logs in production when network is unavailable
+        logger.debug(f"TradingView unavailable for {ticker}: {type(e).__name__}")
     
     return None
 
