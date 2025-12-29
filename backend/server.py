@@ -632,33 +632,32 @@ def parse_generic_csv(content: str) -> List[dict]:
 @api_router.post("/portfolio/import/csv")
 async def import_csv(file: UploadFile = File(...), user: User = Depends(get_current_user)):
     """Import stocks from CSV file (CEI/B3 or generic format)"""
-    try:
-        content = await file.read()
-        
-        # Try different encodings
-        content_str = None
-        for encoding in ['utf-8-sig', 'utf-8', 'latin-1', 'cp1252']:
-            try:
-                content_str = content.decode(encoding)
-                break
-            except:
-                continue
-        
-        if not content_str:
-            raise HTTPException(status_code=400, detail="Não foi possível ler o arquivo. Codificação não suportada.")
-        
-        # Try CEI format first
-        stocks = parse_cei_csv(content_str)
-        
-        # If no stocks found, try generic format
-        if not stocks:
-            stocks = parse_generic_csv(content_str)
-        
-        if not stocks:
-            raise HTTPException(status_code=400, detail="Não foi possível ler o arquivo. Verifique se o CSV contém colunas: ticker, quantity, average_price")
-        
-        imported = 0
-        updated = 0
+    content = await file.read()
+    
+    # Try different encodings
+    content_str = None
+    for encoding in ['utf-8-sig', 'utf-8', 'latin-1', 'cp1252']:
+        try:
+            content_str = content.decode(encoding)
+            break
+        except:
+            continue
+    
+    if not content_str:
+        raise HTTPException(status_code=400, detail="Não foi possível ler o arquivo. Codificação não suportada.")
+    
+    # Try CEI format first
+    stocks = parse_cei_csv(content_str)
+    
+    # If no stocks found, try generic format
+    if not stocks:
+        stocks = parse_generic_csv(content_str)
+    
+    if not stocks:
+        raise HTTPException(status_code=400, detail="Não foi possível ler o arquivo. Verifique se o CSV contém colunas: ticker, quantity, average_price")
+    
+    imported = 0
+    updated = 0
     
     for stock_data in stocks:
         ticker = stock_data["ticker"]
