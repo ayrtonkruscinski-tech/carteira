@@ -1120,6 +1120,11 @@ def parse_generic_csv(content: str) -> List[dict]:
                     ticker = row.get(ticker_col, '').strip().upper()
                     # Remove common suffixes and clean ticker
                     ticker = re.sub(r'[^A-Z0-9]', '', ticker)
+                    
+                    # Remove trailing "F" (fracionário) from ticker
+                    if ticker.endswith('F') and len(ticker) > 4:
+                        ticker = ticker[:-1]
+                    
                     if not ticker or len(ticker) < 4:
                         continue
                     
