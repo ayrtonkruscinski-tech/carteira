@@ -56,6 +56,8 @@ export default function Dividends() {
     type: "dividendo",
   });
   const [syncing, setSyncing] = useState(false);
+  const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchData();
