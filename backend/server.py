@@ -1067,11 +1067,12 @@ async def get_portfolio_summary(user: User = Depends(get_current_user)):
 
 @api_router.post("/portfolio/refresh-prices")
 async def refresh_portfolio_prices(user: User = Depends(get_current_user)):
-    """Refresh all stock prices - uses Yahoo Finance as primary source"""
+    """Refresh all stock prices - uses Yahoo Finance as primary source with graceful fallback"""
     stocks = await db.stocks.find({"user_id": user.user_id}, {"_id": 0}).to_list(1000)
     updated = 0
     alerts_created = 0
     errors = []
+    cached_prices = 0
     
     # Get unique tickers to avoid redundant API calls
     unique_tickers = list(set(stock["ticker"] for stock in stocks))
@@ -1085,35 +1086,42 @@ async def refresh_portfolio_prices(user: User = Depends(get_current_user)):
             
             # Try Yahoo Finance first (most reliable for B3 stocks)
             yahoo_data = await fetch_yahoo_finance_quote(ticker)
-            if yahoo_data and yahoo_data["price"] > 0:
+            if yahoo_data and yahoo_data.get("price", 0) > 0:
                 new_price = yahoo_data["price"]
                 source = "yahoo_finance"
             else:
                 # Fallback to TradingView
                 tv_data = fetch_tradingview_quote(ticker)
-                if tv_data and tv_data["price"] > 0:
+                if tv_data and tv_data.get("price", 0) > 0:
                     new_price = tv_data["price"]
                     source = "tradingview"
                 else:
-                    # Last resort: Alpha Vantage
-                    await asyncio.sleep(0.3)  # Delay to avoid rate limit
+                    # Try Alpha Vantage
+                    await asyncio.sleep(0.2)
                     av_data = await fetch_alpha_vantage_quote(ticker)
-                    if av_data and av_data["price"] > 0:
+                    if av_data and av_data.get("price", 0) > 0:
                         new_price = av_data["price"]
                         source = "alpha_vantage"
+                    else:
+                        # Final fallback: use cached/static data
+                        if ticker in BRAZILIAN_STOCKS:
+                            new_price = BRAZILIAN_STOCKS[ticker].get("current_price")
+                            source = "cache"
+                            cached_prices += 1
             
-            if new_price:
+            if new_price and new_price > 0:
                 ticker_prices[ticker] = {"price": new_price, "source": source}
-                logger.info(f"Fetched {ticker}: R${new_price:.2f} (source: {source})")
+                if source != "cache":
+                    logger.info(f"Fetched {ticker}: R${new_price:.2f} (source: {source})")
             else:
                 errors.append(ticker)
-                logger.warning(f"Could not fetch price for {ticker}")
+                logger.debug(f"Could not fetch price for {ticker} - APIs may be unavailable")
             
-            # Small delay between requests to be respectful
+            # Small delay between requests
             await asyncio.sleep(0.1)
                 
         except Exception as e:
-            logger.error(f"Error fetching price for {ticker}: {e}")
+            logger.debug(f"Error fetching price for {ticker}: {type(e).__name__}")
             errors.append(ticker)
     
     # Update all stock records with fetched prices
