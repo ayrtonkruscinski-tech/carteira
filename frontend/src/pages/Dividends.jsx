@@ -509,6 +509,9 @@ export default function Dividends() {
           </Card>
         </div>
 
+        {/* Ad Banner */}
+        <AdBannerHorizontal />
+
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Monthly Chart */}
