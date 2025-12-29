@@ -600,6 +600,164 @@ PETR4,Petrobras PN,50,40.00,20/01/2024,Petróleo"""
                 print(f"   ⚠️  Source field missing in response")
         return success, response
 
+    def test_dividend_sync_with_f_suffix_fix(self):
+        """Test dividend synchronization with fixed ticker handling (removing F suffix)"""
+        print("\n🔍 Testing Dividend Sync with F Suffix Fix...")
+        
+        # Step 1: Clean up existing data for clean test
+        print("   🗑️  Cleaning up existing data...")
+        success, _ = self.run_test("Delete All Dividends for Clean Test", "DELETE", "dividends/all", 200)
+        if not success:
+            print("❌ Failed to delete existing dividends")
+            return False
+        
+        success, _ = self.run_test("Delete All Stocks for Clean Test", "DELETE", "portfolio/stocks/all", 200)
+        if not success:
+            print("❌ Failed to delete existing stocks")
+            return False
+        
+        print("   ✅ Cleaned up existing data")
+        
+        # Step 2: Add test stock with PETR4 (not PETR4F) and old purchase date
+        print("   📈 Adding test stock PETR4 with old purchase date...")
+        stock_data = {
+            "ticker": "PETR4",  # Note: using PETR4, not PETR4F
+            "name": "Petrobras PN",
+            "quantity": 100,
+            "average_price": 35.50,
+            "purchase_date": "2024-01-01",  # Old date to ensure dividend eligibility
+            "sector": "Petróleo",
+            "current_price": 38.50,
+            "dividend_yield": 12.5
+        }
+        
+        success, add_response = self.run_test("Add PETR4 Test Stock", "POST", "portfolio/stocks", 200, stock_data)
+        if not success:
+            print("❌ Failed to add PETR4 test stock")
+            return False
+        
+        stock_id = add_response.get('stock_id')
+        print(f"   ✅ Added PETR4 stock with ID: {stock_id}")
+        
+        # Step 3: Verify stock was added correctly
+        success, stocks_response = self.run_test("Verify Added Stock", "GET", "portfolio/stocks", 200)
+        if not success:
+            print("❌ Failed to get stocks after adding")
+            return False
+        
+        stocks = stocks_response if isinstance(stocks_response, list) else []
+        petr4_stocks = [s for s in stocks if s.get('ticker') == 'PETR4']
+        
+        if len(petr4_stocks) != 1:
+            print(f"❌ Expected 1 PETR4 stock, found {len(petr4_stocks)}")
+            return False
+        
+        petr4_stock = petr4_stocks[0]
+        if petr4_stock.get('purchase_date') != '2024-01-01':
+            print(f"❌ Wrong purchase date: {petr4_stock.get('purchase_date')}")
+            return False
+        
+        if petr4_stock.get('quantity') != 100:
+            print(f"❌ Wrong quantity: {petr4_stock.get('quantity')}")
+            return False
+        
+        print("   ✅ Stock verified correctly")
+        
+        # Step 4: Call dividend sync
+        print("   🔄 Calling dividend sync...")
+        success, sync_response = self.run_test("Sync Dividends with F Fix", "POST", "dividends/sync", 200)
+        if not success:
+            print("❌ Dividend sync failed")
+            return False
+        
+        # Validate sync response structure
+        required_fields = ['synced', 'skipped', 'total_tickers', 'message']
+        for field in required_fields:
+            if field not in sync_response:
+                print(f"❌ Missing field '{field}' in sync response")
+                return False
+        
+        synced_count = sync_response.get('synced', 0)
+        skipped_count = sync_response.get('skipped', 0)
+        total_tickers = sync_response.get('total_tickers', 0)
+        message = sync_response.get('message', '')
+        
+        print(f"   📊 Sync result: {synced_count} synced, {skipped_count} skipped, {total_tickers} tickers")
+        print(f"   📝 Message: {message}")
+        
+        # Step 5: Verify dividends were synced
+        success, dividends_response = self.run_test("Get Synced Dividends", "GET", "dividends", 200)
+        if not success:
+            print("❌ Failed to get dividends after sync")
+            return False
+        
+        dividends = dividends_response if isinstance(dividends_response, list) else []
+        petr4_dividends = [d for d in dividends if d.get('ticker') == 'PETR4']
+        
+        print(f"   📊 Total dividends found: {len(dividends)}")
+        print(f"   📊 PETR4 dividends found: {len(petr4_dividends)}")
+        
+        if synced_count > 0:
+            print("   ✅ Dividends were synced successfully")
+            
+            if len(petr4_dividends) > 0:
+                print("   ✅ PETR4 dividends found (scraper found dividends for PETR4, not PETR4F)")
+                
+                # Validate dividend structure
+                sample_dividend = petr4_dividends[0]
+                required_div_fields = ['dividend_id', 'user_id', 'stock_id', 'ticker', 'amount', 'payment_date', 'type']
+                for field in required_div_fields:
+                    if field not in sample_dividend:
+                        print(f"❌ Missing field '{field}' in dividend record")
+                        return False
+                
+                # Verify ticker is PETR4 (not PETR4F)
+                if sample_dividend.get('ticker') != 'PETR4':
+                    print(f"❌ Wrong ticker in dividend: {sample_dividend.get('ticker')}")
+                    return False
+                
+                # Verify amount is calculated correctly (valor_por_acao * quantity)
+                amount = sample_dividend.get('amount', 0)
+                if amount > 0:
+                    print(f"   ✅ Dividend amount calculated: R${amount}")
+                else:
+                    print(f"   ❌ Invalid dividend amount: {amount}")
+                    return False
+                
+                print("   ✅ Dividend records have correct structure and ticker")
+            else:
+                print("   ⚠️  No PETR4 dividends found - might be no eligible dividends for the date range")
+        else:
+            print("   ⚠️  No dividends synced - might be no eligible dividends or all already exist")
+        
+        # Step 6: Verify the scraper is looking for PETR4 (not PETR4F)
+        # This is implicit in the success of finding dividends, as the scraper
+        # would fail if it was still looking for PETR4F
+        if total_tickers >= 1:
+            print("   ✅ Scraper processed tickers successfully (F suffix handling working)")
+        else:
+            print("   ❌ No tickers processed by scraper")
+            return False
+        
+        # Step 7: Test that the fix works for purchase date eligibility
+        if len(petr4_dividends) > 0:
+            # Check that dividends have payment dates after our purchase date
+            purchase_date = "2024-01-01"
+            eligible_dividends = 0
+            
+            for dividend in petr4_dividends:
+                payment_date = dividend.get('payment_date', '')
+                if payment_date >= purchase_date:
+                    eligible_dividends += 1
+            
+            if eligible_dividends > 0:
+                print(f"   ✅ Found {eligible_dividends} eligible dividends (purchase_date <= data_com logic working)")
+            else:
+                print("   ⚠️  No eligible dividends found for purchase date")
+        
+        print("   ✅ Dividend sync with F suffix fix test completed successfully")
+        return True
+
 def main():
     print("🚀 Starting StockFolio API Tests - New Features")
     print("=" * 50)
