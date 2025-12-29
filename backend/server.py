@@ -242,7 +242,51 @@ async def logout(request: Request, response: Response):
     response.delete_cookie(key="session_token", path="/")
     return {"message": "Logged out"}
 
-# ==================== ALPHA VANTAGE INTEGRATION ====================
+# ==================== TRADINGVIEW INTEGRATION ====================
+
+def fetch_tradingview_quote(ticker: str) -> dict:
+    """Fetch real-time quote from TradingView"""
+    try:
+        handler = TA_Handler(
+            symbol=ticker,
+            screener="brazil",
+            exchange="BMFBOVESPA",
+            interval=Interval.INTERVAL_1_DAY
+        )
+        analysis = handler.get_analysis()
+        
+        indicators = analysis.indicators
+        close_price = indicators.get("close", 0)
+        open_price = indicators.get("open", 0)
+        high_price = indicators.get("high", 0)
+        low_price = indicators.get("low", 0)
+        volume = indicators.get("volume", 0)
+        change = indicators.get("change", 0)
+        change_percent = indicators.get("change", 0)
+        
+        # Calculate change if not available
+        if close_price and open_price and not change:
+            change = close_price - open_price
+            change_percent = ((close_price - open_price) / open_price) * 100 if open_price else 0
+        
+        return {
+            "ticker": ticker,
+            "price": round(close_price, 2) if close_price else 0,
+            "open": round(open_price, 2) if open_price else 0,
+            "high": round(high_price, 2) if high_price else 0,
+            "low": round(low_price, 2) if low_price else 0,
+            "change": round(change, 2) if change else 0,
+            "change_percent": round(change_percent, 2) if change_percent else 0,
+            "volume": int(volume) if volume else 0,
+            "recommendation": analysis.summary.get("RECOMMENDATION", "NEUTRAL"),
+            "source": "tradingview"
+        }
+    except Exception as e:
+        logger.error(f"TradingView error for {ticker}: {e}")
+    
+    return None
+
+# ==================== ALPHA VANTAGE INTEGRATION (BACKUP) ====================
 
 async def fetch_alpha_vantage_quote(ticker: str) -> dict:
     """Fetch real-time quote from Alpha Vantage"""
