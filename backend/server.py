@@ -74,6 +74,7 @@ class UserSession(BaseModel):
 class Stock(BaseModel):
     stock_id: str = Field(default_factory=lambda: f"stock_{uuid.uuid4().hex[:12]}")
     user_id: str
+    portfolio_id: Optional[str] = None  # ID da carteira
     ticker: str
     name: str
     quantity: float
@@ -96,6 +97,7 @@ class StockCreate(BaseModel):
     current_price: Optional[float] = None
     dividend_yield: Optional[float] = None
     ceiling_price: Optional[float] = None
+    portfolio_id: Optional[str] = None  # ID da carteira
 
 class StockUpdate(BaseModel):
     quantity: Optional[float] = None
