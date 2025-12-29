@@ -283,7 +283,7 @@ class StockFolioAPITester:
     def test_portfolio_import_csv(self):
         """Test CSV import endpoint"""
         # Test with empty file to check endpoint availability
-        return self.run_test("Portfolio CSV Import", "POST", "portfolio/import/csv", 400)
+        return self.run_test("Portfolio CSV Import", "POST", "portfolio/import", 400)
 
     def test_portfolio_export_csv(self):
         """Test CSV export endpoint"""
