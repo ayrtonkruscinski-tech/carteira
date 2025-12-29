@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { TrendingUp, PieChart, Calculator, Brain, ArrowRight, Shield, Zap } from "lucide-react";
 import { FloatingSupport } from "../components/FloatingSupport";
+import { AdBannerHorizontal } from "../components/AdBanner";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
