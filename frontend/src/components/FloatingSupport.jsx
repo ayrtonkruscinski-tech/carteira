@@ -58,7 +58,7 @@ export const FloatingSupport = () => {
   };
 
   const openEmailClient = () => {
-    const subject = contactType === "support" ? "Suporte StockFolio" : "Feedback StockFolio";
+    const subject = contactType === "support" ? "Suporte Carteira Inteligente" : "Feedback Carteira Inteligente";
     const body = contactType === "support" 
       ? "Olá, preciso de ajuda com..." 
       : "Olá, gostaria de compartilhar um feedback...";
@@ -200,7 +200,7 @@ export const FloatingSupport = () => {
               </Button>
               
               <a
-                href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(contactType === "support" ? "Suporte StockFolio" : "Feedback StockFolio")}`}
+                href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(contactType === "support" ? "Suporte Carteira Inteligente" : "Feedback Carteira Inteligente")}`}
                 className="text-center text-sm text-muted-foreground hover:text-primary underline"
               >
                 Ou clique aqui se o botão não funcionar
@@ -224,12 +224,12 @@ export const FloatingSupport = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Heart className="w-5 h-5 text-pink-500" />
-              Apoie o StockFolio
+              Apoie a Carteira Inteligente
             </DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <p className="text-muted-foreground mb-6">
-              Se o StockFolio está te ajudando a gerenciar seus investimentos, considere fazer uma doação para apoiar o desenvolvimento contínuo do projeto.
+              Se a Carteira de Investimentos Inteligente está te ajudando a gerenciar seus investimentos, considere fazer uma doação para apoiar o desenvolvimento contínuo do projeto.
             </p>
             
             <div className="space-y-4">
@@ -269,7 +269,7 @@ export const FloatingSupport = () => {
 
             <div className="mt-6 p-4 bg-primary/5 rounded-lg border border-primary/20">
               <p className="text-sm text-center text-muted-foreground">
-                <span className="text-primary font-medium">Obrigado!</span> Sua contribuição ajuda a manter o StockFolio gratuito e com novas funcionalidades.
+                <span className="text-primary font-medium">Obrigado!</span> Sua contribuição ajuda a manter a Carteira Inteligente gratuita e com novas funcionalidades.
               </p>
             </div>
           </div>
