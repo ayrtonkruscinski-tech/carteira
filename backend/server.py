@@ -925,28 +925,31 @@ def parse_xlsx(file_bytes: bytes) -> List[dict]:
         
         logger.info(f"XLSX headers: {headers}")
         
-        # Map columns - order matters! More specific keywords first
-        header_map = {
-            'ticker': ['codigo de negociacao', 'código de negociação', 'produto', 'ticker', 'codigo', 'código', 'symbol', 'ativo', 'papel', 'acao', 'ação'],
-            'name': ['name', 'nome', 'empresa', 'description', 'descricao', 'descrição'],
-            'quantity': ['quantidade', 'quantity', 'qtd', 'qtde', 'shares', 'qty'],
-            'average_price': ['preço unitário', 'preco unitario', 'unitario', 'unitário', 'average_price', 'preco_medio', 'preço_médio', 'preco', 'preço', 'pm', 'custo'],
-            'purchase_date': ['data do negocio', 'data do negócio', 'purchase_date', 'data_compra', 'date', 'data'],
-            'sector': ['sector', 'setor', 'industry', 'segmento']
-        }
-        
+        # Map columns - be very specific to avoid false matches
         def find_col_idx(key):
+            # First pass: look for exact/specific matches
+            exact_matches = {
+                'ticker': ['código de negociação', 'codigo de negociacao', 'ticker', 'código', 'codigo', 'papel'],
+                'name': ['nome', 'empresa', 'name'],
+                'quantity': ['quantidade', 'qtd'],
+                'average_price': ['preço', 'preco', 'preço unitário', 'preco unitario'],
+                'purchase_date': ['data do negócio', 'data do negocio', 'data'],
+                'sector': ['setor', 'sector']
+            }
+            
             for idx, h in enumerate(headers):
                 if not h:
                     continue
                 h_lower = h.lower().strip()
-                # Normalize accented characters
                 h_normalized = h_lower.replace('ã', 'a').replace('ç', 'c').replace('í', 'i').replace('é', 'e').replace('ú', 'u').replace('á', 'a').replace('ó', 'o')
                 
-                # Check if any keyword matches
-                for keyword in header_map[key]:
+                for keyword in exact_matches.get(key, []):
                     keyword_normalized = keyword.replace('ã', 'a').replace('ç', 'c').replace('í', 'i').replace('é', 'e').replace('ú', 'u').replace('á', 'a').replace('ó', 'o')
-                    if keyword_normalized in h_normalized or h_normalized in keyword_normalized:
+                    # Check for exact match or if header equals keyword
+                    if h_normalized == keyword_normalized:
+                        return idx
+                    # Check if header contains the full keyword (not partial)
+                    if keyword_normalized in h_normalized and len(keyword_normalized) >= 4:
                         return idx
             return None
         
