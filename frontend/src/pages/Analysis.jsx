@@ -400,14 +400,155 @@ export default function Analysis() {
                     Análise Inteligente
                   </h3>
                   <p className="text-muted-foreground max-w-md mx-auto">
-                    Preencha os dados da ação ao lado e clique em "Analisar com IA" para obter insights
+                    Preencha os dados da ação ao lado e clique em &quot;Analisar com IA&quot; para obter insights
                     sobre o ativo
                   </p>
                 </div>
               )}
             </CardContent>
           </Card>
-        </div>
+            </div>
+          </TabsContent>
+
+          {/* Portfolio Analysis Tab */}
+          <TabsContent value="portfolio" className="mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Portfolio Info Card */}
+              <Card className="bg-card border-border">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Briefcase className="w-5 h-5 text-primary" />
+                    Análise da Carteira
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-muted-foreground text-sm">
+                    Obtenha uma análise completa da sua carteira de investimentos, incluindo:
+                  </p>
+                  <ul className="text-sm text-muted-foreground space-y-2">
+                    <li className="flex items-center gap-2">
+                      <span className="text-primary">•</span> Diversificação setorial
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-primary">•</span> Riscos de concentração
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-primary">•</span> Qualidade dos ativos
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-primary">•</span> Pontos fortes e fracos
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-primary">•</span> Sugestões de otimização
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-primary">•</span> Nota geral da carteira
+                    </li>
+                  </ul>
+
+                  {stocks.length > 0 ? (
+                    <div className="pt-4 border-t border-border">
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Sua carteira possui <span className="text-foreground font-semibold">{stocks.length}</span> lançamentos
+                      </p>
+                      <Button
+                        onClick={handleAnalyzePortfolio}
+                        disabled={analyzingPortfolio}
+                        className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-[0_0_15px_rgba(59,130,246,0.3)]"
+                      >
+                        {analyzingPortfolio ? (
+                          <div className="w-5 h-5 border-2 border-secondary-foreground border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Analisar Minha Carteira
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="pt-4 border-t border-border">
+                      <p className="text-sm text-amber-500">
+                        Você precisa ter ações na carteira para gerar a análise.
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Portfolio Analysis Result */}
+              <Card className="bg-card border-border lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                    Resultado da Análise
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {portfolioAnalysis ? (
+                    <div className="space-y-4" data-testid="portfolio-analysis-result">
+                      {/* Summary Cards */}
+                      {portfolioAnalysis.summary && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                          <div className="bg-muted/50 rounded-lg p-3">
+                            <p className="text-xs text-muted-foreground">Investido</p>
+                            <p className="text-lg font-semibold text-foreground">
+                              {formatCurrency(portfolioAnalysis.summary.total_invested)}
+                            </p>
+                          </div>
+                          <div className="bg-muted/50 rounded-lg p-3">
+                            <p className="text-xs text-muted-foreground">Valor Atual</p>
+                            <p className="text-lg font-semibold text-foreground">
+                              {formatCurrency(portfolioAnalysis.summary.total_current)}
+                            </p>
+                          </div>
+                          <div className="bg-muted/50 rounded-lg p-3">
+                            <p className="text-xs text-muted-foreground">Dividendos</p>
+                            <p className="text-lg font-semibold text-accent">
+                              {formatCurrency(portfolioAnalysis.summary.total_dividends)}
+                            </p>
+                          </div>
+                          <div className="bg-muted/50 rounded-lg p-3">
+                            <p className="text-xs text-muted-foreground">Retorno Total</p>
+                            <p className={`text-lg font-semibold ${portfolioAnalysis.summary.total_return_percent >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                              {portfolioAnalysis.summary.total_return_percent >= 0 ? '+' : ''}{portfolioAnalysis.summary.total_return_percent.toFixed(2)}%
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Analysis Text */}
+                      <div className="prose prose-invert max-w-none">
+                        <div className="whitespace-pre-wrap text-foreground leading-relaxed">
+                          {portfolioAnalysis.analysis}
+                        </div>
+                      </div>
+                      <div className="pt-4 border-t border-border">
+                        <p className="text-xs text-muted-foreground">
+                          Gerado em: {new Date(portfolioAnalysis.generated_at).toLocaleString("pt-BR")}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          ⚠️ Esta análise é gerada por IA e não constitui recomendação de investimento.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-16 text-center">
+                      <Briefcase className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                      <h3 className="text-lg font-semibold text-foreground mb-2">
+                        Análise de Carteira
+                      </h3>
+                      <p className="text-muted-foreground max-w-md mx-auto">
+                        Clique em &quot;Analisar Minha Carteira&quot; para obter uma análise completa
+                        da sua carteira de investimentos
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );
