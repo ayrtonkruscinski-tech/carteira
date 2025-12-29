@@ -943,7 +943,7 @@ def parse_xlsx(file_bytes: bytes) -> List[dict]:
         date_idx = find_col_idx('purchase_date')
         sector_idx = find_col_idx('sector')
         
-        logger.info(f"XLSX column indices - ticker: {ticker_idx}, qty: {qty_idx}, price: {price_idx}")
+        logger.info(f"XLSX column indices - ticker: {ticker_idx}, qty: {qty_idx}, price: {price_idx}, date: {date_idx}")
         
         if ticker_idx is None:
             logger.error("No ticker column found in XLSX")
@@ -1004,7 +1004,23 @@ def parse_xlsx(file_bytes: bytes) -> List[dict]:
                                 price_str = price_str.replace(',', '.')
                             avg_price = float(price_str) if price_str else 0
                 
-                # Aggregate by ticker
+                # Parse purchase date
+                purchase_date = None
+                if date_idx is not None and len(row) > date_idx and row[date_idx] is not None:
+                    date_val = row[date_idx]
+                    if isinstance(date_val, datetime):
+                        purchase_date = date_val.strftime('%Y-%m-%d')
+                    elif date_val:
+                        date_str = str(date_val).strip()
+                        for fmt in ['%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%d.%m.%Y']:
+                            try:
+                                parsed_date = datetime.strptime(date_str, fmt)
+                                purchase_date = parsed_date.strftime('%Y-%m-%d')
+                                break
+                            except ValueError:
+                                continue
+                
+                # Aggregate by ticker - keep earliest purchase date
                 if ticker in stocks_dict:
                     old_qty = stocks_dict[ticker]['quantity']
                     old_price = stocks_dict[ticker]['average_price']
@@ -1012,13 +1028,18 @@ def parse_xlsx(file_bytes: bytes) -> List[dict]:
                     if new_qty > 0 and avg_price > 0:
                         stocks_dict[ticker]['average_price'] = ((old_qty * old_price) + (quantity * avg_price)) / new_qty
                     stocks_dict[ticker]['quantity'] = new_qty
+                    # Keep earliest purchase date
+                    if purchase_date:
+                        existing_date = stocks_dict[ticker].get('purchase_date')
+                        if not existing_date or purchase_date < existing_date:
+                            stocks_dict[ticker]['purchase_date'] = purchase_date
                 else:
                     stocks_dict[ticker] = {
                         "ticker": ticker,
                         "name": name,
                         "quantity": quantity,
                         "average_price": avg_price,
-                        "purchase_date": None,
+                        "purchase_date": purchase_date,
                         "sector": None
                     }
                     
