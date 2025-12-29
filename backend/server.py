@@ -712,8 +712,20 @@ async def get_valuation_data(ticker: str):
     # Get dividend info from dividend history
     dividends = fetch_investidor10_dividends(ticker_upper)
     if dividends:
-        # Calculate annual dividend (sum of last 12 months)
-        annual_dividend = sum(d["valor"] for d in dividends[:12])
+        # Calculate annual dividend (sum of dividends from last 12 months by date)
+        from datetime import datetime, timedelta
+        one_year_ago = datetime.now() - timedelta(days=365)
+        
+        annual_dividend = 0
+        for d in dividends:
+            try:
+                # data_com is in YYYY-MM-DD format
+                dividend_date = datetime.strptime(d["data_com"], "%Y-%m-%d")
+                if dividend_date >= one_year_ago:
+                    annual_dividend += d["valor"]
+            except (ValueError, KeyError):
+                continue
+        
         fundamentals["dividend_per_share"] = round(annual_dividend, 2)
         
         # Calculate dividend yield
