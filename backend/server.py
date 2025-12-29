@@ -2115,6 +2115,7 @@ async def sync_dividends(user: User = Depends(get_current_user), portfolio_id: O
                         user_id=user.user_id,
                         stock_id=stock["stock_id"],
                         ticker=ticker,
+                        portfolio_id=stock.get("portfolio_id"),  # Include portfolio_id from stock
                         amount=total_dividend,
                         payment_date=data_pagamento,
                         type="jcp" if "jcp" in tipo or "juros" in tipo else "dividendo"
