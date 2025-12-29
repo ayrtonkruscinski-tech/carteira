@@ -326,7 +326,7 @@ export default function Dividends() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-popover border-border">
-                      {DIVIDEND_TYPES.map((type) => (
+                      {PROVENTO_TYPES.map((type) => (
                         <SelectItem key={type.value} value={type.value}>
                           {type.label}
                         </SelectItem>
