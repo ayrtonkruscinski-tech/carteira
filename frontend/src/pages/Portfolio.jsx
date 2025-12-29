@@ -347,27 +347,28 @@ export default function Portfolio() {
                 </DialogHeader>
                 <div className="space-y-4">
                   <p className="text-sm text-muted-foreground">
-                    Importe sua carteira a partir de um arquivo CSV. Formatos suportados:
+                    Importe sua carteira a partir de um arquivo CSV ou Excel:
                   </p>
                   <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                    <li>Extrato CEI/B3</li>
-                    <li>CSV genérico (ticker, name, quantity, average_price, purchase_date)</li>
+                    <li>Extrato CEI/B3 (CSV ou XLSX)</li>
+                    <li>Planilha Excel (.xlsx)</li>
+                    <li>CSV genérico (ticker, quantidade, preco)</li>
                   </ul>
                   <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
                     <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept=".csv"
+                      accept=".csv,.xlsx,.xls"
                       onChange={handleImportCSV}
                       className="hidden"
-                      id="csv-upload"
+                      id="file-upload"
                     />
                     <label
-                      htmlFor="csv-upload"
+                      htmlFor="file-upload"
                       className="cursor-pointer text-primary hover:underline"
                     >
-                      {importing ? 'Importando...' : 'Clique para selecionar arquivo CSV'}
+                      {importing ? 'Importando...' : 'Clique para selecionar arquivo (CSV ou Excel)'}
                     </label>
                   </div>
                 </div>
