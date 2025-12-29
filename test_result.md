@@ -193,15 +193,18 @@ backend:
 
   - task: "CSV/XLSX Import"
     implemented: true
-    working: true
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "medium"
+    stuck_count: 1
+    priority: "high"
     needs_retesting: false
     status_history:
       - working: true
         agent: "previous"
         comment: "Importação de arquivos CEI/B3 funcionando"
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL ISSUES FOUND: 1) Generic CSV parser missing date format conversion - dates in DD/MM/YYYY format not converted to YYYY-MM-DD, 2) Generic CSV parser missing aggregation logic - multiple entries for same ticker not aggregated (PETR4 shows quantity=50 instead of 150), 3) Purchase date extraction working but format inconsistent. CEI/XLSX parsers have correct logic but generic CSV parser lacks both features. This breaks dividend sync eligibility checks which expect YYYY-MM-DD format."
 
 frontend:
   - task: "Dividends Sync Button"
