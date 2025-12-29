@@ -632,6 +632,138 @@ def parse_cei_csv(content: str) -> List[dict]:
     
     return stocks
 
+def parse_xlsx(file_bytes: bytes) -> List[dict]:
+    """Parse Excel XLSX file"""
+    stocks = []
+    stocks_dict = {}
+    
+    try:
+        wb = load_workbook(filename=io.BytesIO(file_bytes), read_only=True, data_only=True)
+        ws = wb.active
+        
+        # Get headers from first row
+        headers = []
+        for cell in ws[1]:
+            headers.append(str(cell.value or '').strip())
+        
+        logger.info(f"XLSX headers: {headers}")
+        
+        # Map columns
+        header_map = {
+            'ticker': ['ticker', 'codigo', 'código', 'symbol', 'ativo', 'papel', 'acao', 'ação', 'produto'],
+            'name': ['name', 'nome', 'empresa', 'description', 'descricao', 'descrição'],
+            'quantity': ['quantity', 'quantidade', 'qtd', 'qtde', 'shares', 'qty'],
+            'average_price': ['average_price', 'preco_medio', 'preço_médio', 'preco', 'preço', 'pm', 'custo', 'valor', 'preço unitário', 'preco unitario'],
+            'purchase_date': ['purchase_date', 'data_compra', 'date', 'data'],
+            'sector': ['sector', 'setor', 'industry', 'segmento']
+        }
+        
+        def find_col_idx(key):
+            for idx, h in enumerate(headers):
+                h_lower = h.lower().strip().replace('ã', 'a').replace('ç', 'c').replace('í', 'i').replace('é', 'e').replace('ú', 'u')
+                for keyword in header_map[key]:
+                    if keyword in h_lower:
+                        return idx
+            return None
+        
+        ticker_idx = find_col_idx('ticker')
+        name_idx = find_col_idx('name')
+        qty_idx = find_col_idx('quantity')
+        price_idx = find_col_idx('average_price')
+        date_idx = find_col_idx('purchase_date')
+        sector_idx = find_col_idx('sector')
+        
+        logger.info(f"XLSX column indices - ticker: {ticker_idx}, qty: {qty_idx}, price: {price_idx}")
+        
+        if ticker_idx is None:
+            logger.error("No ticker column found in XLSX")
+            return []
+        
+        # Process rows (skip header)
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            try:
+                if not row or len(row) <= ticker_idx:
+                    continue
+                
+                produto = str(row[ticker_idx] or '').strip()
+                if not produto:
+                    continue
+                
+                # Extract ticker from "FIQE3 - UNIFIQUE..." format
+                ticker = produto.split(' - ')[0].split(' ')[0].strip().upper()
+                ticker = re.sub(r'[^A-Z0-9]', '', ticker)
+                
+                if not ticker or len(ticker) < 4:
+                    continue
+                
+                # Get name
+                name = ticker
+                if name_idx is not None and len(row) > name_idx and row[name_idx]:
+                    name = str(row[name_idx]).strip()
+                elif ' - ' in produto:
+                    name = produto.split(' - ')[1].strip()
+                
+                # Parse quantity
+                quantity = 0
+                if qty_idx is not None and len(row) > qty_idx and row[qty_idx] is not None:
+                    qty_val = row[qty_idx]
+                    if isinstance(qty_val, (int, float)):
+                        quantity = float(qty_val)
+                    else:
+                        qty_str = re.sub(r'[^\d.,\-]', '', str(qty_val))
+                        if qty_str:
+                            if ',' in qty_str and '.' in qty_str:
+                                qty_str = qty_str.replace('.', '').replace(',', '.')
+                            elif ',' in qty_str:
+                                qty_str = qty_str.replace(',', '.')
+                            quantity = float(qty_str)
+                
+                # Parse price
+                avg_price = 0
+                if price_idx is not None and len(row) > price_idx and row[price_idx] is not None:
+                    price_val = row[price_idx]
+                    if isinstance(price_val, (int, float)):
+                        avg_price = float(price_val)
+                    else:
+                        price_str = re.sub(r'[R$\s]', '', str(price_val))
+                        if price_str:
+                            if ',' in price_str and '.' in price_str:
+                                price_str = price_str.replace('.', '').replace(',', '.')
+                            elif ',' in price_str:
+                                price_str = price_str.replace(',', '.')
+                            avg_price = float(price_str)
+                
+                # Aggregate by ticker
+                if ticker in stocks_dict:
+                    old_qty = stocks_dict[ticker]['quantity']
+                    old_price = stocks_dict[ticker]['average_price']
+                    new_qty = old_qty + quantity
+                    if new_qty > 0:
+                        stocks_dict[ticker]['average_price'] = ((old_qty * old_price) + (quantity * avg_price)) / new_qty
+                    stocks_dict[ticker]['quantity'] = new_qty
+                else:
+                    stocks_dict[ticker] = {
+                        "ticker": ticker,
+                        "name": name,
+                        "quantity": quantity,
+                        "average_price": avg_price,
+                        "purchase_date": None,
+                        "sector": None
+                    }
+                    
+            except Exception as e:
+                logger.error(f"Error parsing XLSX row: {e}")
+                continue
+        
+        wb.close()
+        stocks = [s for s in stocks_dict.values() if s['quantity'] > 0]
+        logger.info(f"XLSX parser found {len(stocks)} stocks")
+        
+    except Exception as e:
+        logger.error(f"XLSX parser error: {e}")
+    
+    return stocks
+
 def parse_generic_csv(content: str) -> List[dict]:
     """Parse generic CSV format"""
     stocks = []
