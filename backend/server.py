@@ -791,11 +791,121 @@ async def get_valuation_data(ticker: str):
     
     return fundamentals
 
-# ==================== PORTFOLIO ROUTES ====================
+# ==================== PORTFOLIO MANAGEMENT ROUTES ====================
+
+@api_router.get("/portfolios")
+async def get_portfolios(user: User = Depends(get_current_user)):
+    """Get all portfolios for the current user"""
+    portfolios = await db.portfolios.find({"user_id": user.user_id}, {"_id": 0}).to_list(100)
+    
+    # If no portfolios exist, create a default one
+    if not portfolios:
+        default_portfolio = Portfolio(
+            user_id=user.user_id,
+            name="Carteira Principal",
+            description="Carteira padrão",
+            is_default=True
+        )
+        doc = default_portfolio.model_dump()
+        doc["created_at"] = doc["created_at"].isoformat()
+        doc["updated_at"] = doc["updated_at"].isoformat()
+        await db.portfolios.insert_one(doc)
+        portfolios = [doc]
+        
+        # Update existing stocks/dividends to use this portfolio
+        await db.stocks.update_many(
+            {"user_id": user.user_id, "portfolio_id": None},
+            {"$set": {"portfolio_id": default_portfolio.portfolio_id}}
+        )
+        await db.dividends.update_many(
+            {"user_id": user.user_id, "portfolio_id": None},
+            {"$set": {"portfolio_id": default_portfolio.portfolio_id}}
+        )
+    
+    # Add stats for each portfolio
+    for portfolio in portfolios:
+        portfolio_id = portfolio.get("portfolio_id")
+        stocks_count = await db.stocks.count_documents({"user_id": user.user_id, "portfolio_id": portfolio_id})
+        portfolio["stocks_count"] = stocks_count
+    
+    return portfolios
+
+@api_router.post("/portfolios")
+async def create_portfolio(portfolio_data: PortfolioCreate, user: User = Depends(get_current_user)):
+    """Create a new portfolio"""
+    portfolio = Portfolio(
+        user_id=user.user_id,
+        name=portfolio_data.name,
+        description=portfolio_data.description,
+        is_default=False
+    )
+    doc = portfolio.model_dump()
+    doc["created_at"] = doc["created_at"].isoformat()
+    doc["updated_at"] = doc["updated_at"].isoformat()
+    await db.portfolios.insert_one(doc)
+    return {k: v for k, v in doc.items() if k != "_id"}
+
+@api_router.put("/portfolios/{portfolio_id}")
+async def update_portfolio(portfolio_id: str, portfolio_data: PortfolioUpdate, user: User = Depends(get_current_user)):
+    """Update a portfolio"""
+    update_data = {k: v for k, v in portfolio_data.model_dump().items() if v is not None}
+    if update_data:
+        update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        await db.portfolios.update_one(
+            {"portfolio_id": portfolio_id, "user_id": user.user_id},
+            {"$set": update_data}
+        )
+    portfolio = await db.portfolios.find_one({"portfolio_id": portfolio_id, "user_id": user.user_id}, {"_id": 0})
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    return portfolio
+
+@api_router.delete("/portfolios/{portfolio_id}")
+async def delete_portfolio(portfolio_id: str, user: User = Depends(get_current_user)):
+    """Delete a portfolio and optionally move its stocks"""
+    portfolio = await db.portfolios.find_one({"portfolio_id": portfolio_id, "user_id": user.user_id})
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    
+    if portfolio.get("is_default"):
+        raise HTTPException(status_code=400, detail="Cannot delete default portfolio")
+    
+    # Delete all stocks and dividends in this portfolio
+    await db.stocks.delete_many({"portfolio_id": portfolio_id, "user_id": user.user_id})
+    await db.dividends.delete_many({"portfolio_id": portfolio_id, "user_id": user.user_id})
+    
+    # Delete the portfolio
+    await db.portfolios.delete_one({"portfolio_id": portfolio_id, "user_id": user.user_id})
+    
+    return {"message": "Portfolio deleted", "deleted_stocks": True}
+
+@api_router.get("/portfolios/{portfolio_id}")
+async def get_portfolio(portfolio_id: str, user: User = Depends(get_current_user)):
+    """Get a specific portfolio with stats"""
+    portfolio = await db.portfolios.find_one({"portfolio_id": portfolio_id, "user_id": user.user_id}, {"_id": 0})
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    
+    # Add stats
+    stocks = await db.stocks.find({"portfolio_id": portfolio_id, "user_id": user.user_id}, {"_id": 0}).to_list(1000)
+    dividends = await db.dividends.find({"portfolio_id": portfolio_id, "user_id": user.user_id}, {"_id": 0}).to_list(10000)
+    
+    portfolio["stocks_count"] = len(stocks)
+    portfolio["total_invested"] = sum(s["quantity"] * s["average_price"] for s in stocks)
+    portfolio["total_current"] = sum(s["quantity"] * (s.get("current_price") or s["average_price"]) for s in stocks)
+    portfolio["total_dividends"] = sum(d["amount"] for d in dividends)
+    
+    return portfolio
+
+# ==================== PORTFOLIO STOCKS ROUTES ====================
 
 @api_router.get("/portfolio/stocks")
-async def get_stocks(user: User = Depends(get_current_user)):
-    stocks = await db.stocks.find({"user_id": user.user_id}, {"_id": 0}).to_list(1000)
+async def get_stocks(user: User = Depends(get_current_user), portfolio_id: Optional[str] = None):
+    """Get stocks, optionally filtered by portfolio"""
+    query = {"user_id": user.user_id}
+    if portfolio_id:
+        query["portfolio_id"] = portfolio_id
+    stocks = await db.stocks.find(query, {"_id": 0}).to_list(1000)
     return stocks
 
 @api_router.post("/portfolio/stocks")
