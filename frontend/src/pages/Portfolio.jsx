@@ -272,6 +272,9 @@ export default function Portfolio() {
     setImporting(true);
     const formDataObj = new FormData();
     formDataObj.append('file', file);
+    if (currentPortfolio?.portfolio_id) {
+      formDataObj.append('portfolio_id', currentPortfolio.portfolio_id);
+    }
 
     try {
       const response = await fetch(`${API}/portfolio/import`, {
