@@ -486,29 +486,28 @@ agent_communication:
 
   - agent: "main"
     message: |
-      IMPLEMENTAÇÃO DO PRÉ-PREENCHIMENTO DO VALUATION E CORREÇÃO DOS TOOLTIPS
+      CORREÇÃO DO CÁLCULO DE DIVIDENDO POR AÇÃO - ÚLTIMOS 12 MESES
       
-      BACKEND:
-      - Endpoint GET /api/stocks/valuation-data/{ticker} já implementado
-      - Usa fetch_investidor10_fundamentals() para buscar dados do site
-      - Testado via curl - retorna dados corretos para PETR4:
-        * current_price: 30.41
-        * dividend_per_share: 3.26
-        * dividend_yield: 10.7
-        * p_l: 5.05, p_vp: 0.93, roe: 18.33
+      PROBLEMA REPORTADO:
+      - Dividendo/ação estava sendo calculado incorretamente
+      - Somava apenas os primeiros 12 registros de dividendos (não por data)
       
-      FRONTEND (Valuation.jsx):
-      - TooltipProvider já envolve a página inteira
-      - Função fetchValuationData() já implementada
-      - Ao selecionar ticker, chama endpoint e preenche formulário
-      - handleStockSelect() chama fetchValuationData() automaticamente
+      CORREÇÃO APLICADA:
+      - Agora filtra dividendos dos últimos 365 dias por data (data_com)
+      - Soma apenas dividendos com data_com >= (hoje - 365 dias)
+      - Cálculo: Dividendo/Ação = soma dos dividendos nos últimos 12 meses
+      - DY% = (Dividendo/Ação / Preço Atual) × 100
+      
+      TESTES VIA CURL (todos passaram):
+      - PETR4: Preço R$30.41, Div/Ação R$3.26, DY 10.70%
+      - VALE3: Preço R$73.12, Div/Ação R$7.62, DY 10.42%
+      - ITUB4: Preço R$39.10, Div/Ação R$5.07, DY 12.98%
+      - BBDC4: Preço R$18.40, Div/Ação R$1.57, DY 8.54%
       
       PRECISA TESTAR (requer login Google):
       1. Fazer login com Google Auth
       2. Navegar para /valuation
-      3. Digitar PETR4 no campo ticker e clicar no botão de busca
-      4. Verificar se campos são preenchidos automaticamente:
-         - Preço Atual: ~30.41
-         - Dividendo/Ação: ~3.26
-      5. Passar mouse sobre ícones "?" para verificar tooltips
-      6. Calcular valuation e verificar resultados
+      3. Digitar PETR4 e buscar
+      4. Verificar preenchimento automático do formulário
+      5. Verificar tooltips (ícones ?)
+      6. Calcular valuation
