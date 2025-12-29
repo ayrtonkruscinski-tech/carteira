@@ -1234,13 +1234,14 @@ async def get_portfolio_evolution(user: User = Depends(get_current_user), period
     current_date = start_date
     cumulative_dividends = 0
     
-    # Pre-calculate dividends received before start_date
+    # Pre-calculate dividends received before start_date (only paid dividends)
     for div in dividends:
         payment_date = div.get("payment_date", "")[:10]
         if payment_date:
             try:
                 div_date = datetime.strptime(payment_date, "%Y-%m-%d").date()
-                if div_date < start_date:
+                # Only include if already paid AND before start_date
+                if div_date < start_date and div_date <= today:
                     cumulative_dividends += div["amount"]
             except:
                 pass
