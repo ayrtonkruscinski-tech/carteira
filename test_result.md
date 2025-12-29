@@ -206,6 +206,21 @@ backend:
         agent: "testing"
         comment: "CRITICAL ISSUES FOUND: 1) Generic CSV parser missing date format conversion - dates in DD/MM/YYYY format not converted to YYYY-MM-DD, 2) Generic CSV parser missing aggregation logic - multiple entries for same ticker not aggregated (PETR4 shows quantity=50 instead of 150), 3) Purchase date extraction working but format inconsistent. CEI/XLSX parsers have correct logic but generic CSV parser lacks both features. This breaks dividend sync eligibility checks which expect YYYY-MM-DD format."
 
+  - task: "Dividend Sync with F Suffix Fix"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Fixed ticker handling to remove trailing 'F' suffix (PETR4F -> PETR4). Each purchase kept as separate record for proper dividend calculation per purchase date."
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE TEST PASSED ✅ - Clean test with PETR4 stock (purchase_date: 2024-01-01, quantity: 100). Sync result: 33 dividends synced from 126 found by scraper. All dividends have correct ticker 'PETR4' (not 'PETR4F'). Scraper successfully looks for 'PETR4' on Investidor10. Purchase date eligibility logic working correctly. F suffix removal confirmed working in parsers."
+
 frontend:
   - task: "Dividends Sync Button"
     implemented: true
