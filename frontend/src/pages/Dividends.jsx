@@ -175,16 +175,27 @@ export default function Dividends() {
             <h1 className="text-3xl font-bold text-foreground mb-2">Dividendos</h1>
             <p className="text-muted-foreground">Acompanhe seus proventos recebidos</p>
           </div>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                data-testid="add-dividend-btn"
-                className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-[0_0_15px_rgba(245,158,11,0.3)]"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Registrar Dividendo
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Button
+              data-testid="sync-dividends-btn"
+              variant="outline"
+              onClick={handleSyncDividends}
+              disabled={syncing || stocks.length === 0}
+              className="border-primary text-primary hover:bg-primary/10"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
+              {syncing ? "Sincronizando..." : "Sincronizar"}
+            </Button>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  data-testid="add-dividend-btn"
+                  className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-[0_0_15px_rgba(245,158,11,0.3)]"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Registrar Dividendo
+                </Button>
+              </DialogTrigger>
             <DialogContent className="bg-card border-border max-w-md">
               <DialogHeader>
                 <DialogTitle className="text-foreground">Registrar Dividendo</DialogTitle>
