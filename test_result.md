@@ -259,7 +259,9 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Valuation Form Auto-Fill from Investidor10"
+    - "Tooltip display fix verification"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -445,3 +447,32 @@ agent_communication:
       - F suffix removal working ✅
       - Scraper finding dividends ✅
       - Dividend sync based on purchase dates working ✅
+
+  - agent: "main"
+    message: |
+      IMPLEMENTAÇÃO DO PRÉ-PREENCHIMENTO DO VALUATION E CORREÇÃO DOS TOOLTIPS
+      
+      BACKEND:
+      - Endpoint GET /api/stocks/valuation-data/{ticker} já implementado
+      - Usa fetch_investidor10_fundamentals() para buscar dados do site
+      - Testado via curl - retorna dados corretos para PETR4:
+        * current_price: 30.41
+        * dividend_per_share: 3.26
+        * dividend_yield: 10.7
+        * p_l: 5.05, p_vp: 0.93, roe: 18.33
+      
+      FRONTEND (Valuation.jsx):
+      - TooltipProvider já envolve a página inteira
+      - Função fetchValuationData() já implementada
+      - Ao selecionar ticker, chama endpoint e preenche formulário
+      - handleStockSelect() chama fetchValuationData() automaticamente
+      
+      PRECISA TESTAR (requer login Google):
+      1. Fazer login com Google Auth
+      2. Navegar para /valuation
+      3. Digitar PETR4 no campo ticker e clicar no botão de busca
+      4. Verificar se campos são preenchidos automaticamente:
+         - Preço Atual: ~30.41
+         - Dividendo/Ação: ~3.26
+      5. Passar mouse sobre ícones "?" para verificar tooltips
+      6. Calcular valuation e verificar resultados
