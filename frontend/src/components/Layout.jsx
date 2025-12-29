@@ -145,7 +145,7 @@ export const Layout = ({ children }) => {
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Briefcase className="w-5 h-5 text-primary" />
               </div>
-              <span className="text-lg font-bold text-foreground hidden sm:block">StockFolio</span>
+              <span className="text-lg font-bold text-foreground hidden sm:block">Carteira Inteligente</span>
             </Link>
 
             {/* Desktop Nav */}

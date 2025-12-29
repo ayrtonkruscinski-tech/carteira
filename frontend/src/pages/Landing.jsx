@@ -66,7 +66,7 @@ export default function Landing() {
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center glow-primary">
                 <TrendingUp className="w-6 h-6 text-primary" />
               </div>
-              <span className="text-2xl font-bold text-foreground">StockFolio</span>
+              <span className="text-2xl font-bold text-foreground">Carteira Inteligente</span>
             </div>
             <Button
               onClick={handleLogin}
@@ -182,10 +182,10 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-primary" />
-              <span className="font-semibold text-foreground">StockFolio</span>
+              <span className="font-semibold text-foreground">Carteira Inteligente</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              © 2025 StockFolio. Feito para investidores brasileiros.
+              © 2025 Carteira de Investimentos Inteligente. Feito para investidores brasileiros.
             </p>
           </div>
         </div>
