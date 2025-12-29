@@ -358,7 +358,66 @@ test_plan:
     - "Warren Buffett Valuation Pre-fill"
     - "Dividend payment_date in evolution"
 
+frontend:
+  - task: "Landing Page Public Features"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Landing.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE LANDING PAGE TEST COMPLETED ✅ - All public features working perfectly: 1) Landing page loads correctly with title 'Gerencie sua carteira de ações da B3', 2) Login buttons working ('Entrar com Google', 'Começar Agora', 'Criar Conta Grátis'), 3) Pink floating button (heart) opens donation modal with title 'Apoie o StockFolio' and shows both PIX keys (+5547988607103 and 5c435619-f86c-4e64-8f49-8f36b4a4004b), 4) Green floating button (message) opens support menu with 'Suporte' and 'Feedback' options, 5) Support modal shows email ayrtonkruscinski@hotmail.com and 'Abrir Cliente de Email' button, 6) Responsive design works on mobile/tablet/desktop, 7) All sections visible (features, footer), 8) No console errors found. All functionality from review request verified and working."
+
+  - task: "Floating Support Component"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/components/FloatingSupport.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "FLOATING SUPPORT FUNCTIONALITY VERIFIED ✅ - Both floating buttons working correctly: 1) Pink donation button (bg-pink-500) opens modal with correct PIX keys and copy functionality, 2) Green support button (bg-primary) opens menu with Suporte/Feedback options, 3) Support modal displays correct email (ayrtonkruscinski@hotmail.com), 4) Email client button present and functional, 5) All modals close properly with Escape key, 6) UI elements positioned correctly in bottom-right corner. Component fully functional as specified."
+
 agent_communication:
+  - agent: "testing"
+    message: |
+      STOCKFOLIO LANDING PAGE TESTING - COMPREHENSIVE RESULTS ✅
+      
+      TESTED FUNCTIONALITY (as per review request):
+      ✅ Landing page loads correctly at https://preview-abrir.preview.emergentagent.com
+      ✅ Main title: "Gerencie sua carteira de ações da B3" visible
+      ✅ StockFolio branding present and visible
+      ✅ "Entrar com Google" button in header working
+      ✅ "Começar Agora" button working  
+      ✅ "Criar Conta Grátis" CTA button working
+      ✅ Pink floating button (heart icon) opens donation modal
+      ✅ Donation modal shows title "Apoie o StockFolio"
+      ✅ Both PIX keys present: +5547988607103 and 5c435619-f86c-4e64-8f49-8f36b4a4004b
+      ✅ Copy buttons for PIX keys working
+      ✅ Green floating button (message icon) opens support menu
+      ✅ Support menu shows "Suporte" and "Feedback" options
+      ✅ Support modal shows email: ayrtonkruscinski@hotmail.com
+      ✅ "Abrir Cliente de Email" button present
+      ✅ Responsive design working (mobile/tablet/desktop)
+      ✅ Features section visible: "Tudo que você precisa para investir melhor"
+      ✅ Footer visible: "© 2025 StockFolio"
+      ✅ No console errors found
+      
+      TECHNICAL DETAILS:
+      - All floating buttons positioned correctly in bottom-right corner
+      - Modals open/close properly with proper animations
+      - PIX keys display correctly with copy functionality
+      - Email contact system working as expected
+      - All UI elements responsive across different screen sizes
+      - No JavaScript errors or broken functionality detected
+      
+      CONCLUSION: All landing page functionality working perfectly as specified in review request.
+
   - agent: "main"
     message: |
       Implementei a sincronização automática de dividendos:
