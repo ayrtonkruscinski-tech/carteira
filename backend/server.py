@@ -515,43 +515,118 @@ async def create_portfolio_snapshot(user: User = Depends(get_current_user)):
 def parse_cei_csv(content: str) -> List[dict]:
     """Parse CEI/B3 CSV export file"""
     stocks = []
-    reader = csv.DictReader(io.StringIO(content), delimiter=';')
+    stocks_dict = {}  # Para agregar por ticker
     
-    for row in reader:
+    # Try both delimiters
+    for delimiter in [';', ',']:
         try:
-            # CEI format fields
-            ticker = row.get('Código de Negociação', row.get('Código', '')).strip()
-            if not ticker:
+            reader = csv.DictReader(io.StringIO(content), delimiter=delimiter)
+            headers = reader.fieldnames
+            
+            if not headers:
                 continue
             
-            # Remove numbers at the end for some formats
-            ticker = re.sub(r'\s+', '', ticker).upper()
+            logger.info(f"CEI parser trying delimiter '{delimiter}', headers: {headers}")
             
-            quantity = float(row.get('Quantidade', row.get('Qtde.', '0')).replace('.', '').replace(',', '.'))
-            avg_price = float(row.get('Preço Médio', row.get('Preço de Compra', '0')).replace('.', '').replace(',', '.'))
+            # Check for CEI format headers
+            produto_col = None
+            qtd_col = None
+            preco_col = None
             
-            name = row.get('Produto', row.get('Especificação do Ativo', ticker))
+            for h in headers:
+                h_lower = h.lower().strip()
+                # Handle encoding issues
+                h_normalized = h_lower.replace('ã', 'a').replace('ç', 'c').replace('í', 'i').replace('ú', 'u').replace('á', 'a').replace('é', 'e').replace('ó', 'o')
+                
+                if 'produto' in h_normalized or 'ativo' in h_normalized:
+                    produto_col = h
+                elif 'codigo' in h_normalized or 'código' in h_normalized:
+                    produto_col = h
+                elif 'quantidade' in h_normalized or 'qtd' in h_normalized:
+                    qtd_col = h
+                elif 'preco' in h_normalized or 'preço' in h_normalized or 'unitario' in h_normalized or 'unitário' in h_normalized:
+                    preco_col = h
+                elif 'medio' in h_normalized or 'médio' in h_normalized:
+                    preco_col = h
             
-            # Try to get purchase date
-            purchase_date = row.get('Data da Operação', row.get('Data', None))
-            if purchase_date:
-                # Convert DD/MM/YYYY to YYYY-MM-DD
+            logger.info(f"CEI columns found - Produto: {produto_col}, Qtd: {qtd_col}, Preco: {preco_col}")
+            
+            if not produto_col:
+                continue
+            
+            for row in reader:
                 try:
-                    parts = purchase_date.split('/')
-                    if len(parts) == 3:
-                        purchase_date = f"{parts[2]}-{parts[1]}-{parts[0]}"
-                except:
-                    purchase_date = None
+                    produto = row.get(produto_col, '').strip()
+                    if not produto:
+                        continue
+                    
+                    # Extract ticker from "FIQE3 - UNIFIQUE TELECOMUNICAÇÕES S.A." format
+                    ticker = produto.split(' - ')[0].split(' ')[0].strip().upper()
+                    ticker = re.sub(r'[^A-Z0-9]', '', ticker)
+                    
+                    if not ticker or len(ticker) < 4:
+                        continue
+                    
+                    # Get name from produto
+                    name_parts = produto.split(' - ')
+                    name = name_parts[1].strip() if len(name_parts) > 1 else ticker
+                    
+                    # Parse quantity
+                    quantity = 0
+                    if qtd_col and row.get(qtd_col):
+                        qty_str = str(row.get(qtd_col, '0')).strip()
+                        qty_str = re.sub(r'[^\d.,\-]', '', qty_str)
+                        if qty_str:
+                            if ',' in qty_str and '.' in qty_str:
+                                qty_str = qty_str.replace('.', '').replace(',', '.')
+                            elif ',' in qty_str:
+                                qty_str = qty_str.replace(',', '.')
+                            quantity = float(qty_str)
+                    
+                    # Parse price
+                    avg_price = 0
+                    if preco_col and row.get(preco_col):
+                        price_str = str(row.get(preco_col, '0')).strip()
+                        # Remove R$, spaces, quotes
+                        price_str = re.sub(r'[R$\s"\']', '', price_str)
+                        if price_str:
+                            if ',' in price_str and '.' in price_str:
+                                price_str = price_str.replace('.', '').replace(',', '.')
+                            elif ',' in price_str:
+                                price_str = price_str.replace(',', '.')
+                            avg_price = float(price_str)
+                    
+                    # Aggregate by ticker
+                    if ticker in stocks_dict:
+                        old_qty = stocks_dict[ticker]['quantity']
+                        old_price = stocks_dict[ticker]['average_price']
+                        new_qty = old_qty + quantity
+                        # Calculate weighted average price
+                        if new_qty > 0:
+                            stocks_dict[ticker]['average_price'] = ((old_qty * old_price) + (quantity * avg_price)) / new_qty
+                        stocks_dict[ticker]['quantity'] = new_qty
+                    else:
+                        stocks_dict[ticker] = {
+                            "ticker": ticker,
+                            "name": name,
+                            "quantity": quantity,
+                            "average_price": avg_price,
+                            "purchase_date": None
+                        }
+                        
+                except Exception as e:
+                    logger.error(f"Error parsing CEI row: {e}")
+                    continue
             
-            stocks.append({
-                "ticker": ticker,
-                "name": name,
-                "quantity": quantity,
-                "average_price": avg_price,
-                "purchase_date": purchase_date
-            })
+            if stocks_dict:
+                stocks = list(stocks_dict.values())
+                # Filter out stocks with 0 or negative quantity
+                stocks = [s for s in stocks if s['quantity'] > 0]
+                logger.info(f"CEI parser found {len(stocks)} stocks after aggregation")
+                break
+                
         except Exception as e:
-            logger.error(f"Error parsing row: {e}")
+            logger.error(f"CEI parser error: {e}")
             continue
     
     return stocks
