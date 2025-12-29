@@ -520,7 +520,11 @@ def main():
     print("\n📋 Running Comprehensive Dividend Sync Test...")
     tester.test_dividends_sync_comprehensive()
     
-    # Test 8: Valuation
+    # Test 8: DELETE ALL Endpoints
+    print("\n📋 Testing DELETE ALL Endpoints...")
+    tester.test_delete_all_endpoints_comprehensive()
+    
+    # Test 9: Valuation
     print("\n📋 Testing Valuation...")
     tester.test_valuation_calculate()
     
