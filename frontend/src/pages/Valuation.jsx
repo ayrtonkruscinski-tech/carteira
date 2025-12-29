@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
-import { Calculator, TrendingUp, TrendingDown, HelpCircle, Search } from "lucide-react";
+import { Calculator, TrendingUp, TrendingDown, HelpCircle, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Tooltip,
@@ -26,6 +26,7 @@ export default function Valuation() {
   const [stocks, setStocks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [calculating, setCalculating] = useState(false);
+  const [searching, setSearching] = useState(false);
   const [results, setResults] = useState(null);
   const [formData, setFormData] = useState({
     ticker: "",
