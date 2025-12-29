@@ -220,6 +220,53 @@ export default function Dividends() {
   const totalReceived = receivedDividends.reduce((acc, d) => acc + d.amount, 0);
   const totalPending = pendingDividends.reduce((acc, d) => acc + d.amount, 0);
 
+  // Filtrar dados do gráfico por status e período
+  const getFilteredChartData = () => {
+    // Filtrar por status
+    let filteredDividends = dividends;
+    if (chartStatusFilter === "received") {
+      filteredDividends = receivedDividends;
+    } else if (chartStatusFilter === "pending") {
+      filteredDividends = pendingDividends;
+    }
+
+    // Filtrar por período
+    if (chartPeriodFilter !== "max") {
+      const monthsAgo = parseInt(chartPeriodFilter);
+      const cutoffDate = new Date();
+      cutoffDate.setMonth(cutoffDate.getMonth() - monthsAgo);
+      const cutoffStr = cutoffDate.toISOString().split("T")[0];
+      filteredDividends = filteredDividends.filter((d) => d.payment_date >= cutoffStr);
+    }
+
+    // Agrupar por mês
+    const byMonth = {};
+    filteredDividends.forEach((d) => {
+      const month = d.payment_date.substring(0, 7); // YYYY-MM
+      const isReceived = d.payment_date <= today;
+      
+      if (!byMonth[month]) {
+        byMonth[month] = { month, received: 0, pending: 0 };
+      }
+      
+      if (isReceived) {
+        byMonth[month].received += d.amount;
+      } else {
+        byMonth[month].pending += d.amount;
+      }
+    });
+
+    // Converter para array e ordenar por mês
+    return Object.values(byMonth)
+      .sort((a, b) => a.month.localeCompare(b.month))
+      .map((item) => ({
+        ...item,
+        month: new Date(item.month + "-01").toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }),
+      }));
+  };
+
+  const filteredChartData = getFilteredChartData();
+
   // Paginação - ordenar por data de pagamento (mais recente primeiro)
   const sortedDividends = [...dividends].sort((a, b) => 
     new Date(b.payment_date) - new Date(a.payment_date)
