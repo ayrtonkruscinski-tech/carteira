@@ -132,9 +132,135 @@ class StockFolioAPITester:
         """Test dividend synchronization from Investidor10"""
         return self.run_test("Sync Dividends from Investidor10", "POST", "dividends/sync", 200)
 
-    def test_dividends_summary(self):
-        """Test dividends summary"""
-        return self.run_test("Get Dividends Summary", "GET", "dividends/summary", 200)
+    def test_dividends_sync_comprehensive(self):
+        """Comprehensive test for dividend synchronization feature"""
+        print("\n🔍 Testing Comprehensive Dividend Sync Flow...")
+        
+        # Step 1: Get current user stocks
+        success, stocks_response = self.run_test("Get Portfolio Stocks for Sync", "GET", "portfolio/stocks", 200)
+        if not success:
+            print("❌ Failed to get portfolio stocks")
+            return False
+        
+        initial_stocks = stocks_response if isinstance(stocks_response, list) else []
+        print(f"   📊 Found {len(initial_stocks)} stocks in portfolio")
+        
+        # Step 2: Add PETR4 stock if not exists (with past purchase date)
+        petr4_exists = any(stock.get('ticker') == 'PETR4' for stock in initial_stocks)
+        if not petr4_exists:
+            print("   📈 Adding PETR4 stock with past purchase date...")
+            stock_data = {
+                "ticker": "PETR4",
+                "name": "Petrobras PN",
+                "quantity": 100,
+                "average_price": 35.50,
+                "purchase_date": "2024-01-01",  # Past date to ensure eligibility
+                "sector": "Petróleo",
+                "current_price": 38.50,
+                "dividend_yield": 12.5
+            }
+            success, add_response = self.run_test("Add PETR4 for Sync Test", "POST", "portfolio/stocks", 200, stock_data)
+            if not success:
+                print("❌ Failed to add PETR4 stock")
+                return False
+            print(f"   ✅ Added PETR4 with stock_id: {add_response.get('stock_id')}")
+        else:
+            print("   ✅ PETR4 already exists in portfolio")
+        
+        # Step 3: Get initial dividend count
+        success, initial_dividends = self.run_test("Get Initial Dividends", "GET", "dividends", 200)
+        if not success:
+            print("❌ Failed to get initial dividends")
+            return False
+        
+        initial_count = len(initial_dividends) if isinstance(initial_dividends, list) else 0
+        print(f"   📊 Initial dividend count: {initial_count}")
+        
+        # Step 4: Call dividend sync
+        print("   🔄 Calling dividend sync...")
+        success, sync_response = self.run_test("Sync Dividends", "POST", "dividends/sync", 200)
+        if not success:
+            print("❌ Dividend sync failed")
+            return False
+        
+        # Validate sync response structure
+        expected_fields = ['synced', 'skipped', 'total_tickers', 'message']
+        for field in expected_fields:
+            if field not in sync_response:
+                print(f"❌ Missing field '{field}' in sync response")
+                return False
+        
+        synced_count = sync_response.get('synced', 0)
+        skipped_count = sync_response.get('skipped', 0)
+        total_tickers = sync_response.get('total_tickers', 0)
+        
+        print(f"   ✅ Sync completed: {synced_count} synced, {skipped_count} skipped, {total_tickers} tickers processed")
+        
+        # Step 5: Verify dividends were created
+        success, final_dividends = self.run_test("Get Final Dividends", "GET", "dividends", 200)
+        if not success:
+            print("❌ Failed to get final dividends")
+            return False
+        
+        final_count = len(final_dividends) if isinstance(final_dividends, list) else 0
+        new_dividends = final_count - initial_count
+        
+        print(f"   📊 Final dividend count: {final_count} (added {new_dividends})")
+        
+        if new_dividends > 0:
+            print("   ✅ New dividends were created")
+            
+            # Check if PETR4 dividends exist
+            petr4_dividends = [d for d in final_dividends if d.get('ticker') == 'PETR4']
+            print(f"   📊 PETR4 dividends found: {len(petr4_dividends)}")
+            
+            if petr4_dividends:
+                # Validate dividend structure
+                sample_dividend = petr4_dividends[0]
+                required_fields = ['dividend_id', 'user_id', 'stock_id', 'ticker', 'amount', 'payment_date', 'type']
+                for field in required_fields:
+                    if field not in sample_dividend:
+                        print(f"❌ Missing field '{field}' in dividend record")
+                        return False
+                print("   ✅ Dividend records have correct structure")
+        else:
+            print("   ⚠️  No new dividends created (might be duplicates or no eligible dividends)")
+        
+        # Step 6: Test duplicate prevention - call sync again
+        print("   🔄 Testing duplicate prevention...")
+        success, second_sync = self.run_test("Second Sync Call", "POST", "dividends/sync", 200)
+        if not success:
+            print("❌ Second sync call failed")
+            return False
+        
+        second_synced = second_sync.get('synced', 0)
+        second_skipped = second_sync.get('skipped', 0)
+        
+        print(f"   📊 Second sync: {second_synced} synced, {second_skipped} skipped")
+        
+        if second_synced == 0 and second_skipped > 0:
+            print("   ✅ Duplicate prevention working correctly")
+        elif second_synced > 0:
+            print("   ⚠️  Some new dividends synced on second call (might be expected if new data)")
+        
+        # Step 7: Verify dividends summary
+        success, summary_response = self.run_test("Get Dividends Summary", "GET", "dividends/summary", 200)
+        if success and summary_response:
+            total_amount = summary_response.get('total', 0)
+            by_ticker = summary_response.get('by_ticker', [])
+            by_month = summary_response.get('by_month', [])
+            
+            print(f"   📊 Total dividends amount: R${total_amount}")
+            print(f"   📊 Tickers with dividends: {len(by_ticker)}")
+            print(f"   📊 Months with dividends: {len(by_month)}")
+            
+            if total_amount > 0:
+                print("   ✅ Dividends summary shows positive amounts")
+            else:
+                print("   ⚠️  No dividend amounts in summary")
+        
+        print("   ✅ Comprehensive dividend sync test completed")
+        return True
 
     def test_valuation_calculate(self):
         """Test valuation calculation"""
