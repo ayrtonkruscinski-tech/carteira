@@ -1025,23 +1025,35 @@ def parse_xlsx(file_bytes: bytes) -> List[dict]:
                             except ValueError:
                                 continue
                 
-                # Keep each purchase as separate record (don't aggregate)
-                if quantity > 0:
-                    stocks.append({
+                # Group by ticker + purchase_date
+                # Same ticker on same date = aggregate
+                # Same ticker on different dates = separate records
+                key = (ticker, purchase_date)
+                
+                if key in stocks_dict:
+                    old_qty = stocks_dict[key]['quantity']
+                    old_price = stocks_dict[key]['average_price']
+                    new_qty = old_qty + quantity
+                    if new_qty > 0 and avg_price > 0:
+                        stocks_dict[key]['average_price'] = ((old_qty * old_price) + (quantity * avg_price)) / new_qty
+                    stocks_dict[key]['quantity'] = new_qty
+                else:
+                    stocks_dict[key] = {
                         "ticker": ticker,
                         "name": name,
                         "quantity": quantity,
                         "average_price": avg_price,
                         "purchase_date": purchase_date,
                         "sector": None
-                    })
+                    }
                     
             except Exception as e:
                 logger.error(f"Error parsing XLSX row {row_idx}: {e}")
                 continue
         
         wb.close()
-        logger.info(f"XLSX parser found {len(stocks)} stock entries")
+        stocks = [s for s in stocks_dict.values() if s['quantity'] > 0]
+        logger.info(f"XLSX parser found {len(stocks)} stock entries (grouped by ticker+date)")
         
     except Exception as e:
         logger.error(f"XLSX parser error: {e}")
