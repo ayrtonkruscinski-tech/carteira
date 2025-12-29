@@ -119,6 +119,10 @@ export default function Valuation() {
           free_cash_flow: formData.free_cash_flow ? parseFloat(formData.free_cash_flow) * 1000000 : null,
           shares_outstanding: formData.shares_outstanding ? parseFloat(formData.shares_outstanding) * 1000000 : null,
           growth_rate: parseFloat(formData.growth_rate) / 100,
+          // Campos para método Buffett (em milhões)
+          net_income: formData.net_income ? parseFloat(formData.net_income) * 1000000 : null,
+          depreciation: formData.depreciation ? parseFloat(formData.depreciation) * 1000000 : null,
+          capex: formData.capex ? parseFloat(formData.capex) * 1000000 : null,
         }),
       });
 
