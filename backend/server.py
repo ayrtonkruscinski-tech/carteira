@@ -1148,13 +1148,17 @@ async def get_portfolio_history(user: User = Depends(get_current_user), days: in
     return list(reversed(snapshots))
 
 @api_router.get("/portfolio/evolution")
-async def get_portfolio_evolution(user: User = Depends(get_current_user), period: str = "1m"):
+async def get_portfolio_evolution(user: User = Depends(get_current_user), period: str = "1m", portfolio_id: Optional[str] = None):
     """
     Get portfolio evolution based on purchase dates.
     Period options: 1w (week), 1m (month), 12m (year), 5y (5 years), max (all time)
     """
-    stocks = await db.stocks.find({"user_id": user.user_id}, {"_id": 0}).to_list(1000)
-    dividends = await db.dividends.find({"user_id": user.user_id}, {"_id": 0}).to_list(10000)
+    query = {"user_id": user.user_id}
+    if portfolio_id:
+        query["portfolio_id"] = portfolio_id
+    
+    stocks = await db.stocks.find(query, {"_id": 0}).to_list(1000)
+    dividends = await db.dividends.find(query, {"_id": 0}).to_list(10000)
     
     if not stocks:
         return []
@@ -1188,12 +1192,18 @@ async def get_portfolio_evolution(user: User = Depends(get_current_user), period
     if earliest_purchase and earliest_purchase > start_date:
         start_date = earliest_purchase
     
-    # Create dividend lookup by date
+    # Create dividend lookup by payment_date (only include paid dividends)
     dividend_by_date = {}
     for div in dividends:
         payment_date = div.get("payment_date", "")[:10]
         if payment_date:
-            dividend_by_date[payment_date] = dividend_by_date.get(payment_date, 0) + div["amount"]
+            # Only include dividends with payment_date in the past (already paid)
+            try:
+                payment_dt = datetime.strptime(payment_date, "%Y-%m-%d").date()
+                if payment_dt <= today:  # Only include already paid dividends
+                    dividend_by_date[payment_date] = dividend_by_date.get(payment_date, 0) + div["amount"]
+            except:
+                pass
     
     # Generate evolution data points
     evolution = []
