@@ -2212,24 +2212,59 @@ async def calculate_valuation(data: ValuationRequest, user: User = Depends(get_c
             "recommendation": "Comprar" if dcf_price > data.current_price else "Aguardar"
         }
     
-    # Método Warren Buffett (Owner Earnings)
-    # Owner Earnings = Lucro Líquido + Depreciação - CapEx
-    # Valor Intrínseco = Owner Earnings * (8.5 + 2g) onde g = taxa de crescimento
-    # Aplicamos margem de segurança de 25%
+    # Método Warren Buffett (Owner Earnings com DCF projetado)
+    # 1. Calcular Owner Earnings = Lucro Líquido + Depreciação - CapEx
+    # 2. Taxa de Crescimento = ROE × (1 - Payout)
+    # 3. Projetar FCF para 10 anos com a taxa de crescimento
+    # 4. Descontar os fluxos usando taxa de retorno mínima
+    # 5. Calcular valor terminal
+    # 6. Somar valores presentes e dividir por número de ações
     if data.net_income and data.depreciation is not None and data.capex is not None and data.shares_outstanding:
         owner_earnings = data.net_income + data.depreciation - data.capex
         
-        # Usar taxa de crescimento fornecida ou padrão de 5%
-        growth_rate_percent = (data.growth_rate or 0.05) * 100
+        # Calcular taxa de crescimento baseada em ROE e Payout
+        # Growth = ROE × (1 - Payout/100)
+        if data.roe and data.payout:
+            retention_rate = 1 - (data.payout / 100)
+            growth_rate = (data.roe / 100) * retention_rate
+        else:
+            growth_rate = data.growth_rate or 0.05
         
-        # Fórmula de Benjamin Graham adaptada por Buffett
-        # Valor Intrínseco = Owner Earnings * (8.5 + 2g)
-        # onde 8.5 é o P/L base para empresa sem crescimento
-        # e g é a taxa de crescimento esperada em %
-        intrinsic_multiplier = 8.5 + (2 * growth_rate_percent)
-        intrinsic_value = owner_earnings * intrinsic_multiplier
+        # Limitar crescimento a valores razoáveis
+        growth_rate = min(max(growth_rate, 0), 0.25)  # 0% a 25%
         
-        # Preço por ação
+        discount_rate = data.discount_rate  # Taxa de retorno mínimo esperado
+        
+        # Projeção de 10 anos de Owner Earnings
+        projection_years = 10
+        projected_cash_flows = []
+        current_fcf = owner_earnings
+        
+        for year in range(1, projection_years + 1):
+            projected_fcf = current_fcf * ((1 + growth_rate) ** year)
+            present_value = projected_fcf / ((1 + discount_rate) ** year)
+            projected_cash_flows.append({
+                "year": year,
+                "fcf": round(projected_fcf, 0),
+                "present_value": round(present_value, 0)
+            })
+        
+        # Somar valores presentes dos fluxos projetados
+        sum_pv = sum(cf["present_value"] for cf in projected_cash_flows)
+        
+        # Valor Terminal (perpetuidade com crescimento de 3% após ano 10)
+        terminal_growth = 0.03  # Crescimento na perpetuidade
+        if discount_rate > terminal_growth:
+            terminal_fcf = projected_cash_flows[-1]["fcf"] * (1 + terminal_growth)
+            terminal_value = terminal_fcf / (discount_rate - terminal_growth)
+            terminal_pv = terminal_value / ((1 + discount_rate) ** projection_years)
+        else:
+            terminal_pv = 0
+        
+        # Valor Intrínseco Total
+        intrinsic_value = sum_pv + terminal_pv
+        
+        # Preço por ação (Valor Intrínseco)
         buffett_price_raw = intrinsic_value / data.shares_outstanding
         
         # Aplicar margem de segurança de 25% (comprar com desconto)
@@ -2238,9 +2273,16 @@ async def calculate_valuation(data: ValuationRequest, user: User = Depends(get_c
         
         results["buffett"] = {
             "name": "Método Warren Buffett",
-            "description": "Owner Earnings com Margem de Segurança",
-            "owner_earnings": round(owner_earnings, 2),
-            "intrinsic_value": round(buffett_price_raw, 2),
+            "description": "DCF com Owner Earnings (10 anos + perptuidade)",
+            "owner_earnings": round(owner_earnings / 1000000, 2),  # Em milhões
+            "growth_rate_used": f"{growth_rate * 100:.1f}%",
+            "discount_rate": f"{discount_rate * 100:.1f}%",
+            "roe": f"{data.roe:.1f}%" if data.roe else "N/A",
+            "payout": f"{data.payout:.1f}%" if data.payout else "N/A",
+            "sum_projected_pv": round(sum_pv / 1000000, 2),  # Em milhões
+            "terminal_value_pv": round(terminal_pv / 1000000, 2),  # Em milhões
+            "intrinsic_value_total": round(intrinsic_value / 1000000, 2),  # Em milhões
+            "intrinsic_price_per_share": round(buffett_price_raw, 2),
             "ceiling_price": round(buffett_price, 2),
             "margin_of_safety": f"{margin_of_safety * 100:.0f}%",
             "upside": round((buffett_price / data.current_price - 1) * 100, 2),
