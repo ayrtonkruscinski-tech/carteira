@@ -1086,6 +1086,10 @@ def main():
     print("\n📋 Testing Dividend Sync with F Suffix Fix...")
     tester.test_dividend_sync_with_f_suffix_fix()
     
+    # Test updated import and dividend sync functionality (Review Request)
+    print("\n📋 Testing Updated Import and Dividend Sync (Review Request)...")
+    tester.test_updated_import_and_dividend_sync()
+    
     # Test 8: DELETE ALL Endpoints
     print("\n📋 Testing DELETE ALL Endpoints...")
     tester.test_delete_all_endpoints_comprehensive()
