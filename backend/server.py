@@ -655,20 +655,19 @@ async def fetch_yahoo_finance_quote(ticker: str) -> dict:
 # ==================== ALPHA VANTAGE INTEGRATION (BACKUP) ====================
 
 async def fetch_alpha_vantage_quote(ticker: str) -> dict:
-    """Fetch real-time quote from Alpha Vantage"""
+    """Fetch real-time quote from Alpha Vantage with K8s-friendly error handling"""
     # Convert Brazilian ticker to Alpha Vantage format (add .SAO suffix)
     av_ticker = f"{ticker}.SAO"
     
     try:
-        async with httpx.AsyncClient() as http_client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=10.0)) as http_client:
             resp = await http_client.get(
                 ALPHA_VANTAGE_BASE,
                 params={
                     "function": "GLOBAL_QUOTE",
                     "symbol": av_ticker,
                     "apikey": ALPHA_VANTAGE_KEY
-                },
-                timeout=10.0
+                }
             )
             data = resp.json()
             
@@ -683,8 +682,12 @@ async def fetch_alpha_vantage_quote(ticker: str) -> dict:
                     "latest_trading_day": quote.get("07. latest trading day", ""),
                     "source": "alpha_vantage"
                 }
+    except httpx.ConnectError:
+        logger.debug(f"Alpha Vantage connection error for {ticker}")
+    except httpx.TimeoutException:
+        logger.debug(f"Alpha Vantage timeout for {ticker}")
     except Exception as e:
-        logger.error(f"Alpha Vantage error for {ticker}: {e}")
+        logger.debug(f"Alpha Vantage unavailable for {ticker}: {type(e).__name__}")
     
     return None
 
