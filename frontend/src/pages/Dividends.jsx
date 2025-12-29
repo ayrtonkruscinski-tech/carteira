@@ -82,10 +82,13 @@ export default function Dividends() {
   // Get current portfolio
   const portfolioContext = usePortfolioSafe();
   const currentPortfolio = portfolioContext?.currentPortfolio;
+  const portfolioLoading = portfolioContext?.loading;
 
   useEffect(() => {
-    fetchData();
-  }, [currentPortfolio?.portfolio_id]);
+    if (!portfolioLoading) {
+      fetchData();
+    }
+  }, [currentPortfolio?.portfolio_id, portfolioLoading]);
 
   const fetchData = async () => {
     try {
