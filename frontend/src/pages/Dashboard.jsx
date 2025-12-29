@@ -51,17 +51,22 @@ export default function Dashboard() {
   const [stockDividends, setStockDividends] = useState({});
   const [evolutionPeriod, setEvolutionPeriod] = useState('1m');
 
+  // Get current portfolio
+  const portfolioContext = usePortfolioSafe();
+  const currentPortfolio = portfolioContext?.currentPortfolio;
+
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [currentPortfolio?.portfolio_id]);
 
   useEffect(() => {
     fetchEvolution();
-  }, [evolutionPeriod]);
+  }, [evolutionPeriod, currentPortfolio?.portfolio_id]);
 
   const fetchEvolution = async () => {
     try {
-      const response = await fetch(`${API}/portfolio/evolution?period=${evolutionPeriod}`, { credentials: 'include' });
+      const portfolioParam = currentPortfolio?.portfolio_id ? `&portfolio_id=${currentPortfolio.portfolio_id}` : "";
+      const response = await fetch(`${API}/portfolio/evolution?period=${evolutionPeriod}${portfolioParam}`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         setPortfolioEvolution(data);
@@ -73,14 +78,16 @@ export default function Dashboard() {
 
   const fetchData = async () => {
     try {
+      const portfolioParam = currentPortfolio?.portfolio_id ? `?portfolio_id=${currentPortfolio.portfolio_id}` : "";
+      const portfolioParamAnd = currentPortfolio?.portfolio_id ? `&portfolio_id=${currentPortfolio.portfolio_id}` : "";
       const [summaryRes, stocksRes, dividendsRes, historyRes, alertsRes, allDividendsRes, evolutionRes] = await Promise.all([
-        fetch(`${API}/portfolio/summary`, { credentials: 'include' }),
-        fetch(`${API}/portfolio/stocks`, { credentials: 'include' }),
-        fetch(`${API}/dividends/summary`, { credentials: 'include' }),
-        fetch(`${API}/portfolio/history?days=30`, { credentials: 'include' }),
+        fetch(`${API}/portfolio/summary${portfolioParam}`, { credentials: 'include' }),
+        fetch(`${API}/portfolio/stocks${portfolioParam}`, { credentials: 'include' }),
+        fetch(`${API}/dividends/summary${portfolioParam}`, { credentials: 'include' }),
+        fetch(`${API}/portfolio/history?days=30${portfolioParamAnd}`, { credentials: 'include' }),
         fetch(`${API}/alerts?unread_only=true`, { credentials: 'include' }),
-        fetch(`${API}/dividends`, { credentials: 'include' }),
-        fetch(`${API}/portfolio/evolution?period=${evolutionPeriod}`, { credentials: 'include' }),
+        fetch(`${API}/dividends${portfolioParam}`, { credentials: 'include' }),
+        fetch(`${API}/portfolio/evolution?period=${evolutionPeriod}${portfolioParamAnd}`, { credentials: 'include' }),
       ]);
 
       if (summaryRes.ok) setSummary(await summaryRes.json());
