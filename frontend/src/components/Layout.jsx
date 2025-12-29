@@ -26,7 +26,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { path: "/portfolio", label: "Carteira", icon: Briefcase },
-  { path: "/dividends", label: "Dividendos", icon: Coins },
+  { path: "/dividends", label: "Proventos", icon: Coins },
   { path: "/valuation", label: "Valuation", icon: Calculator },
   { path: "/analysis", label: "Análise IA", icon: Brain },
 ];
