@@ -269,7 +269,10 @@ export default function Dashboard() {
                         backgroundColor: '#121417',
                         border: '1px solid #1E293B',
                         borderRadius: '8px',
+                        color: '#E2E8F0',
                       }}
+                      labelStyle={{ color: '#94A3B8' }}
+                      itemStyle={{ color: '#E2E8F0' }}
                       formatter={(value) => [formatCurrency(value), 'Patrimônio']}
                       labelFormatter={(label) => new Date(label).toLocaleDateString('pt-BR')}
                     />
