@@ -1328,14 +1328,6 @@ async def delete_all_dividends(user: User = Depends(get_current_user)):
     result = await db.dividends.delete_many({"user_id": user.user_id})
     return {"message": f"{result.deleted_count} dividendos excluídos", "deleted": result.deleted_count}
 
-@api_router.delete("/portfolio/stocks/all")
-async def delete_all_stocks(user: User = Depends(get_current_user)):
-    """Delete all stocks for the current user"""
-    result = await db.stocks.delete_many({"user_id": user.user_id})
-    # Also delete related dividends
-    await db.dividends.delete_many({"user_id": user.user_id})
-    return {"message": f"{result.deleted_count} ações excluídas", "deleted": result.deleted_count}
-
 @api_router.post("/dividends/sync")
 async def sync_dividends(user: User = Depends(get_current_user)):
     """
