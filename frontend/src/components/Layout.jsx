@@ -104,6 +104,15 @@ export const Layout = ({ children }) => {
 
             {/* User Menu */}
             <div className="flex items-center gap-4">
+              {/* Alert Bell */}
+              {alertCount > 0 && (
+                <Link to="/dashboard" className="relative">
+                  <Bell className="w-5 h-5 text-accent" />
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
+                    {alertCount}
+                  </span>
+                </Link>
+              )}
               {user && (
                 <div className="hidden sm:flex items-center gap-3">
                   <img
