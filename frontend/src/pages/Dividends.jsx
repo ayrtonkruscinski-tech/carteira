@@ -487,7 +487,7 @@ export default function Dividends() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Coins className="w-5 h-5 text-primary" />
-                Dividendos por Ação
+                Proventos por Ação
               </CardTitle>
             </CardHeader>
             <CardContent>
