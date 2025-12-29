@@ -1063,8 +1063,9 @@ def parse_xlsx(file_bytes: bytes) -> List[dict]:
     return stocks
 
 def parse_generic_csv(content: str) -> List[dict]:
-    """Parse generic CSV format - keeps each purchase as separate record"""
+    """Parse generic CSV format - groups by ticker + purchase_date"""
     stocks = []
+    stocks_dict = {}  # Key: (ticker, purchase_date)
     
     # Try different delimiters
     for delimiter in [',', ';', '\t', '|']:
