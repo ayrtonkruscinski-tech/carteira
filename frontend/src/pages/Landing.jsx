@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { TrendingUp, PieChart, Calculator, Brain, ArrowRight, Shield, Zap } from "lucide-react";
+import { FloatingSupport } from "../components/FloatingSupport";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -181,6 +182,9 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+
+      {/* Floating Support Button */}
+      <FloatingSupport />
     </div>
   );
 }
