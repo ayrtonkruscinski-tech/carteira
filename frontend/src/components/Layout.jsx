@@ -19,7 +19,7 @@ import {
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { toast } from "sonner";
-import { usePortfolio } from "../context/PortfolioContext";
+import { usePortfolioSafe } from "../context/PortfolioContext";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
