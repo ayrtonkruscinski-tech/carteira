@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "./components/ui/sonner";
+import { PortfolioProvider } from "./context/PortfolioContext";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Portfolio from "./pages/Portfolio";
@@ -23,27 +24,37 @@ function AppRouter() {
       <Route path="/" element={<Landing />} />
       <Route path="/dashboard" element={
         <ProtectedRoute>
-          <Dashboard />
+          <PortfolioProvider>
+            <Dashboard />
+          </PortfolioProvider>
         </ProtectedRoute>
       } />
       <Route path="/portfolio" element={
         <ProtectedRoute>
-          <Portfolio />
+          <PortfolioProvider>
+            <Portfolio />
+          </PortfolioProvider>
         </ProtectedRoute>
       } />
       <Route path="/dividends" element={
         <ProtectedRoute>
-          <Dividends />
+          <PortfolioProvider>
+            <Dividends />
+          </PortfolioProvider>
         </ProtectedRoute>
       } />
       <Route path="/valuation" element={
         <ProtectedRoute>
-          <Valuation />
+          <PortfolioProvider>
+            <Valuation />
+          </PortfolioProvider>
         </ProtectedRoute>
       } />
       <Route path="/analysis" element={
         <ProtectedRoute>
-          <Analysis />
+          <PortfolioProvider>
+            <Analysis />
+          </PortfolioProvider>
         </ProtectedRoute>
       } />
     </Routes>
