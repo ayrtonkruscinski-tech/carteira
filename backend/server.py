@@ -910,8 +910,30 @@ async def get_stocks(user: User = Depends(get_current_user), portfolio_id: Optio
 
 @api_router.post("/portfolio/stocks")
 async def add_stock(stock_data: StockCreate, user: User = Depends(get_current_user)):
+    # Get or create default portfolio if no portfolio_id provided
+    portfolio_id = stock_data.portfolio_id
+    if not portfolio_id:
+        # Get default portfolio
+        default_portfolio = await db.portfolios.find_one({"user_id": user.user_id, "is_default": True})
+        if not default_portfolio:
+            # Create default portfolio
+            default_portfolio = Portfolio(
+                user_id=user.user_id,
+                name="Carteira Principal",
+                description="Carteira padrão",
+                is_default=True
+            )
+            doc = default_portfolio.model_dump()
+            doc["created_at"] = doc["created_at"].isoformat()
+            doc["updated_at"] = doc["updated_at"].isoformat()
+            await db.portfolios.insert_one(doc)
+            portfolio_id = default_portfolio.portfolio_id
+        else:
+            portfolio_id = default_portfolio.get("portfolio_id")
+    
     stock = Stock(
         user_id=user.user_id,
+        portfolio_id=portfolio_id,
         ticker=stock_data.ticker.upper(),
         name=stock_data.name,
         quantity=stock_data.quantity,
