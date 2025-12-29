@@ -78,13 +78,18 @@ export default function Portfolio() {
     ceiling_price: "",
   });
 
+  // Get current portfolio
+  const portfolioContext = usePortfolioSafe();
+  const currentPortfolio = portfolioContext?.currentPortfolio;
+
   useEffect(() => {
     fetchStocks();
-  }, []);
+  }, [currentPortfolio?.portfolio_id]);
 
   const fetchStocks = async () => {
     try {
-      const response = await fetch(`${API}/portfolio/stocks`, {
+      const portfolioParam = currentPortfolio?.portfolio_id ? `?portfolio_id=${currentPortfolio.portfolio_id}` : "";
+      const response = await fetch(`${API}/portfolio/stocks${portfolioParam}`, {
         credentials: "include",
       });
       if (response.ok) {
