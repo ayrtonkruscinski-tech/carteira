@@ -193,6 +193,14 @@ export default function Dividends() {
     }).format(value);
   };
 
+  // Separar dividendos recebidos e a receber
+  const today = new Date().toISOString().split("T")[0];
+  const receivedDividends = dividends.filter((d) => d.payment_date <= today);
+  const pendingDividends = dividends.filter((d) => d.payment_date > today);
+  
+  const totalReceived = receivedDividends.reduce((acc, d) => acc + d.amount, 0);
+  const totalPending = pendingDividends.reduce((acc, d) => acc + d.amount, 0);
+
   if (loading) {
     return (
       <Layout>
