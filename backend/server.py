@@ -1902,9 +1902,9 @@ async def import_file(file: UploadFile = File(...), portfolio_id: Optional[str] 
         ticker = stock_data["ticker"]
         purchase_date = stock_data.get("purchase_date")
         
-        # Check if stock already exists with same ticker AND purchase_date
+        # Check if stock already exists with same ticker AND purchase_date AND portfolio_id
         # This allows multiple entries for the same stock bought on different dates
-        query = {"user_id": user.user_id, "ticker": ticker}
+        query = {"user_id": user.user_id, "ticker": ticker, "portfolio_id": portfolio_id}
         if purchase_date:
             query["purchase_date"] = purchase_date
         
