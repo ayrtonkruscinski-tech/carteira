@@ -1,0 +1,147 @@
+{
+  "identity": {
+    "name": "E1",
+    "role": "Creative Designer",
+    "principles": [
+      "Fusion over Imitation",
+      "Emotion First",
+      "Content is king",
+      "Zoom in",
+      "Negative Space",
+      "Contrast"
+    ]
+  },
+  "project_context": {
+    "type": "Dashboard & Admin Panel",
+    "domain": "Fintech / Stock Analysis",
+    "target_audience": "Brazilian Investors, Financial Analysts",
+    "emotional_tone": "Professional, Trustworthy, Precise, Sophisticated",
+    "visual_mood": "Dark Mode, High Contrast, Electric Accents"
+  },
+  "typography": {
+    "fonts": {
+      "heading": "Manrope",
+      "body": "Manrope",
+      "mono": "JetBrains Mono"
+    },
+    "weights": {
+      "heading": "font-bold",
+      "body": "font-normal",
+      "mono": "font-medium"
+    },
+    "sizes": {
+      "h1": "text-4xl md:text-5xl tracking-tight",
+      "h2": "text-3xl md:text-4xl tracking-tight",
+      "h3": "text-2xl md:text-3xl tracking-tight",
+      "body": "text-base leading-relaxed",
+      "small": "text-sm text-muted-foreground",
+      "mono_lg": "text-xl md:text-2xl font-mono tracking-tight",
+      "mono_sm": "text-sm font-mono"
+    },
+    "instructions": "Use Manrope for all UI text. Use JetBrains Mono for ALL financial data, stock prices, and percentages. Headings must be tight."
+  },
+  "colors": {
+    "palette": {
+      "background": "#0B0F13",
+      "foreground": "#F8FAFC",
+      "card": "#121417",
+      "card_foreground": "#F8FAFC",
+      "primary": "#00E599",
+      "primary_foreground": "#0B0F13",
+      "secondary": "#3B82F6",
+      "secondary_foreground": "#F8FAFC",
+      "muted": "#1E293B",
+      "muted_foreground": "#94A3B8",
+      "accent": "#F59E0B",
+      "accent_foreground": "#0B0F13",
+      "destructive": "#EF4444",
+      "destructive_foreground": "#F8FAFC",
+      "border": "#1E293B",
+      "input": "#1E293B",
+      "ring": "#00E599"
+    },
+    "chart_colors": [
+      "#00E599",
+      "#3B82F6",
+      "#F59E0B",
+      "#EF4444",
+      "#8B5CF6"
+    ],
+    "gradients": {
+      "primary": "from-[#00E599] to-[#3B82F6]",
+      "surface": "from-[#121417] to-[#0B0F13]"
+    },
+    "instructions": "Implement a strict Dark Mode. Backgrounds are deep charcoal (#0B0F13), NOT pure black. Cards are slightly lighter (#121417). Use Neon Green (#00E599) for primary actions and positive trends. Use Red (#EF4444) for negative trends. Use Amber (#F59E0B) for warnings or dividends."
+  },
+  "layout": {
+    "grid_system": "Control Room Grid",
+    "spacing": "Generous (p-6, p-8 for containers)",
+    "container_width": "max-w-7xl mx-auto",
+    "border_radius": "rounded-lg",
+    "instructions": "Use a dense grid for the dashboard. Summary cards at the top (col-span-1), Main Chart in the middle (col-span-2 or 3), Feed/List on the side. Use 'gap-4' or 'gap-6'. Ensure every pixel is utilized."
+  },
+  "components": {
+    "cards": {
+      "style": "Flat background (#121417), 1px subtle border (border-border), no shadow by default.",
+      "hover": "Slight lift (-translate-y-1), subtle shadow (shadow-lg), border color lightens."
+    },
+    "buttons": {
+      "primary": "bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_15px_rgba(0,229,153,0.3)]",
+      "secondary": "bg-secondary/10 text-secondary hover:bg-secondary/20 border border-secondary/20",
+      "ghost": "hover:bg-muted hover:text-foreground"
+    },
+    "inputs": {
+      "style": "bg-input/50 border-input focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-muted-foreground"
+    },
+    "charts": {
+      "library": "Recharts",
+      "style": "Minimalist. Hide axis lines if possible. Use tooltips with dark backgrounds and neon text."
+    },
+    "tables": {
+      "style": "Compact. Row hover effects (bg-muted/50). Mono font for numeric columns."
+    }
+  },
+  "visual_enhancers": {
+    "glassmorphism": "Use for sticky headers and overlays: bg-background/70 backdrop-blur-xl border-b border-white/5.",
+    "gradients": "Use subtle radial gradients behind hero charts to create depth.",
+    "borders": "Use 1px borders with low opacity (border-white/10) to define structure without clutter.",
+    "shadows": "Use colored shadows for primary actions (e.g., green shadow for green buttons)."
+  },
+  "image_urls": {
+    "abstract_backgrounds": [
+      "https://images.unsplash.com/photo-1647067517631-aa36cda58a17?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDN8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGZpbmFuY2lhbCUyMGRhdGElMjBkYXJrJTIwYmFja2dyb3VuZHxlbnwwfHx8fDE3NjY5MjQ2NzV8MA&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1640451859877-1374a1155215?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDN8MHwxfHNlYXJjaHwyfHxhYnN0cmFjdCUyMGZpbmFuY2lhbCUyMGRhdGElMjBkYXJrJTIwYmFja2dyb3VuZHxlbnwwfHx8fDE3NjY5MjQ2NzV8MA&ixlib=rb-4.1.0&q=85"
+    ],
+    "investor_portraits": [
+      "https://images.unsplash.com/photo-1640531005390-38bd92755d6a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBpbnZlc3RvciUyMHBvcnRyYWl0fGVufDB8fHx8MTc2Njk3Nzk2NXww&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1659128103024-e73f383e18f2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwyfHxwcm9mZXNzaW9uYWwlMjBpbnZlc3RvciUyMHBvcnRyYWl0fGVufDB8fHx8MTc2Njk3Nzk2NXww&ixlib=rb-4.1.0&q=85"
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Implement the Dark Mode theme immediately in tailwind.config.js and index.css.",
+    "Use 'Manrope' for all UI text and 'JetBrains Mono' for all numbers/financial data.",
+    "Create a 'DashboardLayout' component that uses the 'Control Room' grid strategy.",
+    "Use Recharts for all data visualization. Style them to match the neon palette.",
+    "Ensure all interactive elements have hover states and transitions.",
+    "Use the provided image URLs for backgrounds or user avatars where appropriate.",
+    "Do NOT use gradients for backgrounds, use solid deep charcoal (#0B0F13).",
+    "Add 'data-testid' to all interactive elements."
+  ],
+  "universal_guidelines": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy",
+    "Use glass-morphism effects with backdrop filters (12-24px blur)",
+    "You MUST NOT apply universal transition. Eg: transition: all.",
+    "You MUST NOT center align the app container.",
+    "Always use modern button styles like pill-shaped, or sharp button with interaction animations & color relevant to the app style",
+    "NEVER: use AI assistant Emoji characters like 🤖🧠 etc for icons.",
+    "Every interaction needs micro-animations.",
+    "Use 2-3x more spacing than feels comfortable.",
+    "Subtle grain textures, noise overlays, custom cursors, selection states, and loading animations: separates good from extraordinary.",
+    "Prioritize using pre-existing components from src/components/ui when applicable",
+    "Components MUST use named exports",
+    "Pages MUST use default exports",
+    "Use sonner for toasts"
+  ]
+}
