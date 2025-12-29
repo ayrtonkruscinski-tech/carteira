@@ -701,6 +701,9 @@ export default function Dividends() {
           </Card>
         </div>
 
+        {/* Ad Banner */}
+        <AdBannerHorizontal />
+
         {/* Proventos List */}
         <Card className="bg-card border-border">
           <CardHeader>
