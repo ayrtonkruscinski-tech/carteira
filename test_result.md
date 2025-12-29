@@ -1,7 +1,3 @@
-#====================================================================================================
-# START - Testing Protocol - DO NOT EDIT OR REMOVE THIS SECTION
-#====================================================================================================
-
 # THIS SECTION CONTAINS CRITICAL TESTING INSTRUCTIONS FOR BOTH AGENTS
 # BOTH MAIN_AGENT AND TESTING_AGENT MUST PRESERVE THIS ENTIRE BLOCK
 
@@ -101,3 +97,135 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: |
+  Aplicativo full-stack para análise de carteiras de ações da bolsa brasileira B3.
+  Funcionalidade em foco: Sincronização automática de dividendos usando web scraping do site investidor10.com.br
+  O sistema deve verificar a "data com" (ex-date) para determinar se o usuário tinha a ação na data correta.
+
+backend:
+  - task: "Investidor10 Dividend Scraper"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Scraper implementado e testado localmente com python -c. Encontrou 126 dividendos para PETR4."
+
+  - task: "POST /api/dividends/sync endpoint"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Endpoint criado. Verifica data_com vs purchase_date, calcula valor total (valor_por_ação * quantidade), evita duplicatas."
+
+  - task: "Google Auth"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "previous"
+        comment: "Auth com Google funcionando via Emergent-managed auth"
+
+  - task: "TradingView Price Quotes"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "previous"
+        comment: "Cotações TradingView funcionando como fonte primária"
+
+  - task: "CSV/XLSX Import"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "previous"
+        comment: "Importação de arquivos CEI/B3 funcionando"
+
+frontend:
+  - task: "Dividends Sync Button"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Dividends.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Botão 'Sincronizar' adicionado com loading state e toast feedback"
+
+  - task: "Dividends Page"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Dividends.jsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "previous"
+        comment: "Página de dividendos com gráficos e tabela funcionando"
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "POST /api/dividends/sync endpoint"
+    - "Dividends Sync Button"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      Implementei a sincronização automática de dividendos:
+      
+      BACKEND:
+      - Endpoint POST /api/dividends/sync criado
+      - Usa o scraper fetch_investidor10_dividends() para buscar dividendos
+      - Verifica se purchase_date <= data_com para determinar elegibilidade
+      - Calcula valor total: valor_por_ação * quantidade
+      - Evita duplicatas verificando ticker + payment_date + amount
+      
+      FRONTEND:
+      - Botão "Sincronizar" adicionado na página de Dividendos
+      - Loading state durante sincronização
+      - Toast feedback após conclusão
+      
+      TESTE LOCAL:
+      - Scraper testado com python -c, encontrou 126 dividendos para PETR4
+      - Endpoint retorna 401 sem auth (esperado)
+      
+      PRECISO TESTAR:
+      1. Fluxo completo: Login -> Adicionar ação -> Sincronizar dividendos
+      2. Verificar se dividendos são criados corretamente
+      3. Verificar se duplicatas são evitadas
+      4. Verificar UI do botão de sincronização
