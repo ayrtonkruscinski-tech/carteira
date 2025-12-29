@@ -346,10 +346,7 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus:
-    - "Multiple Portfolios Feature"
-    - "Warren Buffett Valuation Pre-fill"
-    - "Dividend payment_date in evolution"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -357,6 +354,9 @@ test_plan:
     - "Dividend Sync with F Suffix Fix"
     - "Updated Import and Dividend Sync with Grouping"
     - "CSV/XLSX Import"
+    - "Multiple Portfolios Feature"
+    - "Warren Buffett Valuation Pre-fill"
+    - "Dividend payment_date in evolution"
 
 agent_communication:
   - agent: "main"
