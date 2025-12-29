@@ -364,10 +364,15 @@ export default function Dashboard() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Dividendos Totais</p>
+                  <p className="text-sm text-muted-foreground mb-1">Dividendos Recebidos</p>
                   <p className="text-2xl font-bold font-mono text-accent" data-testid="total-dividends">
                     {formatCurrency(summary?.total_dividends || 0)}
                   </p>
+                  {summary?.total_dividends_pending > 0 && (
+                    <p className="text-xs text-blue-400 mt-1">
+                      + {formatCurrency(summary.total_dividends_pending)} a receber
+                    </p>
+                  )}
                 </div>
                 <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
                   <Coins className="w-6 h-6 text-accent" />
