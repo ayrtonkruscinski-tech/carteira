@@ -160,6 +160,8 @@ class ValuationRequest(BaseModel):
     net_income: Optional[float] = None  # Lucro Líquido
     depreciation: Optional[float] = None  # Depreciação e Amortização
     capex: Optional[float] = None  # Capital Expenditure
+    roe: Optional[float] = None  # Return on Equity (%)
+    payout: Optional[float] = None  # Payout ratio (%)
 
 class AnalysisRequest(BaseModel):
     ticker: str
