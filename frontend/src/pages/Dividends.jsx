@@ -119,6 +119,36 @@ export default function Dividends() {
     }
   };
 
+  const handleSyncDividends = async () => {
+    setSyncing(true);
+    try {
+      const response = await fetch(`${API}/dividends/sync`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.synced > 0) {
+          toast.success(`${result.synced} dividendos sincronizados!`);
+        } else if (result.skipped > 0) {
+          toast.info("Todos os dividendos já estão sincronizados.");
+        } else {
+          toast.info("Nenhum dividendo encontrado para sincronizar.");
+        }
+        fetchData();
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || "Erro ao sincronizar dividendos");
+      }
+    } catch (error) {
+      console.error("Error syncing dividends:", error);
+      toast.error("Erro ao sincronizar dividendos");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const formatCurrency = (value) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
