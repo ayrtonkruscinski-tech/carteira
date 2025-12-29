@@ -624,7 +624,8 @@ async def refresh_portfolio_prices(user: User = Depends(get_current_user)):
                 new_price = tv_data["price"]
                 source = "tradingview"
             else:
-                # Fallback to Alpha Vantage
+                # Fallback to Alpha Vantage with small delay to avoid rate limit
+                await asyncio.sleep(0.3)  # 300ms delay between Alpha Vantage calls
                 av_data = await fetch_alpha_vantage_quote(ticker)
                 if av_data and av_data["price"] > 0:
                     new_price = av_data["price"]
@@ -635,6 +636,7 @@ async def refresh_portfolio_prices(user: User = Depends(get_current_user)):
                 logger.info(f"Fetched {ticker}: R${new_price:.2f} (source: {source})")
             else:
                 errors.append(ticker)
+                logger.warning(f"Could not fetch price for {ticker}")
                 
         except Exception as e:
             logger.error(f"Error fetching price for {ticker}: {e}")
