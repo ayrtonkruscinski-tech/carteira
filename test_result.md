@@ -259,13 +259,14 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus:
-    - "CSV/XLSX Import"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
   completed_tests:
     - "Dividend Sync with F Suffix Fix"
+    - "Updated Import and Dividend Sync with Grouping"
+    - "CSV/XLSX Import"
 
 agent_communication:
   - agent: "main"
