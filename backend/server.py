@@ -782,6 +782,10 @@ def parse_cei_csv(content: str) -> List[dict]:
                     ticker = produto.split(' - ')[0].split(' ')[0].strip().upper()
                     ticker = re.sub(r'[^A-Z0-9]', '', ticker)
                     
+                    # Remove trailing "F" (fracionário) from ticker
+                    if ticker.endswith('F') and len(ticker) > 4:
+                        ticker = ticker[:-1]
+                    
                     if not ticker or len(ticker) < 4:
                         continue
                     
