@@ -135,7 +135,7 @@ class StockFolioAPITester:
     def test_dividends_summary(self):
         """Test dividends summary"""
         return self.run_test("Get Dividends Summary", "GET", "dividends/summary", 200)
-        """Comprehensive test for dividend synchronization feature"""
+    def test_dividends_sync_comprehensive(self):
         print("\n🔍 Testing Comprehensive Dividend Sync Flow...")
         
         # Step 1: Get current user stocks
