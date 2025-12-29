@@ -498,16 +498,56 @@ export default function Dividends() {
           {/* Monthly Chart */}
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-accent" />
-                Proventos por Mês
-              </CardTitle>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-accent" />
+                  Proventos por Mês
+                </CardTitle>
+                <div className="flex flex-wrap gap-2">
+                  {/* Status Filter */}
+                  <div className="flex rounded-lg border border-border overflow-hidden">
+                    {STATUS_FILTERS.map((filter) => (
+                      <button
+                        key={filter.value}
+                        onClick={() => setChartStatusFilter(filter.value)}
+                        className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                          chartStatusFilter === filter.value
+                            ? filter.value === "received" 
+                              ? "bg-primary text-primary-foreground"
+                              : filter.value === "pending"
+                              ? "bg-blue-500 text-white"
+                              : "bg-accent text-accent-foreground"
+                            : "bg-transparent text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {filter.label}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Period Filter */}
+                  <div className="flex rounded-lg border border-border overflow-hidden">
+                    {PERIOD_FILTERS.map((filter) => (
+                      <button
+                        key={filter.value}
+                        onClick={() => setChartPeriodFilter(filter.value)}
+                        className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                          chartPeriodFilter === filter.value
+                            ? "bg-muted text-foreground"
+                            : "bg-transparent text-muted-foreground hover:bg-muted/50"
+                        }`}
+                      >
+                        {filter.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
-              {summary?.by_month?.length > 0 ? (
+              {filteredChartData.length > 0 ? (
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={summary.by_month}>
+                    <BarChart data={filteredChartData}>
                       <XAxis
                         dataKey="month"
                         stroke="#94A3B8"
@@ -530,16 +570,48 @@ export default function Dividends() {
                           color: "#E2E8F0",
                         }}
                         labelStyle={{ color: "#94A3B8" }}
-                        itemStyle={{ color: "#E2E8F0" }}
-                        formatter={(value) => formatCurrency(value)}
+                        formatter={(value, name) => [
+                          formatCurrency(value),
+                          name === "received" ? "Recebido" : "A Receber"
+                        ]}
                       />
-                      <Bar dataKey="amount" fill="#F59E0B" radius={[4, 4, 0, 0]} />
+                      {(chartStatusFilter === "all" || chartStatusFilter === "received") && (
+                        <Bar 
+                          dataKey="received" 
+                          name="received"
+                          fill="#00E599" 
+                          radius={[4, 4, 0, 0]} 
+                          stackId="stack"
+                        />
+                      )}
+                      {(chartStatusFilter === "all" || chartStatusFilter === "pending") && (
+                        <Bar 
+                          dataKey="pending" 
+                          name="pending"
+                          fill="#3B82F6" 
+                          radius={[4, 4, 0, 0]} 
+                          stackId="stack"
+                        />
+                      )}
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               ) : (
                 <div className="h-64 flex items-center justify-center text-muted-foreground">
-                  Registre dividendos para ver o gráfico
+                  Nenhum provento encontrado para os filtros selecionados
+                </div>
+              )}
+              {/* Legend */}
+              {filteredChartData.length > 0 && chartStatusFilter === "all" && (
+                <div className="flex justify-center gap-6 mt-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-primary" />
+                    <span className="text-sm text-muted-foreground">Recebido</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-blue-500" />
+                    <span className="text-sm text-muted-foreground">A Receber</span>
+                  </div>
                 </div>
               )}
             </CardContent>
