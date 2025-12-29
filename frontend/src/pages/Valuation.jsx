@@ -138,6 +138,8 @@ export default function Valuation() {
           net_income: formData.net_income ? parseFloat(formData.net_income) * 1000000 : null,
           depreciation: formData.depreciation ? parseFloat(formData.depreciation) * 1000000 : null,
           capex: formData.capex ? parseFloat(formData.capex) * 1000000 : null,
+          roe: formData.roe ? parseFloat(formData.roe) : null,
+          payout: formData.payout ? parseFloat(formData.payout) : null,
         }),
       });
 
