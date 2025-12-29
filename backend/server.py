@@ -832,38 +832,22 @@ def parse_cei_csv(content: str) -> List[dict]:
                                 except ValueError:
                                     continue
                     
-                    # Aggregate by ticker - keep earliest purchase date
-                    if ticker in stocks_dict:
-                        old_qty = stocks_dict[ticker]['quantity']
-                        old_price = stocks_dict[ticker]['average_price']
-                        new_qty = old_qty + quantity
-                        # Calculate weighted average price
-                        if new_qty > 0:
-                            stocks_dict[ticker]['average_price'] = ((old_qty * old_price) + (quantity * avg_price)) / new_qty
-                        stocks_dict[ticker]['quantity'] = new_qty
-                        # Keep earliest purchase date
-                        if purchase_date:
-                            existing_date = stocks_dict[ticker].get('purchase_date')
-                            if not existing_date or purchase_date < existing_date:
-                                stocks_dict[ticker]['purchase_date'] = purchase_date
-                    else:
-                        stocks_dict[ticker] = {
+                    # Keep each purchase as separate record (don't aggregate)
+                    if quantity > 0:
+                        stocks.append({
                             "ticker": ticker,
                             "name": name,
                             "quantity": quantity,
                             "average_price": avg_price,
                             "purchase_date": purchase_date
-                        }
+                        })
                         
                 except Exception as e:
                     logger.error(f"Error parsing CEI row: {e}")
                     continue
             
-            if stocks_dict:
-                stocks = list(stocks_dict.values())
-                # Filter out stocks with 0 or negative quantity
-                stocks = [s for s in stocks if s['quantity'] > 0]
-                logger.info(f"CEI parser found {len(stocks)} stocks after aggregation")
+            if stocks:
+                logger.info(f"CEI parser found {len(stocks)} stock entries")
                 break
                 
         except Exception as e:
