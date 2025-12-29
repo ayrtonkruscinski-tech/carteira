@@ -46,7 +46,7 @@ export const FloatingSupport = () => {
   return (
     <>
       {/* Floating Button */}
-      <div className="fixed bottom-6 right-6 z-[60]">
+      <div className="fixed bottom-20 right-6 z-[60]">
         {/* Menu Options */}
         {isOpen && (
           <div className="absolute bottom-16 right-0 mb-2 flex flex-col gap-2 animate-fade-in">
