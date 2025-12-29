@@ -75,6 +75,8 @@ export default function Dividends() {
   const [syncing, setSyncing] = useState(false);
   const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [chartStatusFilter, setChartStatusFilter] = useState("all");
+  const [chartPeriodFilter, setChartPeriodFilter] = useState("12");
 
   useEffect(() => {
     fetchData();
