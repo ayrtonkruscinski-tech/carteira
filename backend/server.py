@@ -112,6 +112,7 @@ class Dividend(BaseModel):
     user_id: str
     stock_id: str
     ticker: str
+    portfolio_id: Optional[str] = None  # ID da carteira
     amount: float
     payment_date: str
     type: str = "dividendo"
@@ -123,6 +124,7 @@ class DividendCreate(BaseModel):
     amount: float
     payment_date: str
     type: str = "dividendo"
+    portfolio_id: Optional[str] = None  # ID da carteira
 
 class PortfolioSnapshot(BaseModel):
     snapshot_id: str = Field(default_factory=lambda: f"snap_{uuid.uuid4().hex[:12]}")
