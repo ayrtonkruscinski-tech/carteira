@@ -1,1 +1,1 @@
-export { PortfolioProvider, usePortfolio } from "./PortfolioContext";
+export { PortfolioProvider, usePortfolio, usePortfolioSafe } from "./PortfolioContext";
