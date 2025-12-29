@@ -37,6 +37,8 @@ export default function Dashboard() {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [sortBy, setSortBy] = useState('ticker');
+  const [stockDividends, setStockDividends] = useState({});
 
   useEffect(() => {
     fetchData();
