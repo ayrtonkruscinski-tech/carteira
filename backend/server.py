@@ -743,6 +743,7 @@ def parse_cei_csv(content: str) -> List[dict]:
             produto_col = None
             qtd_col = None
             preco_col = None
+            data_col = None
             
             for h in headers:
                 h_lower = h.lower().strip()
@@ -759,8 +760,14 @@ def parse_cei_csv(content: str) -> List[dict]:
                     preco_col = h
                 elif 'medio' in h_normalized or 'médio' in h_normalized:
                     preco_col = h
+                # Look for date columns
+                if data_col is None:
+                    if 'data' in h_normalized and ('compra' in h_normalized or 'aquisicao' in h_normalized or 'negociacao' in h_normalized):
+                        data_col = h
+                    elif h_normalized in ['data', 'date', 'dt']:
+                        data_col = h
             
-            logger.info(f"CEI columns found - Produto: {produto_col}, Qtd: {qtd_col}, Preco: {preco_col}")
+            logger.info(f"CEI columns found - Produto: {produto_col}, Qtd: {qtd_col}, Preco: {preco_col}, Data: {data_col}")
             
             if not produto_col:
                 continue
@@ -807,7 +814,21 @@ def parse_cei_csv(content: str) -> List[dict]:
                                 price_str = price_str.replace(',', '.')
                             avg_price = float(price_str)
                     
-                    # Aggregate by ticker
+                    # Parse purchase date
+                    purchase_date = None
+                    if data_col and row.get(data_col):
+                        date_str = str(row.get(data_col, '')).strip()
+                        if date_str:
+                            # Try different date formats
+                            for fmt in ['%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%d.%m.%Y']:
+                                try:
+                                    parsed_date = datetime.strptime(date_str, fmt)
+                                    purchase_date = parsed_date.strftime('%Y-%m-%d')
+                                    break
+                                except ValueError:
+                                    continue
+                    
+                    # Aggregate by ticker - keep earliest purchase date
                     if ticker in stocks_dict:
                         old_qty = stocks_dict[ticker]['quantity']
                         old_price = stocks_dict[ticker]['average_price']
@@ -816,13 +837,18 @@ def parse_cei_csv(content: str) -> List[dict]:
                         if new_qty > 0:
                             stocks_dict[ticker]['average_price'] = ((old_qty * old_price) + (quantity * avg_price)) / new_qty
                         stocks_dict[ticker]['quantity'] = new_qty
+                        # Keep earliest purchase date
+                        if purchase_date:
+                            existing_date = stocks_dict[ticker].get('purchase_date')
+                            if not existing_date or purchase_date < existing_date:
+                                stocks_dict[ticker]['purchase_date'] = purchase_date
                     else:
                         stocks_dict[ticker] = {
                             "ticker": ticker,
                             "name": name,
                             "quantity": quantity,
                             "average_price": avg_price,
-                            "purchase_date": None
+                            "purchase_date": purchase_date
                         }
                         
                 except Exception as e:
