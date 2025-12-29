@@ -437,7 +437,7 @@ export default function Dividends() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-accent" />
-                Dividendos por Mês
+                Proventos por Mês
               </CardTitle>
             </CardHeader>
             <CardContent>
