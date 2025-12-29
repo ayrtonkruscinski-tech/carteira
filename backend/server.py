@@ -870,8 +870,9 @@ def parse_cei_csv(content: str) -> List[dict]:
     return stocks
 
 def parse_xlsx(file_bytes: bytes) -> List[dict]:
-    """Parse Excel XLSX file - keeps each purchase as separate record"""
+    """Parse Excel XLSX file - groups by ticker + purchase_date"""
     stocks = []
+    stocks_dict = {}  # Key: (ticker, purchase_date)
     
     try:
         wb = load_workbook(filename=io.BytesIO(file_bytes), read_only=False, data_only=True)
