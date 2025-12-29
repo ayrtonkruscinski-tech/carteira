@@ -575,6 +575,7 @@ export default function Portfolio() {
                       </div>
                       <div className="flex gap-1">
                         <Button
+                          type="button"
                           variant="ghost"
                           size="icon"
                           onClick={() => handleEdit(stock)}
@@ -583,9 +584,14 @@ export default function Portfolio() {
                           <Edit2 className="w-4 h-4 text-muted-foreground hover:text-foreground" />
                         </Button>
                         <Button
+                          type="button"
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDelete(stock.stock_id)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDelete(stock.stock_id);
+                          }}
                           data-testid={`delete-stock-${stock.ticker}`}
                         >
                           <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
