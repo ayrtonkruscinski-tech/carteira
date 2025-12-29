@@ -188,7 +188,7 @@ class StockFolioAPITester:
         return success, response
 
 def main():
-    print("🚀 Starting StockFolio API Tests")
+    print("🚀 Starting StockFolio API Tests - New Features")
     print("=" * 50)
     
     tester = StockFolioAPITester()
@@ -197,10 +197,10 @@ def main():
     print("\n📋 Testing API Health...")
     tester.test_api_health()
     
-    # Test 2: Stock Search
-    print("\n📋 Testing Stock Search...")
-    tester.test_stock_search("PETR4")
-    tester.test_stock_search("VALE3")
+    # Test 2: Stock Search with Source Field
+    print("\n📋 Testing Stock Search with Source Field...")
+    tester.test_stock_search_with_source("PETR4")
+    tester.test_stock_search_with_source("VALE3")
     
     # Test 3: Authentication
     print("\n📋 Testing Authentication...")
@@ -218,7 +218,21 @@ def main():
     
     tester.test_portfolio_summary()
     
-    # Test 5: Dividends
+    # Test 5: New Portfolio Features
+    print("\n📋 Testing New Portfolio Features...")
+    tester.test_portfolio_import_csv()
+    tester.test_portfolio_export_csv()
+    tester.test_portfolio_refresh_prices()
+    tester.test_portfolio_snapshot()
+    tester.test_portfolio_history()
+    
+    # Test 6: Alerts System
+    print("\n📋 Testing Alerts System...")
+    tester.test_alerts_get()
+    tester.test_alerts_count()
+    tester.test_alerts_mark_read()
+    
+    # Test 7: Dividends
     print("\n📋 Testing Dividends...")
     tester.test_dividends_get()
     
@@ -227,7 +241,7 @@ def main():
     else:
         print("⚠️  Skipping dividend test - no stock ID available")
     
-    # Test 6: Valuation
+    # Test 8: Valuation
     print("\n📋 Testing Valuation...")
     tester.test_valuation_calculate()
     
