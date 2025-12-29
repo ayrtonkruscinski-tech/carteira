@@ -353,10 +353,10 @@ def fetch_investidor10_fundamentals(ticker: str) -> dict:
         page_text = soup.get_text()
         
         # Extract shares outstanding - look for "Nº total de papeis" pattern
+        # Must be before market_cap calculation
         shares_patterns = [
-            r'N[ºo°]\s*total\s*de\s*papeis?\s*([\d.,]+)\s*(Bilh[ãõo]|Milh[ãõo]|Trilh[ãõo])',
-            r'total\s*de\s*papeis?\s*([\d.,]+)\s*(Bilh[ãõo]|Milh[ãõo]|Trilh[ãõo])',
-            r'([\d.,]+)\s*(Bilh[ãõo]es?|Milh[ãõo]es?)\s*([\d.,]+)',  # Format: 12,89 Bilhões12.888.732.000
+            r'N[ºo°]\s*total\s*de\s*papeis?\s*([\d.,]+)\s*(Bilh[ãõo]es?|Milh[ãõo]es?|Trilh[ãõo]es?)',
+            r'total\s*de\s*papeis?\s*([\d.,]+)\s*(Bilh[ãõo]es?|Milh[ãõo]es?|Trilh[ãõo]es?)',
         ]
         
         for pattern in shares_patterns:
@@ -364,17 +364,18 @@ def fetch_investidor10_fundamentals(ticker: str) -> dict:
             if shares_match:
                 shares_text = f"{shares_match.group(1)} {shares_match.group(2)}"
                 data['shares_outstanding'] = parse_br_number(shares_text)
+                logger.info(f"Found shares_outstanding for {ticker}: {data['shares_outstanding']} from pattern: {shares_text}")
                 if data['shares_outstanding']:
                     break
         
         # Extract Net Income from "lucro no valor de R$ X Bilhões"
-        lucro_match = re.search(r'lucro\s+(?:no\s+valor\s+de\s+)?R\$\s*([\d.,]+)\s*(Bilh[ãõo]es?|Milh[ãõo]es?|Trilh[ãõo])?', page_text, re.IGNORECASE)
+        lucro_match = re.search(r'lucro\s+(?:no\s+valor\s+de\s+)?R\$\s*([\d.,]+)\s*(Bilh[ãõo]es?|Milh[ãõo]es?|Trilh[ãõo]es?)?', page_text, re.IGNORECASE)
         if lucro_match:
             lucro_text = f"{lucro_match.group(1)} {lucro_match.group(2) or ''}"
             data['net_income'] = parse_br_number(lucro_text)
         
         # Extract Market Cap from "valor de mercado de R$ X Bilhões"
-        market_match = re.search(r'valor de mercado de\s+R\$\s*([\d.,]+)\s*(Bilh[ãõo]es?|Milh[ãõo]es?|Trilh[ãõo])?', page_text, re.IGNORECASE)
+        market_match = re.search(r'valor de mercado de\s+R\$\s*([\d.,]+)\s*(Bilh[ãõo]es?|Milh[ãõo]es?|Trilh[ãõo]es?)?', page_text, re.IGNORECASE)
         if market_match:
             market_text = f"{market_match.group(1)} {market_match.group(2) or ''}"
             data['market_cap'] = parse_br_number(market_text)
