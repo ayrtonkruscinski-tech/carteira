@@ -135,6 +135,10 @@ class ValuationRequest(BaseModel):
     free_cash_flow: Optional[float] = None
     shares_outstanding: Optional[float] = None
     growth_rate: Optional[float] = 0.05
+    # Campos para método Warren Buffett
+    net_income: Optional[float] = None  # Lucro Líquido
+    depreciation: Optional[float] = None  # Depreciação e Amortização
+    capex: Optional[float] = None  # Capital Expenditure
 
 class AnalysisRequest(BaseModel):
     ticker: str
