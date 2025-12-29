@@ -733,8 +733,8 @@ def parse_cei_csv(content: str) -> List[dict]:
     stocks = []
     stocks_dict = {}  # Key: (ticker, purchase_date)
     
-    # Try both delimiters
-    for delimiter in [';', ',']:
+    # Try different delimiters - TAB is common in CEI exports
+    for delimiter in ['\t', ';', ',']:
         try:
             reader = csv.DictReader(io.StringIO(content), delimiter=delimiter)
             headers = reader.fieldnames
