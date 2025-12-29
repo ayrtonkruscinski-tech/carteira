@@ -544,7 +544,12 @@ async def get_stock_quote(ticker: str):
     """Get real-time quote for a stock from TradingView"""
     ticker_upper = ticker.upper()
     
-    # Try TradingView first
+    # Try Yahoo Finance first (most reliable)
+    yahoo_data = await fetch_yahoo_finance_quote(ticker_upper)
+    if yahoo_data and yahoo_data["price"] > 0:
+        return yahoo_data
+    
+    # Fallback to TradingView
     tv_data = fetch_tradingview_quote(ticker_upper)
     if tv_data and tv_data["price"] > 0:
         return tv_data
@@ -554,7 +559,7 @@ async def get_stock_quote(ticker: str):
     if av_data:
         return av_data
     
-    # Fallback
+    # Fallback to cache
     if ticker_upper in BRAZILIAN_STOCKS:
         return {
             "ticker": ticker_upper,
