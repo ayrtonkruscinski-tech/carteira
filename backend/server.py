@@ -1314,6 +1314,132 @@ async def get_dividends_summary(user: User = Depends(get_current_user)):
         "by_ticker": [{"ticker": k, "amount": round(v, 2)} for k, v in sorted(by_ticker.items(), key=lambda x: -x[1])]
     }
 
+@api_router.post("/dividends/sync")
+async def sync_dividends(user: User = Depends(get_current_user)):
+    """
+    Synchronize dividends from Investidor10 for all stocks in the user's portfolio.
+    This checks if the user held the stock on the 'data com' (ex-date) and creates dividend entries.
+    """
+    stocks = await db.stocks.find({"user_id": user.user_id}, {"_id": 0}).to_list(1000)
+    
+    if not stocks:
+        return {"message": "Nenhuma ação na carteira", "synced": 0, "total_tickers": 0}
+    
+    # Get unique tickers
+    unique_tickers = list(set(s["ticker"] for s in stocks))
+    
+    synced = 0
+    skipped = 0
+    errors = []
+    details = []
+    
+    for ticker in unique_tickers:
+        try:
+            # Fetch dividends from Investidor10
+            dividends_data = fetch_investidor10_dividends(ticker)
+            
+            if not dividends_data:
+                logger.info(f"No dividends found for {ticker}")
+                continue
+            
+            # Get all user stocks for this ticker (there might be multiple purchases)
+            user_stocks = [s for s in stocks if s["ticker"] == ticker]
+            
+            for div_data in dividends_data:
+                data_com = div_data.get("data_com")
+                data_pagamento = div_data.get("data_pagamento") or data_com
+                valor = div_data.get("valor", 0)
+                tipo = div_data.get("tipo", "Dividendo").lower()
+                
+                if not data_com or valor <= 0:
+                    continue
+                
+                # Check if user held the stock on data_com for each purchase
+                for stock in user_stocks:
+                    purchase_date = stock.get("purchase_date")
+                    
+                    # If no purchase date, assume user always held it
+                    user_held_on_data_com = True
+                    if purchase_date:
+                        try:
+                            # Parse dates for comparison
+                            if isinstance(purchase_date, str):
+                                purchase_dt = datetime.strptime(purchase_date, "%Y-%m-%d").date()
+                            else:
+                                purchase_dt = purchase_date
+                            
+                            data_com_dt = datetime.strptime(data_com, "%Y-%m-%d").date()
+                            
+                            # User must have purchased BEFORE or ON the data_com to be eligible
+                            user_held_on_data_com = purchase_dt <= data_com_dt
+                        except Exception as e:
+                            logger.error(f"Date parsing error for {ticker}: {e}")
+                            user_held_on_data_com = True  # Default to eligible if date parsing fails
+                    
+                    if not user_held_on_data_com:
+                        skipped += 1
+                        continue
+                    
+                    # Calculate total dividend amount based on quantity
+                    quantity = stock.get("quantity", 0)
+                    total_dividend = round(valor * quantity, 2)
+                    
+                    if total_dividend <= 0:
+                        continue
+                    
+                    # Check if this dividend already exists (avoid duplicates)
+                    existing = await db.dividends.find_one({
+                        "user_id": user.user_id,
+                        "ticker": ticker,
+                        "payment_date": data_pagamento,
+                        "amount": total_dividend
+                    })
+                    
+                    if existing:
+                        skipped += 1
+                        continue
+                    
+                    # Create dividend entry
+                    dividend = Dividend(
+                        user_id=user.user_id,
+                        stock_id=stock["stock_id"],
+                        ticker=ticker,
+                        amount=total_dividend,
+                        payment_date=data_pagamento,
+                        type="jcp" if "jcp" in tipo or "juros" in tipo else "dividendo"
+                    )
+                    doc = dividend.model_dump()
+                    doc["created_at"] = doc["created_at"].isoformat()
+                    doc["ex_date"] = data_com  # Store the ex-date for reference
+                    await db.dividends.insert_one(doc)
+                    
+                    synced += 1
+                    details.append({
+                        "ticker": ticker,
+                        "amount": total_dividend,
+                        "payment_date": data_pagamento,
+                        "ex_date": data_com
+                    })
+                    
+                    logger.info(f"Synced dividend for {ticker}: R${total_dividend} (ex-date: {data_com})")
+                    
+        except Exception as e:
+            logger.error(f"Error syncing dividends for {ticker}: {e}")
+            errors.append({"ticker": ticker, "error": str(e)})
+    
+    result = {
+        "message": f"Sincronização concluída: {synced} dividendos adicionados",
+        "synced": synced,
+        "skipped": skipped,
+        "total_tickers": len(unique_tickers),
+        "details": details[:10]  # Return first 10 details
+    }
+    
+    if errors:
+        result["errors"] = errors
+    
+    return result
+
 # ==================== VALUATION ROUTES ====================
 
 @api_router.post("/valuation/calculate")
