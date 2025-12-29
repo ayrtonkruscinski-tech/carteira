@@ -559,7 +559,7 @@ export default function Dividends() {
               <div className="text-center py-12 text-muted-foreground">
                 <Coins className="w-12 h-12 mx-auto mb-4 opacity-50" />
                 <p>Nenhum dividendo registrado</p>
-                <p className="text-sm mt-2">Clique em "Registrar Dividendo" para começar</p>
+                <p className="text-sm mt-2">Clique em &quot;Registrar Dividendo&quot; para começar</p>
               </div>
             )}
           </CardContent>
