@@ -1373,9 +1373,9 @@ async def sync_dividends(user: User = Depends(get_current_user)):
                         
                         data_com_dt = datetime.strptime(data_com, "%Y-%m-%d").date()
                         
-                        # User must have purchased BEFORE the data_com to be eligible
-                        # Stocks bought ON or AFTER the data_com do NOT receive the dividend
-                        user_held_on_data_com = purchase_dt < data_com_dt
+                        # User must have purchased BEFORE or ON the data_com to be eligible
+                        # Stocks bought AFTER the data_com do NOT receive the dividend
+                        user_held_on_data_com = purchase_dt <= data_com_dt
                         
                     except Exception as e:
                         logger.error(f"Date parsing error for {ticker}: {e}")
@@ -1383,7 +1383,7 @@ async def sync_dividends(user: User = Depends(get_current_user)):
                         continue
                     
                     if not user_held_on_data_com:
-                        logger.debug(f"Skipping dividend for {ticker}: purchased {purchase_date} >= data_com {data_com}")
+                        logger.debug(f"Skipping dividend for {ticker}: purchased {purchase_date} > data_com {data_com}")
                         skipped += 1
                         continue
                     
