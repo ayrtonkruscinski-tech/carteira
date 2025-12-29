@@ -44,6 +44,20 @@ const PROVENTO_TYPES = [
 
 const ITEMS_PER_PAGE = 10;
 
+// Filtros para o gráfico
+const PERIOD_FILTERS = [
+  { value: "1", label: "1 Mês" },
+  { value: "6", label: "6 Meses" },
+  { value: "12", label: "12 Meses" },
+  { value: "max", label: "Máximo" },
+];
+
+const STATUS_FILTERS = [
+  { value: "all", label: "Todos" },
+  { value: "received", label: "Recebido" },
+  { value: "pending", label: "A Receber" },
+];
+
 export default function Dividends() {
   const [dividends, setDividends] = useState([]);
   const [stocks, setStocks] = useState([]);
