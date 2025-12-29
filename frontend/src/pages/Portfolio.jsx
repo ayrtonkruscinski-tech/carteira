@@ -340,6 +340,54 @@ export default function Portfolio() {
     }).format(value);
   };
 
+  // Agrupar ações por ticker para exibição consolidada
+  const groupedStocks = stocks.reduce((acc, stock) => {
+    const existing = acc.find(s => s.ticker === stock.ticker);
+    if (existing) {
+      // Calcular novo preço médio ponderado
+      const totalQuantity = existing.quantity + stock.quantity;
+      const newAveragePrice = (
+        (existing.quantity * existing.average_price) + 
+        (stock.quantity * stock.average_price)
+      ) / totalQuantity;
+      
+      existing.quantity = totalQuantity;
+      existing.average_price = newAveragePrice;
+      // Manter o preço atual mais recente
+      if (stock.current_price) {
+        existing.current_price = stock.current_price;
+      }
+      // Agrupar IDs para operações
+      existing.stock_ids = [...(existing.stock_ids || [existing.stock_id]), stock.stock_id];
+      // Guardar lançamentos individuais para visualização detalhada
+      existing.entries = [...(existing.entries || [{
+        stock_id: existing.stock_id,
+        quantity: existing.original_quantity || existing.quantity,
+        average_price: existing.original_price || existing.average_price,
+        purchase_date: existing.purchase_date
+      }]), {
+        stock_id: stock.stock_id,
+        quantity: stock.quantity,
+        average_price: stock.average_price,
+        purchase_date: stock.purchase_date
+      }];
+    } else {
+      acc.push({
+        ...stock,
+        stock_ids: [stock.stock_id],
+        original_quantity: stock.quantity,
+        original_price: stock.average_price,
+        entries: [{
+          stock_id: stock.stock_id,
+          quantity: stock.quantity,
+          average_price: stock.average_price,
+          purchase_date: stock.purchase_date
+        }]
+      });
+    }
+    return acc;
+  }, []);
+
   if (loading) {
     return (
       <Layout>
