@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Layout } from "../components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
-import { Plus, Trash2, Edit2, Search, Briefcase } from "lucide-react";
+import { Plus, Trash2, Edit2, Search, Briefcase, Upload, Download, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -35,6 +35,9 @@ const SECTORS = [
   "Saúde",
   "Tecnologia",
   "Telecomunicações",
+  "Papel e Celulose",
+  "Alimentos",
+  "Bebidas",
   "Outros",
 ];
 
@@ -42,17 +45,22 @@ export default function Portfolio() {
   const [stocks, setStocks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [editingStock, setEditingStock] = useState(null);
   const [searchTicker, setSearchTicker] = useState("");
   const [searchResult, setSearchResult] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     ticker: "",
     name: "",
     quantity: "",
     average_price: "",
+    purchase_date: "",
     current_price: "",
     dividend_yield: "",
     sector: "",
+    ceiling_price: "",
   });
 
   useEffect(() => {
@@ -86,10 +94,15 @@ export default function Portfolio() {
           name: data.name || "",
           quantity: "",
           average_price: "",
+          purchase_date: "",
           current_price: data.current_price?.toString() || "",
           dividend_yield: data.dividend_yield?.toString() || "",
           sector: data.sector || "",
+          ceiling_price: "",
         });
+        if (data.source === "alpha_vantage") {
+          toast.success(`Cotação em tempo real: R$ ${data.current_price?.toFixed(2)}`);
+        }
       }
     } catch (error) {
       console.error("Search error:", error);
@@ -104,9 +117,11 @@ export default function Portfolio() {
       name: formData.name,
       quantity: parseFloat(formData.quantity),
       average_price: parseFloat(formData.average_price),
+      purchase_date: formData.purchase_date || null,
       current_price: formData.current_price ? parseFloat(formData.current_price) : null,
       dividend_yield: formData.dividend_yield ? parseFloat(formData.dividend_yield) : null,
       sector: formData.sector || null,
+      ceiling_price: formData.ceiling_price ? parseFloat(formData.ceiling_price) : null,
     };
 
     try {
@@ -120,8 +135,10 @@ export default function Portfolio() {
             body: JSON.stringify({
               quantity: payload.quantity,
               average_price: payload.average_price,
+              purchase_date: payload.purchase_date,
               current_price: payload.current_price,
               dividend_yield: payload.dividend_yield,
+              ceiling_price: payload.ceiling_price,
             }),
           }
         );
@@ -173,11 +190,71 @@ export default function Portfolio() {
       name: stock.name,
       quantity: stock.quantity.toString(),
       average_price: stock.average_price.toString(),
+      purchase_date: stock.purchase_date || "",
       current_price: stock.current_price?.toString() || "",
       dividend_yield: stock.dividend_yield?.toString() || "",
       sector: stock.sector || "",
+      ceiling_price: stock.ceiling_price?.toString() || "",
     });
     setIsAddDialogOpen(true);
+  };
+
+  const handleImportCSV = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch(`${API}/portfolio/import/csv`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast.success(data.message);
+        fetchStocks();
+        setIsImportDialogOpen(false);
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || 'Erro ao importar arquivo');
+      }
+    } catch (error) {
+      toast.error('Erro ao importar arquivo');
+      console.error('Import error:', error);
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      const response = await fetch(`${API}/portfolio/export/csv`, {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'portfolio.csv';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        toast.success('Carteira exportada com sucesso!');
+      }
+    } catch (error) {
+      toast.error('Erro ao exportar carteira');
+      console.error('Export error:', error);
+    }
   };
 
   const resetForm = () => {
@@ -186,9 +263,11 @@ export default function Portfolio() {
       name: "",
       quantity: "",
       average_price: "",
+      purchase_date: "",
       current_price: "",
       dividend_yield: "",
       sector: "",
+      ceiling_price: "",
     });
     setEditingStock(null);
     setSearchResult(null);
@@ -222,170 +301,247 @@ export default function Portfolio() {
             <h1 className="text-3xl font-bold text-foreground mb-2">Minha Carteira</h1>
             <p className="text-muted-foreground">Gerencie suas ações e investimentos</p>
           </div>
-          <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
-            if (!open) resetForm();
-            setIsAddDialogOpen(open);
-          }}>
-            <DialogTrigger asChild>
-              <Button
-                data-testid="add-stock-btn"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_15px_rgba(0,229,153,0.3)]"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Adicionar Ação
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-card border-border max-w-md">
-              <DialogHeader>
-                <DialogTitle className="text-foreground">
-                  {editingStock ? "Editar Ação" : "Adicionar Ação"}
-                </DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {!editingStock && (
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Buscar ticker (ex: PETR4)"
-                      value={searchTicker}
-                      onChange={(e) => setSearchTicker(e.target.value.toUpperCase())}
-                      className="bg-input border-input"
-                      data-testid="search-ticker-input"
+          <div className="flex gap-2 flex-wrap">
+            {/* Import Button */}
+            <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" data-testid="import-btn">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Importar
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-card border-border max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="text-foreground">Importar Carteira</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Importe sua carteira a partir de um arquivo CSV. Formatos suportados:
+                  </p>
+                  <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                    <li>Extrato CEI/B3</li>
+                    <li>CSV genérico (ticker, name, quantity, average_price, purchase_date)</li>
+                  </ul>
+                  <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
+                    <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".csv"
+                      onChange={handleImportCSV}
+                      className="hidden"
+                      id="csv-upload"
                     />
+                    <label
+                      htmlFor="csv-upload"
+                      className="cursor-pointer text-primary hover:underline"
+                    >
+                      {importing ? 'Importando...' : 'Clique para selecionar arquivo CSV'}
+                    </label>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Export Button */}
+            <Button variant="outline" onClick={handleExportCSV} data-testid="export-btn">
+              <Download className="w-4 h-4 mr-2" />
+              Exportar
+            </Button>
+
+            {/* Add Stock Button */}
+            <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+              if (!open) resetForm();
+              setIsAddDialogOpen(open);
+            }}>
+              <DialogTrigger asChild>
+                <Button
+                  data-testid="add-stock-btn"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_15px_rgba(0,229,153,0.3)]"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Ação
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-card border-border max-w-lg">
+                <DialogHeader>
+                  <DialogTitle className="text-foreground">
+                    {editingStock ? "Editar Ação" : "Adicionar Ação"}
+                  </DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {!editingStock && (
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Buscar ticker (ex: PETR4)"
+                        value={searchTicker}
+                        onChange={(e) => setSearchTicker(e.target.value.toUpperCase())}
+                        className="bg-input border-input"
+                        data-testid="search-ticker-input"
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={handleSearch}
+                        data-testid="search-ticker-btn"
+                      >
+                        <Search className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="ticker">Ticker</Label>
+                      <Input
+                        id="ticker"
+                        value={formData.ticker}
+                        onChange={(e) => setFormData({ ...formData, ticker: e.target.value.toUpperCase() })}
+                        required
+                        disabled={editingStock}
+                        className="bg-input border-input font-mono"
+                        data-testid="ticker-input"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Nome</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        required
+                        disabled={editingStock}
+                        className="bg-input border-input"
+                        data-testid="name-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="quantity">Quantidade</Label>
+                      <Input
+                        id="quantity"
+                        type="number"
+                        step="0.01"
+                        value={formData.quantity}
+                        onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                        required
+                        className="bg-input border-input font-mono"
+                        data-testid="quantity-input"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="average_price">Preço Médio (R$)</Label>
+                      <Input
+                        id="average_price"
+                        type="number"
+                        step="0.01"
+                        value={formData.average_price}
+                        onChange={(e) => setFormData({ ...formData, average_price: e.target.value })}
+                        required
+                        className="bg-input border-input font-mono"
+                        data-testid="average-price-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="purchase_date">Data de Compra</Label>
+                      <Input
+                        id="purchase_date"
+                        type="date"
+                        value={formData.purchase_date}
+                        onChange={(e) => setFormData({ ...formData, purchase_date: e.target.value })}
+                        className="bg-input border-input"
+                        data-testid="purchase-date-input"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="current_price">Preço Atual (R$)</Label>
+                      <Input
+                        id="current_price"
+                        type="number"
+                        step="0.01"
+                        value={formData.current_price}
+                        onChange={(e) => setFormData({ ...formData, current_price: e.target.value })}
+                        className="bg-input border-input font-mono"
+                        data-testid="current-price-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="dividend_yield">Dividend Yield (%)</Label>
+                      <Input
+                        id="dividend_yield"
+                        type="number"
+                        step="0.01"
+                        value={formData.dividend_yield}
+                        onChange={(e) => setFormData({ ...formData, dividend_yield: e.target.value })}
+                        className="bg-input border-input font-mono"
+                        data-testid="dividend-yield-input"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ceiling_price">Preço Teto (R$)</Label>
+                      <Input
+                        id="ceiling_price"
+                        type="number"
+                        step="0.01"
+                        value={formData.ceiling_price}
+                        onChange={(e) => setFormData({ ...formData, ceiling_price: e.target.value })}
+                        className="bg-input border-input font-mono"
+                        placeholder="Opcional"
+                        data-testid="ceiling-price-input"
+                      />
+                    </div>
+                  </div>
+
+                  {!editingStock && (
+                    <div className="space-y-2">
+                      <Label htmlFor="sector">Setor</Label>
+                      <Select
+                        value={formData.sector}
+                        onValueChange={(value) => setFormData({ ...formData, sector: value })}
+                      >
+                        <SelectTrigger className="bg-input border-input" data-testid="sector-select">
+                          <SelectValue placeholder="Selecione o setor" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover border-border">
+                          {SECTORS.map((sector) => (
+                            <SelectItem key={sector} value={sector}>
+                              {sector}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  <div className="flex gap-3 pt-4">
                     <Button
                       type="button"
-                      variant="secondary"
-                      onClick={handleSearch}
-                      data-testid="search-ticker-btn"
+                      variant="outline"
+                      onClick={resetForm}
+                      className="flex-1"
                     >
-                      <Search className="w-4 h-4" />
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                      data-testid="save-stock-btn"
+                    >
+                      {editingStock ? "Atualizar" : "Adicionar"}
                     </Button>
                   </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="ticker">Ticker</Label>
-                    <Input
-                      id="ticker"
-                      value={formData.ticker}
-                      onChange={(e) => setFormData({ ...formData, ticker: e.target.value.toUpperCase() })}
-                      required
-                      disabled={editingStock}
-                      className="bg-input border-input font-mono"
-                      data-testid="ticker-input"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nome</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      required
-                      disabled={editingStock}
-                      className="bg-input border-input"
-                      data-testid="name-input"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="quantity">Quantidade</Label>
-                    <Input
-                      id="quantity"
-                      type="number"
-                      step="0.01"
-                      value={formData.quantity}
-                      onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                      required
-                      className="bg-input border-input font-mono"
-                      data-testid="quantity-input"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="average_price">Preço Médio (R$)</Label>
-                    <Input
-                      id="average_price"
-                      type="number"
-                      step="0.01"
-                      value={formData.average_price}
-                      onChange={(e) => setFormData({ ...formData, average_price: e.target.value })}
-                      required
-                      className="bg-input border-input font-mono"
-                      data-testid="average-price-input"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="current_price">Preço Atual (R$)</Label>
-                    <Input
-                      id="current_price"
-                      type="number"
-                      step="0.01"
-                      value={formData.current_price}
-                      onChange={(e) => setFormData({ ...formData, current_price: e.target.value })}
-                      className="bg-input border-input font-mono"
-                      data-testid="current-price-input"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="dividend_yield">Dividend Yield (%)</Label>
-                    <Input
-                      id="dividend_yield"
-                      type="number"
-                      step="0.01"
-                      value={formData.dividend_yield}
-                      onChange={(e) => setFormData({ ...formData, dividend_yield: e.target.value })}
-                      className="bg-input border-input font-mono"
-                      data-testid="dividend-yield-input"
-                    />
-                  </div>
-                </div>
-
-                {!editingStock && (
-                  <div className="space-y-2">
-                    <Label htmlFor="sector">Setor</Label>
-                    <Select
-                      value={formData.sector}
-                      onValueChange={(value) => setFormData({ ...formData, sector: value })}
-                    >
-                      <SelectTrigger className="bg-input border-input" data-testid="sector-select">
-                        <SelectValue placeholder="Selecione o setor" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover border-border">
-                        {SECTORS.map((sector) => (
-                          <SelectItem key={sector} value={sector}>
-                            {sector}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                <div className="flex gap-3 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={resetForm}
-                    className="flex-1"
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
-                    data-testid="save-stock-btn"
-                  >
-                    {editingStock ? "Atualizar" : "Adicionar"}
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* Stocks Grid */}
@@ -397,18 +553,20 @@ export default function Portfolio() {
               const totalInvested = stock.quantity * stock.average_price;
               const gain = totalValue - totalInvested;
               const gainPercent = ((currentPrice / stock.average_price) - 1) * 100;
+              const atCeiling = stock.ceiling_price && currentPrice >= stock.ceiling_price;
 
               return (
                 <Card
                   key={stock.stock_id}
-                  className="bg-card border-border hover:border-primary/30 transition-all duration-300 hover:-translate-y-1"
+                  className={`bg-card border-border hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 ${atCeiling ? 'border-accent/50' : ''}`}
                   data-testid={`stock-card-${stock.ticker}`}
                 >
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                       <div>
-                        <CardTitle className="font-mono text-xl text-foreground">
+                        <CardTitle className="font-mono text-xl text-foreground flex items-center gap-2">
                           {stock.ticker}
+                          {atCeiling && <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded">Teto!</span>}
                         </CardTitle>
                         <p className="text-sm text-muted-foreground">{stock.name}</p>
                       </div>
@@ -450,6 +608,22 @@ export default function Portfolio() {
                           {formatCurrency(currentPrice)}
                         </span>
                       </div>
+                      {stock.ceiling_price && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">Preço Teto</span>
+                          <span className="font-mono text-accent">
+                            {formatCurrency(stock.ceiling_price)}
+                          </span>
+                        </div>
+                      )}
+                      {stock.purchase_date && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">Data Compra</span>
+                          <span className="text-foreground">
+                            {new Date(stock.purchase_date).toLocaleDateString('pt-BR')}
+                          </span>
+                        </div>
+                      )}
                       <div className="border-t border-border pt-3">
                         <div className="flex justify-between">
                           <span className="text-sm text-muted-foreground">Valor Total</span>
@@ -490,16 +664,25 @@ export default function Portfolio() {
                 Sua carteira está vazia
               </h3>
               <p className="text-muted-foreground mb-6">
-                Comece adicionando suas primeiras ações
+                Comece adicionando suas primeiras ações ou importe do CEI/B3
               </p>
-              <Button
-                onClick={() => setIsAddDialogOpen(true)}
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
-                data-testid="add-first-stock-btn"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Adicionar Ação
-              </Button>
+              <div className="flex gap-3 justify-center">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsImportDialogOpen(true)}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Importar CSV
+                </Button>
+                <Button
+                  onClick={() => setIsAddDialogOpen(true)}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  data-testid="add-first-stock-btn"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Ação
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
