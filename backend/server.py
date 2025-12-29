@@ -1012,15 +1012,27 @@ async def get_portfolio_summary(user: User = Depends(get_current_user)):
     total_gain = total_current - total_invested
     gain_percent = (total_gain / total_invested * 100) if total_invested > 0 else 0
     
+    # Get dividends and filter only those already paid
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     dividends = await db.dividends.find({"user_id": user.user_id}, {"_id": 0}).to_list(10000)
-    total_dividends = sum(d["amount"] for d in dividends)
+    
+    # Only sum dividends where payment_date <= today
+    total_dividends_received = sum(
+        d["amount"] for d in dividends 
+        if d.get("payment_date", "")[:10] <= today
+    )
+    total_dividends_pending = sum(
+        d["amount"] for d in dividends 
+        if d.get("payment_date", "")[:10] > today
+    )
     
     return {
         "total_invested": round(total_invested, 2),
         "total_current": round(total_current, 2),
         "total_gain": round(total_gain, 2),
         "gain_percent": round(gain_percent, 2),
-        "total_dividends": round(total_dividends, 2),
+        "total_dividends": round(total_dividends_received, 2),  # Only received dividends
+        "total_dividends_pending": round(total_dividends_pending, 2),  # Pending dividends
         "stocks_count": len(stocks)
     }
 
