@@ -18,6 +18,7 @@ export const Layout = ({ children }) => {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [alertCount, setAlertCount] = useState(0);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -31,7 +32,25 @@ export const Layout = ({ children }) => {
         console.error('Error fetching user:', error);
       }
     };
+    
+    const fetchAlertCount = async () => {
+      try {
+        const response = await fetch(`${API}/alerts/count`, { credentials: 'include' });
+        if (response.ok) {
+          const data = await response.json();
+          setAlertCount(data.count);
+        }
+      } catch (error) {
+        console.error('Error fetching alert count:', error);
+      }
+    };
+    
     fetchUser();
+    fetchAlertCount();
+    
+    // Poll for alerts every 30 seconds
+    const interval = setInterval(fetchAlertCount, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleLogout = async () => {
