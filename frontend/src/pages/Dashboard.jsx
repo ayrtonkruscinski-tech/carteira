@@ -46,12 +46,13 @@ export default function Dashboard() {
 
   const fetchData = async () => {
     try {
-      const [summaryRes, stocksRes, dividendsRes, historyRes, alertsRes] = await Promise.all([
+      const [summaryRes, stocksRes, dividendsRes, historyRes, alertsRes, allDividendsRes] = await Promise.all([
         fetch(`${API}/portfolio/summary`, { credentials: 'include' }),
         fetch(`${API}/portfolio/stocks`, { credentials: 'include' }),
         fetch(`${API}/dividends/summary`, { credentials: 'include' }),
         fetch(`${API}/portfolio/history?days=30`, { credentials: 'include' }),
         fetch(`${API}/alerts?unread_only=true`, { credentials: 'include' }),
+        fetch(`${API}/dividends`, { credentials: 'include' }),
       ]);
 
       if (summaryRes.ok) setSummary(await summaryRes.json());
@@ -59,6 +60,16 @@ export default function Dashboard() {
       if (dividendsRes.ok) setDividendSummary(await dividendsRes.json());
       if (historyRes.ok) setPortfolioHistory(await historyRes.json());
       if (alertsRes.ok) setAlerts(await alertsRes.json());
+      
+      // Calculate dividends per stock
+      if (allDividendsRes.ok) {
+        const dividends = await allDividendsRes.json();
+        const divByTicker = {};
+        dividends.forEach(d => {
+          divByTicker[d.ticker] = (divByTicker[d.ticker] || 0) + d.amount;
+        });
+        setStockDividends(divByTicker);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
