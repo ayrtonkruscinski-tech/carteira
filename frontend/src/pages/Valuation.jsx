@@ -98,6 +98,8 @@ export default function Valuation() {
           capex: data.capex ? (data.capex / 1000000).toFixed(0) : prev.capex,
           free_cash_flow: data.free_cash_flow ? (data.free_cash_flow / 1000000).toFixed(0) : prev.free_cash_flow,
           shares_outstanding: data.shares_outstanding ? (data.shares_outstanding / 1000000).toFixed(0) : prev.shares_outstanding,
+          roe: data.roe?.toString() || prev.roe,
+          payout: data.payout?.toString() || prev.payout,
         }));
         toast.success(`Dados de ${ticker} carregados do Investidor10`);
       }
