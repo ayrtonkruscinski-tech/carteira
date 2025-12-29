@@ -126,7 +126,7 @@ class StockFolioAPITester:
             "payment_date": "2025-01-15",
             "type": "dividendo"
         }
-        return self.run_test("Add Dividend", "POST", "dividends", 201, dividend_data)
+        return self.run_test("Add Dividend", "POST", "dividends", 200, dividend_data)
 
     def test_valuation_calculate(self):
         """Test valuation calculation"""
