@@ -192,35 +192,35 @@ export const Layout = ({ children }) => {
                           currentPortfolio?.portfolio_id === portfolio.portfolio_id ? "bg-primary/10" : ""
                         }`}
                       >
-                        <span className="truncate">{portfolio.name}</span>
+                        <span className="truncate flex-1">{portfolio.name}</span>
                         <div className="flex items-center gap-1">
-                          <span className="text-xs text-muted-foreground">{portfolio.stocks_count || 0}</span>
+                          <span className="text-xs text-muted-foreground mr-1">{portfolio.stocks_count || 0}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 hover:bg-primary/20"
+                            title="Renomear carteira"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingPortfolio({ ...portfolio });
+                              setIsEditDialogOpen(true);
+                            }}
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </Button>
                           {!portfolio.is_default && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingPortfolio({ ...portfolio });
-                                  setIsEditDialogOpen(true);
-                                }}
-                              >
-                                <Pencil className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 text-destructive"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeletePortfolio(portfolio);
-                                }}
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            </>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-destructive hover:bg-destructive/20"
+                              title="Excluir carteira"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeletePortfolio(portfolio);
+                              }}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
                           )}
                         </div>
                       </DropdownMenuItem>
