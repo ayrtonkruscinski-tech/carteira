@@ -13,6 +13,7 @@ import { TrendingUp, TrendingDown, Wallet, PieChart, Coins, BarChart3, RefreshCw
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, LineChart, Line } from "recharts";
 import { toast } from "sonner";
 import { usePortfolioSafe } from "../context/PortfolioContext";
+import { AdBannerHorizontal } from "../components/AdBanner";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
