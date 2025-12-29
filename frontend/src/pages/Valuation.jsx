@@ -487,13 +487,13 @@ export default function Valuation() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="roe" className="flex items-center gap-1">
-                          ROE (%)
+                          ROE Médio (%)
                           <Tooltip>
                             <TooltipTrigger>
                               <HelpCircle className="w-3 h-3 text-muted-foreground" />
                             </TooltipTrigger>
                             <TooltipContent>
-                              Retorno sobre Patrimônio Líquido. Usado para calcular crescimento: ROE × (1 - Payout)
+                              Média do ROE dos últimos 5 anos (ou anos disponíveis). Usado para calcular taxa de crescimento.
                             </TooltipContent>
                           </Tooltip>
                         </Label>
@@ -509,13 +509,13 @@ export default function Valuation() {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="payout" className="flex items-center gap-1">
-                          Payout (%)
+                          Payout Médio (%)
                           <Tooltip>
                             <TooltipTrigger>
                               <HelpCircle className="w-3 h-3 text-muted-foreground" />
                             </TooltipTrigger>
                             <TooltipContent>
-                              % do lucro distribuído como dividendos. Taxa de retenção = 1 - Payout
+                              Média do Payout dos últimos 5 anos. Taxa de retenção = 1 - Payout
                             </TooltipContent>
                           </Tooltip>
                         </Label>
@@ -531,7 +531,7 @@ export default function Valuation() {
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      DCF com Owner Earnings: projeta 10 anos de fluxo de caixa usando crescimento = ROE × (1 - Payout). Margem de segurança de 25%.
+                      DCF com Owner Earnings: projeta 10 anos de fluxo de caixa usando crescimento = ROE médio × (1 - Payout médio). Margem de segurança de 25%.
                     </p>
                   </div>
 
