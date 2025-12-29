@@ -225,8 +225,10 @@ export default function Portfolio() {
     if (!file) return;
 
     // Validar extensão
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      toast.error('Por favor, selecione um arquivo CSV');
+    const validExtensions = ['.csv', '.xlsx', '.xls'];
+    const fileExt = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+    if (!validExtensions.includes(fileExt)) {
+      toast.error('Por favor, selecione um arquivo CSV ou Excel (.xlsx)');
       return;
     }
 
@@ -235,7 +237,7 @@ export default function Portfolio() {
     formDataObj.append('file', file);
 
     try {
-      const response = await fetch(`${API}/portfolio/import/csv`, {
+      const response = await fetch(`${API}/portfolio/import`, {
         method: 'POST',
         credentials: 'include',
         body: formDataObj,
