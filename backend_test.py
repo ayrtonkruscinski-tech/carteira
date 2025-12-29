@@ -249,6 +249,11 @@ def main():
     else:
         print("⚠️  Skipping dividend test - no stock ID available")
     
+    # Test dividend sync functionality
+    print("\n📋 Testing Dividend Sync...")
+    tester.test_dividends_sync()
+    tester.test_dividends_summary()
+    
     # Test 8: Valuation
     print("\n📋 Testing Valuation...")
     tester.test_valuation_calculate()
