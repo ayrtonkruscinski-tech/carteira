@@ -203,7 +203,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "POST /api/dividends/sync endpoint"
     - "Dividends Sync Button"
   stuck_tasks: []
   test_all: false
