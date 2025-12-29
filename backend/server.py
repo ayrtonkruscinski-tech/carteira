@@ -1921,6 +1921,7 @@ async def import_file(file: UploadFile = File(...), portfolio_id: Optional[str] 
                     "quantity": stock_data["quantity"],
                     "average_price": stock_data["average_price"],
                     "purchase_date": purchase_date,
+                    "portfolio_id": portfolio_id,
                     "updated_at": datetime.now(timezone.utc).isoformat()
                 }}
             )
@@ -1929,6 +1930,7 @@ async def import_file(file: UploadFile = File(...), portfolio_id: Optional[str] 
             # Create new stock entry
             new_stock = Stock(
                 user_id=user.user_id,
+                portfolio_id=portfolio_id,
                 ticker=ticker,
                 name=stock_data.get("name") or stock_info.get("name", ticker),
                 quantity=stock_data["quantity"],
