@@ -638,13 +638,30 @@ def parse_xlsx(file_bytes: bytes) -> List[dict]:
     stocks_dict = {}
     
     try:
-        wb = load_workbook(filename=io.BytesIO(file_bytes), read_only=True, data_only=True)
+        wb = load_workbook(filename=io.BytesIO(file_bytes), read_only=False, data_only=True)
         ws = wb.active
         
-        # Get headers from first row
+        # Find header row (might not be the first row)
         headers = []
-        for cell in ws[1]:
-            headers.append(str(cell.value or '').strip())
+        header_row = 0
+        
+        for row_idx, row in enumerate(ws.iter_rows(max_row=10, values_only=True)):
+            # Check if this row looks like a header
+            row_values = [str(cell or '').strip().lower() for cell in row if cell]
+            row_str = ' '.join(row_values)
+            
+            # Look for keywords that indicate this is a header row
+            if any(kw in row_str for kw in ['produto', 'ticker', 'codigo', 'ativo', 'quantidade', 'preco', 'preço']):
+                headers = [str(cell or '').strip() for cell in row]
+                header_row = row_idx
+                logger.info(f"XLSX found header at row {row_idx}: {headers}")
+                break
+        
+        if not headers:
+            # If no header found, use first row
+            for row in ws.iter_rows(min_row=1, max_row=1, values_only=True):
+                headers = [str(cell or '').strip() for cell in row]
+            logger.info(f"XLSX using first row as headers: {headers}")
         
         logger.info(f"XLSX headers: {headers}")
         
@@ -653,16 +670,21 @@ def parse_xlsx(file_bytes: bytes) -> List[dict]:
             'ticker': ['ticker', 'codigo', 'código', 'symbol', 'ativo', 'papel', 'acao', 'ação', 'produto'],
             'name': ['name', 'nome', 'empresa', 'description', 'descricao', 'descrição'],
             'quantity': ['quantity', 'quantidade', 'qtd', 'qtde', 'shares', 'qty'],
-            'average_price': ['average_price', 'preco_medio', 'preço_médio', 'preco', 'preço', 'pm', 'custo', 'valor', 'preço unitário', 'preco unitario'],
+            'average_price': ['average_price', 'preco_medio', 'preço_médio', 'preco', 'preço', 'pm', 'custo', 'valor', 'preço unitário', 'preco unitario', 'unitario', 'unitário'],
             'purchase_date': ['purchase_date', 'data_compra', 'date', 'data'],
             'sector': ['sector', 'setor', 'industry', 'segmento']
         }
         
         def find_col_idx(key):
             for idx, h in enumerate(headers):
-                h_lower = h.lower().strip().replace('ã', 'a').replace('ç', 'c').replace('í', 'i').replace('é', 'e').replace('ú', 'u')
+                if not h:
+                    continue
+                h_lower = h.lower().strip()
+                # Normalize accented characters
+                h_normalized = h_lower.replace('ã', 'a').replace('ç', 'c').replace('í', 'i').replace('é', 'e').replace('ú', 'u').replace('á', 'a').replace('ó', 'o')
                 for keyword in header_map[key]:
-                    if keyword in h_lower:
+                    keyword_normalized = keyword.replace('ã', 'a').replace('ç', 'c').replace('í', 'i').replace('é', 'e').replace('ú', 'u').replace('á', 'a').replace('ó', 'o')
+                    if keyword_normalized in h_normalized:
                         return idx
             return None
         
@@ -677,10 +699,11 @@ def parse_xlsx(file_bytes: bytes) -> List[dict]:
         
         if ticker_idx is None:
             logger.error("No ticker column found in XLSX")
+            wb.close()
             return []
         
-        # Process rows (skip header)
-        for row in ws.iter_rows(min_row=2, values_only=True):
+        # Process rows (skip header row)
+        for row_idx, row in enumerate(ws.iter_rows(min_row=header_row + 2, values_only=True)):
             try:
                 if not row or len(row) <= ticker_idx:
                     continue
@@ -716,7 +739,7 @@ def parse_xlsx(file_bytes: bytes) -> List[dict]:
                                 qty_str = qty_str.replace('.', '').replace(',', '.')
                             elif ',' in qty_str:
                                 qty_str = qty_str.replace(',', '.')
-                            quantity = float(qty_str)
+                            quantity = float(qty_str) if qty_str else 0
                 
                 # Parse price
                 avg_price = 0
@@ -731,14 +754,14 @@ def parse_xlsx(file_bytes: bytes) -> List[dict]:
                                 price_str = price_str.replace('.', '').replace(',', '.')
                             elif ',' in price_str:
                                 price_str = price_str.replace(',', '.')
-                            avg_price = float(price_str)
+                            avg_price = float(price_str) if price_str else 0
                 
                 # Aggregate by ticker
                 if ticker in stocks_dict:
                     old_qty = stocks_dict[ticker]['quantity']
                     old_price = stocks_dict[ticker]['average_price']
                     new_qty = old_qty + quantity
-                    if new_qty > 0:
+                    if new_qty > 0 and avg_price > 0:
                         stocks_dict[ticker]['average_price'] = ((old_qty * old_price) + (quantity * avg_price)) / new_qty
                     stocks_dict[ticker]['quantity'] = new_qty
                 else:
@@ -752,15 +775,17 @@ def parse_xlsx(file_bytes: bytes) -> List[dict]:
                     }
                     
             except Exception as e:
-                logger.error(f"Error parsing XLSX row: {e}")
+                logger.error(f"Error parsing XLSX row {row_idx}: {e}")
                 continue
         
         wb.close()
         stocks = [s for s in stocks_dict.values() if s['quantity'] > 0]
-        logger.info(f"XLSX parser found {len(stocks)} stocks")
+        logger.info(f"XLSX parser found {len(stocks)} stocks after aggregation")
         
     except Exception as e:
         logger.error(f"XLSX parser error: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
     
     return stocks
 
