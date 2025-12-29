@@ -605,11 +605,7 @@ export default function Portfolio() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleDelete(stock.stock_id);
-                          }}
+                          onClick={() => confirmDelete(stock)}
                           data-testid={`delete-stock-${stock.ticker}`}
                         >
                           <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
