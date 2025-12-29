@@ -1955,16 +1955,27 @@ async def get_unread_alerts_count(user: User = Depends(get_current_user)):
 # ==================== DIVIDENDS ROUTES ====================
 
 @api_router.get("/dividends")
-async def get_dividends(user: User = Depends(get_current_user)):
-    dividends = await db.dividends.find({"user_id": user.user_id}, {"_id": 0}).to_list(10000)
+async def get_dividends(user: User = Depends(get_current_user), portfolio_id: Optional[str] = None):
+    query = {"user_id": user.user_id}
+    if portfolio_id:
+        query["portfolio_id"] = portfolio_id
+    dividends = await db.dividends.find(query, {"_id": 0}).to_list(10000)
     return dividends
 
 @api_router.post("/dividends")
 async def add_dividend(dividend_data: DividendCreate, user: User = Depends(get_current_user)):
+    # Get portfolio_id from the stock or use provided one
+    portfolio_id = dividend_data.portfolio_id
+    if not portfolio_id and dividend_data.stock_id:
+        stock = await db.stocks.find_one({"stock_id": dividend_data.stock_id, "user_id": user.user_id})
+        if stock:
+            portfolio_id = stock.get("portfolio_id")
+    
     dividend = Dividend(
         user_id=user.user_id,
         stock_id=dividend_data.stock_id,
         ticker=dividend_data.ticker.upper(),
+        portfolio_id=portfolio_id,
         amount=dividend_data.amount,
         payment_date=dividend_data.payment_date,
         type=dividend_data.type
@@ -1975,8 +1986,11 @@ async def add_dividend(dividend_data: DividendCreate, user: User = Depends(get_c
     return {k: v for k, v in doc.items() if k != "_id"}
 
 @api_router.get("/dividends/summary")
-async def get_dividends_summary(user: User = Depends(get_current_user)):
-    dividends = await db.dividends.find({"user_id": user.user_id}, {"_id": 0}).to_list(10000)
+async def get_dividends_summary(user: User = Depends(get_current_user), portfolio_id: Optional[str] = None):
+    query = {"user_id": user.user_id}
+    if portfolio_id:
+        query["portfolio_id"] = portfolio_id
+    dividends = await db.dividends.find(query, {"_id": 0}).to_list(10000)
     
     by_month = {}
     by_ticker = {}
@@ -1993,18 +2007,24 @@ async def get_dividends_summary(user: User = Depends(get_current_user)):
     }
 
 @api_router.delete("/dividends/all")
-async def delete_all_dividends(user: User = Depends(get_current_user)):
-    """Delete all dividends for the current user"""
-    result = await db.dividends.delete_many({"user_id": user.user_id})
+async def delete_all_dividends(user: User = Depends(get_current_user), portfolio_id: Optional[str] = None):
+    """Delete all dividends for the current user, optionally filtered by portfolio"""
+    query = {"user_id": user.user_id}
+    if portfolio_id:
+        query["portfolio_id"] = portfolio_id
+    result = await db.dividends.delete_many(query)
     return {"message": f"{result.deleted_count} dividendos excluídos", "deleted": result.deleted_count}
 
 @api_router.post("/dividends/sync")
-async def sync_dividends(user: User = Depends(get_current_user)):
+async def sync_dividends(user: User = Depends(get_current_user), portfolio_id: Optional[str] = None):
     """
     Synchronize dividends from Investidor10 for all stocks in the user's portfolio.
     This checks if the user held the stock on the 'data com' (ex-date) and creates dividend entries.
     """
-    stocks = await db.stocks.find({"user_id": user.user_id}, {"_id": 0}).to_list(1000)
+    query = {"user_id": user.user_id}
+    if portfolio_id:
+        query["portfolio_id"] = portfolio_id
+    stocks = await db.stocks.find(query, {"_id": 0}).to_list(1000)
     
     if not stocks:
         return {"message": "Nenhuma ação na carteira", "synced": 0, "total_tickers": 0}
