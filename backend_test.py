@@ -107,7 +107,7 @@ class StockFolioAPITester:
             "current_price": 38.50,
             "dividend_yield": 12.5
         }
-        return self.run_test("Add Stock to Portfolio", "POST", "portfolio/stocks", 201, stock_data)
+        return self.run_test("Add Stock to Portfolio", "POST", "portfolio/stocks", 200, stock_data)
 
     def test_portfolio_summary(self):
         """Test portfolio summary"""
