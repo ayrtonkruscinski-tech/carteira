@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MessageCircle, X, Heart, Copy, Check, HelpCircle, MessageSquare } from "lucide-react";
+import { MessageCircle, X, Heart, Copy, Check, HelpCircle, MessageSquare, Mail, ExternalLink } from "lucide-react";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -18,7 +18,10 @@ const PIX_KEYS = [
 export const FloatingSupport = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showDonationModal, setShowDonationModal] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [contactType, setContactType] = useState("support"); // "support" or "feedback"
   const [copiedKey, setCopiedKey] = useState(null);
+  const [copiedEmail, setCopiedEmail] = useState(false);
 
   const handleCopyPix = async (key) => {
     try {
@@ -31,14 +34,36 @@ export const FloatingSupport = () => {
     }
   };
 
+  const handleCopyEmail = async () => {
+    try {
+      await navigator.clipboard.writeText(SUPPORT_EMAIL);
+      setCopiedEmail(true);
+      toast.success("Email copiado!");
+      setTimeout(() => setCopiedEmail(false), 3000);
+    } catch (error) {
+      toast.error("Erro ao copiar");
+    }
+  };
+
   const handleSupport = () => {
-    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=Suporte StockFolio&body=Olá, preciso de ajuda com...`;
+    setContactType("support");
+    setShowContactModal(true);
     setIsMenuOpen(false);
   };
 
   const handleFeedback = () => {
-    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=Feedback StockFolio&body=Olá, gostaria de compartilhar um feedback...`;
+    setContactType("feedback");
+    setShowContactModal(true);
     setIsMenuOpen(false);
+  };
+
+  const openEmailClient = () => {
+    const subject = contactType === "support" ? "Suporte StockFolio" : "Feedback StockFolio";
+    const body = contactType === "support" 
+      ? "Olá, preciso de ajuda com..." 
+      : "Olá, gostaria de compartilhar um feedback...";
+    const mailtoLink = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(mailtoLink, "_blank");
   };
 
   return (
@@ -110,6 +135,88 @@ export const FloatingSupport = () => {
           </Button>
         </div>
       </div>
+
+      {/* Contact Modal (Support/Feedback) */}
+      <Dialog open={showContactModal} onOpenChange={setShowContactModal}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {contactType === "support" ? (
+                <>
+                  <HelpCircle className="w-5 h-5 text-blue-500" />
+                  Suporte
+                </>
+              ) : (
+                <>
+                  <MessageSquare className="w-5 h-5 text-purple-500" />
+                  Feedback
+                </>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-muted-foreground mb-6">
+              {contactType === "support" 
+                ? "Precisa de ajuda? Entre em contato conosco por email e responderemos o mais rápido possível."
+                : "Sua opinião é muito importante! Envie sugestões, críticas ou elogios para nos ajudar a melhorar."}
+            </p>
+            
+            <div className="bg-card border border-border rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Mail className="w-4 h-4 text-primary" />
+                </div>
+                <span className="font-medium text-foreground">Email de Contato</span>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <div className="flex-1 bg-muted/50 rounded-lg px-4 py-3 font-mono text-sm text-foreground">
+                  {SUPPORT_EMAIL}
+                </div>
+                <Button
+                  onClick={handleCopyEmail}
+                  variant="outline"
+                  size="icon"
+                  className="h-11 w-11 flex-shrink-0"
+                  title="Copiar email"
+                >
+                  {copiedEmail ? (
+                    <Check className="w-4 h-4 text-primary" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3">
+              <Button
+                onClick={openEmailClient}
+                className="w-full bg-primary hover:bg-primary/90"
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                Abrir Cliente de Email
+                <ExternalLink className="w-4 h-4 ml-2" />
+              </Button>
+              
+              <a
+                href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(contactType === "support" ? "Suporte StockFolio" : "Feedback StockFolio")}`}
+                className="text-center text-sm text-muted-foreground hover:text-primary underline"
+              >
+                Ou clique aqui se o botão não funcionar
+              </a>
+            </div>
+
+            <div className="mt-6 p-4 bg-primary/5 rounded-lg border border-primary/20">
+              <p className="text-sm text-center text-muted-foreground">
+                {contactType === "support" 
+                  ? "Descreva seu problema com detalhes para que possamos ajudá-lo melhor."
+                  : "Agradecemos seu tempo e suas sugestões! 💚"}
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Donation Modal */}
       <Dialog open={showDonationModal} onOpenChange={setShowDonationModal}>
