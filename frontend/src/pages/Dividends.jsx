@@ -161,6 +161,31 @@ export default function Dividends() {
     }
   };
 
+  const handleDeleteAllDividends = async () => {
+    setDeleting(true);
+    try {
+      const response = await fetch(`${API}/dividends/all`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast.success(result.message || "Todos os dividendos foram excluídos!");
+        fetchData();
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || "Erro ao excluir dividendos");
+      }
+    } catch (error) {
+      console.error("Error deleting dividends:", error);
+      toast.error("Erro ao excluir dividendos");
+    } finally {
+      setDeleting(false);
+      setDeleteAllDialogOpen(false);
+    }
+  };
+
   const formatCurrency = (value) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
