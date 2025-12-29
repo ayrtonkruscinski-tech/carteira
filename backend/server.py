@@ -795,6 +795,128 @@ async def get_portfolio_history(user: User = Depends(get_current_user), days: in
     
     return list(reversed(snapshots))
 
+@api_router.get("/portfolio/evolution")
+async def get_portfolio_evolution(user: User = Depends(get_current_user), period: str = "1m"):
+    """
+    Get portfolio evolution based on purchase dates.
+    Period options: 1w (week), 1m (month), 12m (year), 5y (5 years), max (all time)
+    """
+    stocks = await db.stocks.find({"user_id": user.user_id}, {"_id": 0}).to_list(1000)
+    dividends = await db.dividends.find({"user_id": user.user_id}, {"_id": 0}).to_list(10000)
+    
+    if not stocks:
+        return []
+    
+    # Calculate date range based on period
+    today = datetime.now(timezone.utc).date()
+    
+    period_days = {
+        "1w": 7,
+        "1m": 30,
+        "12m": 365,
+        "5y": 1825,
+        "max": 3650  # 10 years max
+    }
+    
+    days_back = period_days.get(period, 30)
+    start_date = today - timedelta(days=days_back)
+    
+    # Find the earliest purchase date
+    earliest_purchase = None
+    for stock in stocks:
+        if stock.get("purchase_date"):
+            try:
+                purchase_dt = datetime.strptime(stock["purchase_date"], "%Y-%m-%d").date()
+                if earliest_purchase is None or purchase_dt < earliest_purchase:
+                    earliest_purchase = purchase_dt
+            except:
+                pass
+    
+    # If we have purchases, start from the earliest one (within our period)
+    if earliest_purchase and earliest_purchase > start_date:
+        start_date = earliest_purchase
+    
+    # Create dividend lookup by date
+    dividend_by_date = {}
+    for div in dividends:
+        payment_date = div.get("payment_date", "")[:10]
+        if payment_date:
+            dividend_by_date[payment_date] = dividend_by_date.get(payment_date, 0) + div["amount"]
+    
+    # Generate evolution data points
+    evolution = []
+    current_date = start_date
+    cumulative_dividends = 0
+    
+    # Pre-calculate dividends received before start_date
+    for div in dividends:
+        payment_date = div.get("payment_date", "")[:10]
+        if payment_date:
+            try:
+                div_date = datetime.strptime(payment_date, "%Y-%m-%d").date()
+                if div_date < start_date:
+                    cumulative_dividends += div["amount"]
+            except:
+                pass
+    
+    while current_date <= today:
+        date_str = current_date.strftime("%Y-%m-%d")
+        
+        # Calculate portfolio value on this date
+        # Only include stocks that were purchased on or before this date
+        total_invested = 0
+        total_current = 0
+        
+        for stock in stocks:
+            purchase_date = stock.get("purchase_date")
+            if purchase_date:
+                try:
+                    purchase_dt = datetime.strptime(purchase_date, "%Y-%m-%d").date()
+                    if purchase_dt <= current_date:
+                        # Stock was owned on this date
+                        invested = stock["quantity"] * stock["average_price"]
+                        current_value = stock["quantity"] * (stock.get("current_price") or stock["average_price"])
+                        total_invested += invested
+                        total_current += current_value
+                except:
+                    # If date parsing fails, include the stock
+                    total_invested += stock["quantity"] * stock["average_price"]
+                    total_current += stock["quantity"] * (stock.get("current_price") or stock["average_price"])
+            else:
+                # No purchase date, include the stock
+                total_invested += stock["quantity"] * stock["average_price"]
+                total_current += stock["quantity"] * (stock.get("current_price") or stock["average_price"])
+        
+        # Add dividends received on this date
+        if date_str in dividend_by_date:
+            cumulative_dividends += dividend_by_date[date_str]
+        
+        # Only add data points where we have investments
+        if total_invested > 0:
+            evolution.append({
+                "date": date_str,
+                "invested": round(total_invested, 2),
+                "current": round(total_current, 2),
+                "dividends": round(cumulative_dividends, 2),
+                "total": round(total_current + cumulative_dividends, 2),
+                "gain": round(total_current - total_invested, 2),
+                "gain_percent": round(((total_current - total_invested) / total_invested) * 100, 2) if total_invested > 0 else 0
+            })
+        
+        # Move to next date (adjust granularity based on period)
+        if period == "1w":
+            current_date += timedelta(days=1)
+        elif period == "1m":
+            current_date += timedelta(days=1)
+        elif period == "12m":
+            current_date += timedelta(days=7)  # Weekly for 12 months
+        elif period == "5y":
+            current_date += timedelta(days=30)  # Monthly for 5 years
+        else:  # max
+            current_date += timedelta(days=30)  # Monthly
+    
+    return evolution
+
 @api_router.post("/portfolio/snapshot")
 async def create_portfolio_snapshot(user: User = Depends(get_current_user)):
     """Manually create a portfolio snapshot"""
