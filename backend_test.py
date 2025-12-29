@@ -128,6 +128,14 @@ class StockFolioAPITester:
         }
         return self.run_test("Add Dividend", "POST", "dividends", 200, dividend_data)
 
+    def test_dividends_sync(self):
+        """Test dividend synchronization from Investidor10"""
+        return self.run_test("Sync Dividends from Investidor10", "POST", "dividends/sync", 200)
+
+    def test_dividends_summary(self):
+        """Test dividends summary"""
+        return self.run_test("Get Dividends Summary", "GET", "dividends/summary", 200)
+
     def test_valuation_calculate(self):
         """Test valuation calculation"""
         valuation_data = {
