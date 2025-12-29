@@ -922,11 +922,11 @@ def parse_xlsx(file_bytes: bytes) -> List[dict]:
         
         # Map columns - order matters! More specific keywords first
         header_map = {
-            'ticker': ['produto', 'ticker', 'codigo', 'código', 'symbol', 'ativo', 'papel', 'acao', 'ação'],
+            'ticker': ['codigo de negociacao', 'código de negociação', 'produto', 'ticker', 'codigo', 'código', 'symbol', 'ativo', 'papel', 'acao', 'ação'],
             'name': ['name', 'nome', 'empresa', 'description', 'descricao', 'descrição'],
             'quantity': ['quantidade', 'quantity', 'qtd', 'qtde', 'shares', 'qty'],
             'average_price': ['preço unitário', 'preco unitario', 'unitario', 'unitário', 'average_price', 'preco_medio', 'preço_médio', 'preco', 'preço', 'pm', 'custo'],
-            'purchase_date': ['purchase_date', 'data_compra', 'date', 'data'],
+            'purchase_date': ['data do negocio', 'data do negócio', 'purchase_date', 'data_compra', 'date', 'data'],
             'sector': ['sector', 'setor', 'industry', 'segmento']
         }
         
@@ -938,21 +938,11 @@ def parse_xlsx(file_bytes: bytes) -> List[dict]:
                 # Normalize accented characters
                 h_normalized = h_lower.replace('ã', 'a').replace('ç', 'c').replace('í', 'i').replace('é', 'e').replace('ú', 'u').replace('á', 'a').replace('ó', 'o')
                 
-                # For ticker, prefer exact matches first
-                if key == 'ticker':
-                    # Check exact match first
-                    if h_normalized in ['produto', 'ticker', 'codigo', 'ativo', 'papel', 'symbol']:
+                # Check if any keyword matches
+                for keyword in header_map[key]:
+                    keyword_normalized = keyword.replace('ã', 'a').replace('ç', 'c').replace('í', 'i').replace('é', 'e').replace('ú', 'u').replace('á', 'a').replace('ó', 'o')
+                    if keyword_normalized in h_normalized or h_normalized in keyword_normalized:
                         return idx
-                    # Then check if starts with keyword
-                    for keyword in header_map[key]:
-                        keyword_normalized = keyword.replace('ã', 'a').replace('ç', 'c').replace('í', 'i').replace('é', 'e').replace('ú', 'u').replace('á', 'a').replace('ó', 'o')
-                        if h_normalized.startswith(keyword_normalized):
-                            return idx
-                else:
-                    for keyword in header_map[key]:
-                        keyword_normalized = keyword.replace('ã', 'a').replace('ç', 'c').replace('í', 'i').replace('é', 'e').replace('ú', 'u').replace('á', 'a').replace('ó', 'o')
-                        if keyword_normalized in h_normalized:
-                            return idx
             return None
         
         ticker_idx = find_col_idx('ticker')
