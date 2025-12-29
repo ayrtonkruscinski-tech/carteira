@@ -79,16 +79,21 @@ export default function Dividends() {
   const [chartStatusFilter, setChartStatusFilter] = useState("all");
   const [chartPeriodFilter, setChartPeriodFilter] = useState("12");
 
+  // Get current portfolio
+  const portfolioContext = usePortfolioSafe();
+  const currentPortfolio = portfolioContext?.currentPortfolio;
+
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [currentPortfolio?.portfolio_id]);
 
   const fetchData = async () => {
     try {
+      const portfolioParam = currentPortfolio?.portfolio_id ? `?portfolio_id=${currentPortfolio.portfolio_id}` : "";
       const [dividendsRes, stocksRes, summaryRes] = await Promise.all([
-        fetch(`${API}/dividends`, { credentials: "include" }),
-        fetch(`${API}/portfolio/stocks`, { credentials: "include" }),
-        fetch(`${API}/dividends/summary`, { credentials: "include" }),
+        fetch(`${API}/dividends${portfolioParam}`, { credentials: "include" }),
+        fetch(`${API}/portfolio/stocks${portfolioParam}`, { credentials: "include" }),
+        fetch(`${API}/dividends/summary${portfolioParam}`, { credentials: "include" }),
       ]);
 
       if (dividendsRes.ok) setDividends(await dividendsRes.json());
