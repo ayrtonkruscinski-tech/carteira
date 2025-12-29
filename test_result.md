@@ -341,26 +341,38 @@ agent_communication:
 
   - agent: "testing"
     message: |
-      DELETE ALL ENDPOINTS - TESTE COMPLETO REALIZADO ✅
+      CSV/XLSX IMPORT WITH PURCHASE_DATE - CRITICAL ISSUES FOUND ❌
       
-      RESULTADOS DOS TESTES:
-      ✅ DELETE /api/dividends/all funcionando perfeitamente
-      ✅ DELETE /api/portfolio/stocks/all funcionando perfeitamente
-      ✅ Ambos endpoints requerem autenticação (401 sem auth)
-      ✅ Formato de resposta correto: {message: "X itens excluídos", deleted: number}
-      ✅ Cascade deletion funcionando (stocks/all também deleta dividendos)
+      TESTED FUNCTIONALITY:
+      ✅ CSV file upload and parsing working
+      ✅ Purchase_date column detection working
+      ✅ Basic import functionality working
       
-      PROBLEMA ENCONTRADO E CORRIGIDO:
-      ❌ Inicialmente DELETE /api/portfolio/stocks/all retornava 404
-      🔧 CAUSA: Conflito de rotas - FastAPI interpretava 'all' como stock_id
-      ✅ SOLUÇÃO: Movido endpoint /portfolio/stocks/all ANTES de /portfolio/stocks/{stock_id}
+      CRITICAL ISSUES IDENTIFIED:
+      ❌ Generic CSV parser missing date format conversion
+         - Dates in DD/MM/YYYY format not converted to YYYY-MM-DD
+         - PETR4: '20/01/2024' (should be '2024-01-20')
+         - ITUB4: '10/03/2024' (should be '2024-03-10')
+         - Only VALE3 with YYYY-MM-DD format works correctly
       
-      CENÁRIOS TESTADOS:
-      1. ✅ DELETE /api/dividends/all - deleta todos os dividendos
-      2. ✅ GET /api/dividends retorna array vazio após delete
-      3. ✅ DELETE /api/portfolio/stocks/all - deleta todas as ações
-      4. ✅ GET /api/portfolio/stocks retorna array vazio após delete
-      5. ✅ Dividendos também são deletados quando stocks são deletados (cascade)
-      6. ✅ Ambos endpoints requerem autenticação
+      ❌ Generic CSV parser missing aggregation logic
+         - Multiple entries for same ticker not aggregated
+         - PETR4 should have quantity=150 (100+50) but shows quantity=50
+         - Should keep earliest purchase date but doesn't aggregate at all
       
-      DELETE ALL ENDPOINTS: FUNCIONANDO COMPLETAMENTE ✅
+      ❌ Inconsistent behavior between parsers
+         - CEI parser has both date conversion and aggregation logic
+         - XLSX parser has both date conversion and aggregation logic  
+         - Generic CSV parser missing both features
+      
+      ROOT CAUSE:
+      The parse_generic_csv() function in server.py lacks:
+      1. Date format conversion logic (lines 823-829 in CEI parser)
+      2. Ticker aggregation logic (lines 832-852 in CEI parser)
+      
+      IMPACT:
+      - Dividend sync fails due to incorrect date format for eligibility checks
+      - Portfolio shows incorrect quantities for aggregated stocks
+      - Inconsistent user experience between file formats
+      
+      REQUIRES MAIN AGENT TO FIX: Generic CSV parser needs date conversion and aggregation logic
