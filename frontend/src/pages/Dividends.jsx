@@ -287,6 +287,7 @@ export default function Dividends() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {/* Summary Cards */}
