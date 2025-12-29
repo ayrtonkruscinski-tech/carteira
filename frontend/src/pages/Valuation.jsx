@@ -424,7 +424,7 @@ export default function Valuation() {
                             <TooltipTrigger>
                               <HelpCircle className="w-3 h-3 text-muted-foreground" />
                             </TooltipTrigger>
-                            <TooltipContent className="bg-popover border-border">
+                            <TooltipContent>
                               Lucro Líquido anual em milhões
                             </TooltipContent>
                           </Tooltip>
@@ -446,7 +446,7 @@ export default function Valuation() {
                             <TooltipTrigger>
                               <HelpCircle className="w-3 h-3 text-muted-foreground" />
                             </TooltipTrigger>
-                            <TooltipContent className="bg-popover border-border">
+                            <TooltipContent>
                               Depreciação e Amortização em milhões
                             </TooltipContent>
                           </Tooltip>
@@ -468,7 +468,7 @@ export default function Valuation() {
                             <TooltipTrigger>
                               <HelpCircle className="w-3 h-3 text-muted-foreground" />
                             </TooltipTrigger>
-                            <TooltipContent className="bg-popover border-border">
+                            <TooltipContent>
                               Capital Expenditure em milhões
                             </TooltipContent>
                           </Tooltip>
@@ -484,8 +484,54 @@ export default function Valuation() {
                         />
                       </div>
                     </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="roe" className="flex items-center gap-1">
+                          ROE (%)
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <HelpCircle className="w-3 h-3 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              Retorno sobre Patrimônio Líquido. Usado para calcular crescimento: ROE × (1 - Payout)
+                            </TooltipContent>
+                          </Tooltip>
+                        </Label>
+                        <Input
+                          id="roe"
+                          type="number"
+                          step="0.1"
+                          value={formData.roe}
+                          onChange={(e) => setFormData({ ...formData, roe: e.target.value })}
+                          className="bg-input border-input font-mono"
+                          placeholder="Ex: 15"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="payout" className="flex items-center gap-1">
+                          Payout (%)
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <HelpCircle className="w-3 h-3 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              % do lucro distribuído como dividendos. Taxa de retenção = 1 - Payout
+                            </TooltipContent>
+                          </Tooltip>
+                        </Label>
+                        <Input
+                          id="payout"
+                          type="number"
+                          step="0.1"
+                          value={formData.payout}
+                          onChange={(e) => setFormData({ ...formData, payout: e.target.value })}
+                          className="bg-input border-input font-mono"
+                          placeholder="Ex: 40"
+                        />
+                      </div>
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      Owner Earnings = Lucro Líquido + Depreciação - CapEx. Margem de segurança de 25% aplicada.
+                      DCF com Owner Earnings: projeta 10 anos de fluxo de caixa usando crescimento = ROE × (1 - Payout). Margem de segurança de 25%.
                     </p>
                   </div>
 
