@@ -1166,23 +1166,36 @@ def parse_generic_csv(content: str) -> List[dict]:
                     
                     sector = row.get(sector_col) if sector_col else None
                     
-                    # Keep each purchase as separate record (don't aggregate)
-                    if quantity > 0:
-                        stocks.append({
+                    # Group by ticker + purchase_date
+                    # Same ticker on same date = aggregate
+                    # Same ticker on different dates = separate records
+                    key = (ticker, purchase_date)
+                    
+                    if key in stocks_dict:
+                        old_qty = stocks_dict[key]['quantity']
+                        old_price = stocks_dict[key]['average_price']
+                        new_qty = old_qty + quantity
+                        # Calculate weighted average price
+                        if new_qty > 0 and avg_price > 0:
+                            stocks_dict[key]['average_price'] = ((old_qty * old_price) + (quantity * avg_price)) / new_qty
+                        stocks_dict[key]['quantity'] = new_qty
+                    else:
+                        stocks_dict[key] = {
                             "ticker": ticker,
                             "name": name,
                             "quantity": quantity,
                             "average_price": avg_price,
                             "purchase_date": purchase_date,
                             "sector": sector
-                        })
+                        }
                         
                 except Exception as e:
                     logger.error(f"Error parsing row: {e}")
                     continue
             
-            if stocks:
-                logger.info(f"CSV parser found {len(stocks)} stock entries")
+            if stocks_dict:
+                stocks = [s for s in stocks_dict.values() if s['quantity'] > 0]
+                logger.info(f"CSV parser found {len(stocks)} stock entries (grouped by ticker+date)")
                 break
         except Exception as e:
             logger.error(f"Error with delimiter '{delimiter}': {e}")
