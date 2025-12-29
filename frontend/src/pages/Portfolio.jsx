@@ -57,11 +57,13 @@ export default function Portfolio() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
   const [stockToDelete, setStockToDelete] = useState(null);
   const [editingStock, setEditingStock] = useState(null);
   const [searchTicker, setSearchTicker] = useState("");
   const [searchResult, setSearchResult] = useState(null);
   const [importing, setImporting] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
   const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     ticker: "",
