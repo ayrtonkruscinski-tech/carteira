@@ -79,6 +79,7 @@ export default function Dashboard() {
         fetch(`${API}/portfolio/history?days=30`, { credentials: 'include' }),
         fetch(`${API}/alerts?unread_only=true`, { credentials: 'include' }),
         fetch(`${API}/dividends`, { credentials: 'include' }),
+        fetch(`${API}/portfolio/evolution?period=${evolutionPeriod}`, { credentials: 'include' }),
       ]);
 
       if (summaryRes.ok) setSummary(await summaryRes.json());
@@ -86,6 +87,7 @@ export default function Dashboard() {
       if (dividendsRes.ok) setDividendSummary(await dividendsRes.json());
       if (historyRes.ok) setPortfolioHistory(await historyRes.json());
       if (alertsRes.ok) setAlerts(await alertsRes.json());
+      if (evolutionRes.ok) setPortfolioEvolution(await evolutionRes.json());
       
       // Calculate dividends per stock
       if (allDividendsRes.ok) {
