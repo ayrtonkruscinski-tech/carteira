@@ -665,12 +665,12 @@ def parse_xlsx(file_bytes: bytes) -> List[dict]:
         
         logger.info(f"XLSX headers: {headers}")
         
-        # Map columns
+        # Map columns - order matters! More specific keywords first
         header_map = {
-            'ticker': ['ticker', 'codigo', 'código', 'symbol', 'ativo', 'papel', 'acao', 'ação', 'produto'],
+            'ticker': ['produto', 'ticker', 'codigo', 'código', 'symbol', 'ativo', 'papel', 'acao', 'ação'],
             'name': ['name', 'nome', 'empresa', 'description', 'descricao', 'descrição'],
-            'quantity': ['quantity', 'quantidade', 'qtd', 'qtde', 'shares', 'qty'],
-            'average_price': ['average_price', 'preco_medio', 'preço_médio', 'preco', 'preço', 'pm', 'custo', 'valor', 'preço unitário', 'preco unitario', 'unitario', 'unitário'],
+            'quantity': ['quantidade', 'quantity', 'qtd', 'qtde', 'shares', 'qty'],
+            'average_price': ['preço unitário', 'preco unitario', 'unitario', 'unitário', 'average_price', 'preco_medio', 'preço_médio', 'preco', 'preço', 'pm', 'custo'],
             'purchase_date': ['purchase_date', 'data_compra', 'date', 'data'],
             'sector': ['sector', 'setor', 'industry', 'segmento']
         }
