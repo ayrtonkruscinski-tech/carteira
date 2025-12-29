@@ -111,19 +111,49 @@ export default function Dashboard() {
     }
   };
 
-  const portfolioData = stocks.map((stock, index) => ({
+  // Group stocks by ticker for dashboard display
+  const groupedStocks = Object.values(
+    stocks.reduce((acc, stock) => {
+      const ticker = stock.ticker;
+      if (!acc[ticker]) {
+        acc[ticker] = {
+          ticker,
+          name: stock.name,
+          quantity: 0,
+          totalInvested: 0,
+          current_price: stock.current_price,
+          ceiling_price: stock.ceiling_price,
+          sector: stock.sector,
+          stock_id: stock.stock_id, // Keep first stock_id for reference
+        };
+      }
+      acc[ticker].quantity += stock.quantity;
+      acc[ticker].totalInvested += stock.quantity * stock.average_price;
+      // Update current_price if this entry has one
+      if (stock.current_price) {
+        acc[ticker].current_price = stock.current_price;
+      }
+      return acc;
+    }, {})
+  ).map(stock => ({
+    ...stock,
+    // Calculate weighted average price
+    average_price: stock.totalInvested / stock.quantity,
+  }));
+
+  const portfolioData = groupedStocks.map((stock, index) => ({
     name: stock.ticker,
     value: stock.quantity * (stock.current_price || stock.average_price),
     color: COLORS[index % COLORS.length],
   }));
 
   // Calculate total portfolio value for percentage calculations
-  const totalPortfolioValue = stocks.reduce((sum, stock) => {
+  const totalPortfolioValue = groupedStocks.reduce((sum, stock) => {
     return sum + stock.quantity * (stock.current_price || stock.average_price);
   }, 0);
 
-  // Enrich stocks with calculated metrics
-  const enrichedStocks = stocks.map(stock => {
+  // Enrich grouped stocks with calculated metrics
+  const enrichedStocks = groupedStocks.map(stock => {
     const currentPrice = stock.current_price || stock.average_price;
     const investedValue = stock.quantity * stock.average_price;
     const currentValue = stock.quantity * currentPrice;
