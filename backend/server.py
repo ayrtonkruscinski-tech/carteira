@@ -2566,6 +2566,26 @@ Seja objetivo e direto, use linguagem acessível."""
 async def root():
     return {"message": "Stock Portfolio API"}
 
+@api_router.get("/health")
+async def health_check():
+    """Health check endpoint for Kubernetes liveness/readiness probes"""
+    try:
+        # Ping MongoDB to verify connection
+        await client.admin.command('ping')
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return {
+            "status": "unhealthy",
+            "database": "disconnected",
+            "error": str(e),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+
 # Include router
 app.include_router(api_router)
 
@@ -2576,6 +2596,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.on_event("startup")
+async def startup_db_client():
+    """Verify MongoDB connection on startup"""
+    try:
+        # Ping the database to verify connection
+        await client.admin.command('ping')
+        logger.info("Successfully connected to MongoDB")
+    except Exception as e:
+        logger.warning(f"MongoDB connection warning on startup: {e}")
+        # Don't raise - let the app start and retry connections
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
