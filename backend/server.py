@@ -23,9 +23,23 @@ import requests
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
+# MongoDB connection with Atlas-compatible settings
 mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
+
+# Configure Motor client with settings optimized for MongoDB Atlas in Kubernetes
+# These settings handle DNS resolution issues, replica set failover, and connection pooling
+client = AsyncIOMotorClient(
+    mongo_url,
+    serverSelectionTimeoutMS=30000,  # 30 seconds for server selection (Atlas replica sets)
+    connectTimeoutMS=30000,  # 30 seconds connection timeout
+    socketTimeoutMS=60000,  # 60 seconds socket timeout
+    maxPoolSize=50,  # Connection pool size
+    minPoolSize=5,  # Minimum connections to keep
+    retryWrites=True,  # Enable retry for write operations
+    retryReads=True,  # Enable retry for read operations
+    w='majority',  # Write concern for data durability
+    directConnection=False,  # Allow connection to replica set (required for Atlas)
+)
 db = client[os.environ['DB_NAME']]
 
 # Alpha Vantage config
