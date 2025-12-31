@@ -14,7 +14,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "../components/ui/tooltip";
-import { TrendingUp, TrendingDown, Wallet, PieChart, Coins, BarChart3, RefreshCw, Bell, ArrowUpDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, PieChart, Coins, BarChart3, RefreshCw, Bell, ArrowUpDown, Sparkles } from "lucide-react";
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, LineChart, Line } from "recharts";
 import { toast } from "sonner";
 import { usePortfolioSafe } from "../context/PortfolioContext";
