@@ -174,16 +174,18 @@ export default function Portfolio() {
       
       let assetType = "acao"; // default
       let detectedName = "";
+      let detectedSector = "";
       
       // Process type detection
       if (typeResponse.ok) {
         const typeData = await typeResponse.json();
         assetType = typeData.asset_type || "acao";
         detectedName = typeData.name || "";
+        detectedSector = typeData.sector || "";
         
         if (typeData.source && typeData.source !== "pattern_fallback") {
           const typeLabel = assetType === "fii" ? "FII" : "Ação";
-          toast.success(`${searchTicker.toUpperCase()} detectado como ${typeLabel}`);
+          toast.success(`${searchTicker.toUpperCase()} detectado como ${typeLabel}${detectedSector ? ` - ${detectedSector}` : ''}`);
         }
       }
       
@@ -207,7 +209,7 @@ export default function Portfolio() {
           issuer: "",
           current_price: data.current_price?.toString() || "",
           dividend_yield: data.dividend_yield?.toString() || "",
-          sector: data.sector || "",
+          sector: detectedSector || data.sector || "",
           ceiling_price: "",
         });
         if (data.source === "alpha_vantage") {
