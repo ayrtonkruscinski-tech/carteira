@@ -1029,6 +1029,11 @@ async def add_stock(stock_data: StockCreate, user: User = Depends(get_current_us
         else:
             portfolio_id = default_portfolio.get("portfolio_id")
     
+    # Auto-detect asset type if not provided
+    asset_type = stock_data.asset_type
+    if not asset_type:
+        asset_type = detect_asset_type(stock_data.ticker)
+    
     stock = Stock(
         user_id=user.user_id,
         portfolio_id=portfolio_id,
@@ -1037,8 +1042,14 @@ async def add_stock(stock_data: StockCreate, user: User = Depends(get_current_us
         quantity=stock_data.quantity,
         average_price=stock_data.average_price,
         purchase_date=stock_data.purchase_date,
-        operation_type=stock_data.operation_type or "compra",  # Tipo de operação
+        operation_type=stock_data.operation_type or "compra",
         include_in_results=stock_data.include_in_results if stock_data.include_in_results is not None else True,
+        asset_type=asset_type,
+        fixed_income_type=stock_data.fixed_income_type,
+        maturity_date=stock_data.maturity_date,
+        rate=stock_data.rate,
+        rate_type=stock_data.rate_type,
+        issuer=stock_data.issuer,
         sector=stock_data.sector,
         current_price=stock_data.current_price,
         dividend_yield=stock_data.dividend_yield,
