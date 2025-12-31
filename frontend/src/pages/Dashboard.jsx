@@ -418,14 +418,20 @@ export default function Dashboard() {
   ].filter(item => item.value > 0); // Only show types that have value
 
   // Filtered portfolio data for chart
-  const filteredPortfolioData = distributionFilter === 'by_type'
-    ? distributionByType
-    : filteredStocksForChart.map((stock, index) => ({
-        name: stock.ticker,
-        value: stock.quantity * (stock.current_price || stock.average_price),
-        color: COLORS[index % COLORS.length],
-        asset_type: stock.asset_type,
-      }));
+  const filteredPortfolioData = (() => {
+    if (distributionFilter === 'by_type') {
+      return distributionByType;
+    }
+    if (distributionFilter === 'by_sector') {
+      return distributionBySector;
+    }
+    return filteredStocksForChart.map((stock, index) => ({
+      name: stock.ticker,
+      value: stock.quantity * (stock.current_price || stock.average_price),
+      color: COLORS[index % COLORS.length],
+      asset_type: stock.asset_type,
+    }));
+  })();
 
   // Distribution filter options
   const DISTRIBUTION_FILTERS = [
