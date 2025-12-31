@@ -968,7 +968,10 @@ export default function Dashboard() {
                         }}
                         labelStyle={{ color: '#94A3B8' }}
                         itemStyle={{ color: '#E2E8F0' }}
-                        formatter={(value) => formatCurrency(value)}
+                        formatter={(value) => {
+                          const percent = totalPortfolioValue > 0 ? ((value / totalPortfolioValue) * 100).toFixed(1) : 0;
+                          return [`${formatCurrency(value)} (${percent}%)`];
+                        }}
                       />
                     </RechartsPie>
                   </ResponsiveContainer>
@@ -983,12 +986,17 @@ export default function Dashboard() {
               )}
               {filteredPortfolioData.length > 0 && (
                 <div className="flex flex-wrap gap-3 mt-4">
-                  {filteredPortfolioData.map((item, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                      <span className="text-sm text-muted-foreground">{item.name}</span>
-                    </div>
-                  ))}
+                  {filteredPortfolioData.map((item, index) => {
+                    const percent = totalPortfolioValue > 0 ? ((item.value / totalPortfolioValue) * 100).toFixed(1) : 0;
+                    return (
+                      <div key={index} className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                        <span className="text-sm text-muted-foreground">
+                          {item.name} <span className="font-mono text-foreground">({percent}%)</span>
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
