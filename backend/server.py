@@ -1297,16 +1297,6 @@ async def resync_dividends_for_ticker(user_id: str, ticker: str, portfolio_id: s
         "ticker": ticker,
         "message": f"Proventos recalculados: {synced} sincronizados"
     }
-    
-    result = await db.dividends.delete_many(div_query)
-    
-    logger.info(f"Cleared {result.deleted_count} dividends for {ticker} - quantity changed, needs re-sync")
-    
-    return {
-        "deleted": result.deleted_count,
-        "ticker": ticker,
-        "message": f"{result.deleted_count} proventos removidos. Sincronize novamente para recalcular."
-    }
 
 @api_router.delete("/portfolio/stocks/all")
 async def delete_all_stocks(user: User = Depends(get_current_user)):
