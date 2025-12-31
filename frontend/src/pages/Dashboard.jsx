@@ -431,10 +431,60 @@ export default function Dashboard() {
   const DISTRIBUTION_FILTERS = [
     { value: 'all', label: 'Todos os Ativos' },
     { value: 'by_type', label: '% por Tipo de Ativo' },
+    { value: 'by_sector', label: '% por Segmento/Setor' },
     { value: 'acao', label: 'Ações (Renda Variável)' },
     { value: 'fii', label: 'Fundos Imobiliários (FIIs)' },
     { value: 'renda_fixa', label: 'Renda Fixa (Tesouro)' },
   ];
+
+  // Distribution by sector/segment
+  const distributionBySector = (() => {
+    const sectorMap = {};
+    const sectorColors = [
+      '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', 
+      '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1',
+      '#14B8A6', '#A855F7', '#F43F5E', '#22C55E', '#0EA5E9'
+    ];
+    
+    groupedStocks.forEach(stock => {
+      const sector = stock.sector || 'Não classificado';
+      const value = stock.quantity * (stock.current_price || stock.average_price);
+      
+      if (!sectorMap[sector]) {
+        sectorMap[sector] = { value: 0, count: 0 };
+      }
+      sectorMap[sector].value += value;
+      sectorMap[sector].count += 1;
+    });
+    
+    return Object.entries(sectorMap)
+      .map(([name, data], index) => ({
+        name,
+        value: data.value,
+        count: data.count,
+        color: sectorColors[index % sectorColors.length]
+      }))
+      .sort((a, b) => b.value - a.value);
+  })();
+
+  // Fetch ideal distribution from AI
+  const fetchIdealDistribution = async () => {
+    setLoadingIdeal(true);
+    try {
+      const response = await fetch(`${API}/portfolio/ideal-distribution`, {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setIdealDistribution(data);
+        setShowIdealDistribution(true);
+      }
+    } catch (error) {
+      console.error('Error fetching ideal distribution:', error);
+    } finally {
+      setLoadingIdeal(false);
+    }
+  };
 
   // Enrich grouped stocks with calculated metrics
   const enrichedStocks = groupedStocks.map(stock => {
