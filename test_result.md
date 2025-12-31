@@ -1082,3 +1082,64 @@ agent_communication:
       - working: true
         agent: "testing"
         comment: "✅ CODE ANALYSIS VERIFIED - Evolução de Proventos chart correctly implemented: 1) Chart positioned below 'Evolução Patrimonial' (line 935), 2) Title 'Evolução de Proventos' with purple Coins icon (lines 938-941), 3) Period buttons (Semanal, Mensal, 12 Meses, 5 Anos, Máximo) with purple styling when selected (lines 942-957), 4) AreaChart with purple color #A855F7 (lines 963-1024), 5) Tooltip shows 'Proventos Acumulados' (lines 1000-1012), 6) Two cards below: 'Total Acumulado' and 'No Período' with R$ values (lines 1032-1049). LIMITATION: Cannot perform functional UI testing due to Google Auth requirement (redirects to auth.emergentagent.com). Manual testing required for full validation."
+
+  - agent: "main"
+    message: |
+      CORREÇÃO DE BUGS CRÍTICOS:
+      
+      1. RECÁLCULO AUTOMÁTICO DE PROVENTOS AO EDITAR QUANTIDADE:
+         - Modificado PUT /api/portfolio/stocks/{stock_id}
+         - Quando quantidade ou data_de_compra muda, proventos são recalculados automaticamente
+         - Função resync_dividends_for_ticker() criada para re-sincronizar proventos do ticker
+         - Remove proventos antigos e sincroniza novos com quantidade atualizada
+         - Resposta inclui campo "dividends_resynced" com resultado da operação
+      
+      2. AUTO-DETECÇÃO DO TIPO DE ATIVO:
+         - Backend já tinha detect_asset_type() que funciona corretamente
+         - Frontend já tinha handleTickerChange() que detecta automaticamente
+         - Testado: MXRF11 -> fii, PETR4 -> acao, VALE3 -> acao
+         - Adicionado auto-detect ao update_stock() quando ticker muda
+      
+      ARQUIVOS MODIFICADOS:
+      - /app/backend/server.py (update_stock, resync_dividends_for_ticker, fetch_investidor10_dividends_sync)
+      
+      FLUXO CORRIGIDO:
+      1. Usuário lança MXRF11 com 1 cota
+      2. Usuário sincroniza proventos (calcula baseado em 1 cota)
+      3. Usuário edita para 500 cotas
+      4. Sistema automaticamente:
+         - Detecta mudança de quantidade
+         - Remove proventos antigos do MXRF11
+         - Re-sincroniza proventos com 500 cotas
+         - Valores agora refletem 500 cotas
+      
+      PRECISA TESTAR:
+      1. Login com Google
+      2. Adicionar FII (ex: MXRF11) - verificar tipo detectado como "FII"
+      3. Sincronizar proventos
+      4. Editar quantidade
+      5. Verificar se proventos foram recalculados
+
+  - task: "Auto-resync dividends on quantity change"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implementado recálculo automático de proventos quando quantidade ou data de compra é alterada. Função resync_dividends_for_ticker() criada."
+
+  - task: "Auto-detect asset type"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py, /app/frontend/src/pages/Portfolio.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Auto-detecção já existia e funciona corretamente. Testado: MXRF11->fii, HGLG11->fii, PETR4->acao, VALE3->acao. Backend detect_asset_type() e frontend handleTickerChange() funcionando."
