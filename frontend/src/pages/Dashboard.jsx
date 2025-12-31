@@ -82,7 +82,7 @@ const StocksTable = ({ stocks, title, assetType, showFixedIncomeColumns = false,
                 <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Valor</th>
                 <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Variação</th>
                 {!showFixedIncomeColumns && (
-                  <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Dividendos</th>
+                  <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Proventos</th>
                 )}
                 <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Rentab.</th>
                 <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">% Cart.</th>
