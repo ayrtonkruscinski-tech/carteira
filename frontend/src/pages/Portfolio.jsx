@@ -111,7 +111,9 @@ export default function Portfolio() {
   const [deletingAll, setDeletingAll] = useState(false);
   const [sortBy, setSortBy] = useState("date_desc");
   const [currentPage, setCurrentPage] = useState(1);
+  const [detectingType, setDetectingType] = useState(false);
   const fileInputRef = useRef(null);
+  const detectTypeTimeoutRef = useRef(null);
   const [formData, setFormData] = useState({
     ticker: "",
     name: "",
