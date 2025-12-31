@@ -409,6 +409,9 @@ export default function Dashboard() {
                   <p className="text-2xl font-bold font-mono text-foreground" data-testid="total-value">
                     {formatCurrency(summary?.total_current || 0)}
                   </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Investido: <span className="font-mono text-foreground">{formatCurrency(summary?.total_invested || 0)}</span>
+                  </p>
                 </div>
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Wallet className="w-6 h-6 text-primary" />
