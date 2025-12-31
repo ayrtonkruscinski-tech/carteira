@@ -154,6 +154,7 @@ export default function Portfolio() {
       quantity: parseFloat(formData.quantity),
       average_price: parseFloat(formData.average_price),
       purchase_date: formData.purchase_date || null,
+      operation_type: formData.operation_type || "compra",  // Tipo de operação
       current_price: formData.current_price ? parseFloat(formData.current_price) : null,
       dividend_yield: formData.dividend_yield ? parseFloat(formData.dividend_yield) : null,
       sector: formData.sector || null,
@@ -173,6 +174,7 @@ export default function Portfolio() {
               quantity: payload.quantity,
               average_price: payload.average_price,
               purchase_date: payload.purchase_date,
+              operation_type: payload.operation_type,
               current_price: payload.current_price,
               dividend_yield: payload.dividend_yield,
               ceiling_price: payload.ceiling_price,
@@ -191,13 +193,14 @@ export default function Portfolio() {
           body: JSON.stringify(payload),
         });
         if (response.ok) {
-          toast.success("Ação adicionada com sucesso!");
+          const opLabel = payload.operation_type === "venda" ? "Venda" : "Compra";
+          toast.success(`${opLabel} registrada com sucesso!`);
           fetchStocks();
         }
       }
       resetForm();
     } catch (error) {
-      toast.error("Erro ao salvar ação");
+      toast.error("Erro ao salvar operação");
       console.error("Error saving stock:", error);
     }
   };
