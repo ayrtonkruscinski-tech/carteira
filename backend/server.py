@@ -84,11 +84,12 @@ def detect_asset_type(ticker: str) -> str:
     return "acao"
 
 
+
 def detect_asset_type_from_investidor10(ticker: str) -> dict:
     """
-    Detect asset type by checking if ticker exists on Investidor10.
+    Detect asset type and sector by checking if ticker exists on Investidor10.
     Checks both https://investidor10.com.br/acoes/ and https://investidor10.com.br/fiis/
-    Returns dict with asset_type, name, and source.
+    Returns dict with asset_type, name, sector, and source.
     """
     ticker = ticker.upper().strip()
     
@@ -107,11 +108,29 @@ def detect_asset_type_from_investidor10(ticker: str) -> dict:
                 if "error" not in name_text.lower() and "oops" not in name_text.lower():
                     # Verify it's the correct asset page
                     if ticker.lower() in str(response.url).lower() and "/acoes/" in str(response.url).lower():
-                        logger.info(f"Detected {ticker} as AÇÃO from Investidor10")
+                        # Extract sector
+                        sector = None
+                        for cell in soup.find_all('div', class_='cell'):
+                            text = cell.get_text(strip=True)
+                            if text.startswith('Setor') and len(text) > 5:
+                                sector = text.replace('Setor', '').strip()
+                                break
+                        
+                        # Fallback: look for sector link
+                        if not sector:
+                            for a in soup.find_all('a'):
+                                href = a.get('href', '')
+                                link_text = a.get_text(strip=True)
+                                if '/setores/' in href and link_text.startswith('Setor'):
+                                    sector = link_text.replace('Setor', '').strip()
+                                    break
+                        
+                        logger.info(f"Detected {ticker} as AÇÃO from Investidor10, sector: {sector}")
                         return {
                             "ticker": ticker,
                             "asset_type": "acao",
                             "name": name_text,
+                            "sector": sector,
                             "source": "investidor10_acoes"
                         }
     except Exception as e:
@@ -132,11 +151,20 @@ def detect_asset_type_from_investidor10(ticker: str) -> dict:
                 if "error" not in name_text.lower() and "oops" not in name_text.lower():
                     # Verify it's the correct FII page
                     if ticker.lower() in str(response.url).lower() and "/fiis/" in str(response.url).lower():
-                        logger.info(f"Detected {ticker} as FII from Investidor10")
+                        # Extract segment (FIIs use SEGMENTO instead of Setor)
+                        segment = None
+                        for cell in soup.find_all('div', class_='cell'):
+                            text = cell.get_text(strip=True)
+                            if text.startswith('SEGMENTO') and len(text) > 8:
+                                segment = text.replace('SEGMENTO', '').strip()
+                                break
+                        
+                        logger.info(f"Detected {ticker} as FII from Investidor10, segment: {segment}")
                         return {
                             "ticker": ticker,
                             "asset_type": "fii",
                             "name": name_text,
+                            "sector": segment,  # For FIIs, sector = segment
                             "source": "investidor10_fiis"
                         }
     except Exception as e:
@@ -149,8 +177,10 @@ def detect_asset_type_from_investidor10(ticker: str) -> dict:
         "ticker": ticker,
         "asset_type": fallback_type,
         "name": None,
+        "sector": None,
         "source": "pattern_fallback"
     }
+
 
 # ==================== MODELS ====================
 
