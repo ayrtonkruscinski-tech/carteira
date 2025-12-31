@@ -69,6 +69,8 @@ export default function Portfolio() {
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
+  const [saleConfirmDialogOpen, setSaleConfirmDialogOpen] = useState(false);
+  const [pendingSalePayload, setPendingSalePayload] = useState(null);
   const [stockToDelete, setStockToDelete] = useState(null);
   const [editingStock, setEditingStock] = useState(null);
   const [searchTicker, setSearchTicker] = useState("");
@@ -84,7 +86,8 @@ export default function Portfolio() {
     quantity: "",
     average_price: "",
     purchase_date: "",
-    operation_type: "compra",  // "compra" ou "venda"
+    operation_type: "compra",  // "compra", "venda" ou "bonificacao"
+    include_in_results: true,  // Para vendas: incluir no dashboard
     current_price: "",
     dividend_yield: "",
     sector: "",
