@@ -1291,8 +1291,8 @@ PETR4,Petrobras PN,50,40.00,20/01/2024,Petróleo"""
         return all_passed
 
 def main():
-    print("🚀 Starting StockFolio API Tests - New Features")
-    print("=" * 50)
+    print("🚀 Starting StockFolio API Tests - REVIEW REQUEST CRITICAL FIXES")
+    print("=" * 60)
     
     tester = StockFolioAPITester()
     
@@ -1300,16 +1300,35 @@ def main():
     print("\n📋 Testing API Health...")
     tester.test_api_health()
     
-    # Test 2: Stock Search with Source Field
+    # Test 2: Authentication
+    print("\n📋 Testing Authentication...")
+    tester.test_auth_me()
+    
+    # REVIEW REQUEST TESTS - CRITICAL FIXES
+    print("\n" + "=" * 60)
+    print("🔥 REVIEW REQUEST TESTS - CRITICAL FIXES")
+    print("=" * 60)
+    
+    # Test 3: Auto-Detect Asset Type (Review Request Test 1)
+    print("\n📋 REVIEW REQUEST TEST 1: Auto-Detect Asset Type...")
+    tester.test_detect_asset_type_backend()
+    tester.test_auto_detect_asset_type_on_create()
+    
+    # Test 4: Auto-Resync Dividends on Quantity Change (Review Request Test 2)
+    print("\n📋 REVIEW REQUEST TEST 2: Auto-Resync Dividends on Quantity Change...")
+    tester.test_auto_resync_dividends_on_quantity_change()
+    
+    # ADDITIONAL COMPREHENSIVE TESTS
+    print("\n" + "=" * 60)
+    print("🔧 ADDITIONAL COMPREHENSIVE TESTS")
+    print("=" * 60)
+    
+    # Test 5: Stock Search with Source Field
     print("\n📋 Testing Stock Search with Source Field...")
     tester.test_stock_search_with_source("PETR4")
     tester.test_stock_search_with_source("VALE3")
     
-    # Test 3: Authentication
-    print("\n📋 Testing Authentication...")
-    tester.test_auth_me()
-    
-    # Test 4: Portfolio Operations
+    # Test 6: Portfolio Operations
     print("\n📋 Testing Portfolio Operations...")
     tester.test_portfolio_get_stocks()
     
@@ -1321,7 +1340,7 @@ def main():
     
     tester.test_portfolio_summary()
     
-    # Test 5: New Portfolio Features
+    # Test 7: New Portfolio Features
     print("\n📋 Testing New Portfolio Features...")
     tester.test_portfolio_import_csv()
     tester.test_portfolio_import_with_purchase_date()  # New comprehensive test
@@ -1330,13 +1349,13 @@ def main():
     tester.test_portfolio_snapshot()
     tester.test_portfolio_history()
     
-    # Test 6: Alerts System
+    # Test 8: Alerts System
     print("\n📋 Testing Alerts System...")
     tester.test_alerts_get()
     tester.test_alerts_count()
     tester.test_alerts_mark_read()
     
-    # Test 7: Dividends
+    # Test 9: Dividends
     print("\n📋 Testing Dividends...")
     tester.test_dividends_get()
     
@@ -1362,16 +1381,16 @@ def main():
     print("\n📋 Testing Updated Import and Dividend Sync (Review Request)...")
     tester.test_updated_import_and_dividend_sync()
     
-    # Test 8: DELETE ALL Endpoints
+    # Test 10: DELETE ALL Endpoints
     print("\n📋 Testing DELETE ALL Endpoints...")
     tester.test_delete_all_endpoints_comprehensive()
     
-    # Test 9: Valuation
+    # Test 11: Valuation
     print("\n📋 Testing Valuation...")
     tester.test_valuation_calculate()
     
     # Print final results
-    print("\n" + "=" * 50)
+    print("\n" + "=" * 60)
     print(f"📊 Test Results: {tester.tests_passed}/{tester.tests_run} passed")
     
     if tester.tests_passed == tester.tests_run:
