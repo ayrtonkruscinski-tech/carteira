@@ -190,6 +190,7 @@ export default function Dashboard() {
   const [evolutionPeriod, setEvolutionPeriod] = useState('1m');
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(null);
+  const [distributionFilter, setDistributionFilter] = useState('all');
   const [chartVisibility, setChartVisibility] = useState({
     invested: true,
     current: true,
