@@ -484,7 +484,7 @@ def fetch_investidor10_fundamentals(ticker: str) -> dict:
     return data
 
 async def fetch_investidor10_dividends_async(client: httpx.AsyncClient, ticker: str, page: int = 1) -> List[dict]:
-    """Busca histórico de dividendos de forma rápida e assíncrona."""
+    """Busca histórico de dividendos e bonificações de forma rápida e assíncrona."""
     url = f"https://investidor10.com.br/acoes/{ticker.lower()}/?page={page}"
     try:
         response = await client.get(url, timeout=15.0)
@@ -509,9 +509,6 @@ async def fetch_investidor10_dividends_async(client: httpx.AsyncClient, ticker: 
             if len(cells) < 4: continue
             
             tipo = cells[0].get_text(strip=True)
-            # REGRA: Ignorar bonificações (não são dinheiro)
-            if "bonifica" in tipo.lower(): continue
-            
             data_com_str = cells[1].get_text(strip=True)
             pagamento_str = cells[2].get_text(strip=True)
             valor_raw = cells[3].get_text(strip=True).replace('.', '').replace(',', '.')
@@ -530,12 +527,16 @@ async def fetch_investidor10_dividends_async(client: httpx.AsyncClient, ticker: 
                 # Limpa valor (remove R$, espaços, etc)
                 valor = float(re.sub(r'[^\d.]', '', valor_raw))
                 
-                if valor > 0:
+                # Verifica se é bonificação (tratamento especial)
+                is_bonificacao = "bonifica" in tipo.lower()
+                
+                if valor > 0 or is_bonificacao:
                     dividends.append({
-                        "tipo": tipo, # Nome exato: "Juros Sobre Capital Próprio", etc.
+                        "tipo": tipo,
                         "data_com": data_com,
                         "data_pagamento": data_pag,
-                        "valor": valor
+                        "valor": valor,
+                        "is_bonificacao": is_bonificacao
                     })
             except: continue
             
