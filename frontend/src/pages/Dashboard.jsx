@@ -436,10 +436,10 @@ export default function Dashboard() {
                       </TooltipTrigger>
                       <TooltipContent>
                         <p className="text-xs text-muted-foreground">
-                          Variação desde a abertura da B3 (10h)
+                          Variação do dia em relação ao fechamento anterior
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Zerado diariamente antes do pregão
+                          Zerado diariamente às 00:01 (BRT)
                         </p>
                       </TooltipContent>
                     </TooltipUI>
