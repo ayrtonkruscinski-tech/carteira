@@ -1261,8 +1261,11 @@ async def save_portfolio_snapshot(user_id: str):
     stocks = await db.stocks.find({"user_id": user_id}, {"_id": 0}).to_list(1000)
     dividends = await db.dividends.find({"user_id": user_id}, {"_id": 0}).to_list(10000)
     
-    total_invested = sum(s["quantity"] * s["average_price"] for s in stocks)
-    total_current = sum(s["quantity"] * (s.get("current_price") or s["average_price"]) for s in stocks)
+    # Filter out bonificações from invested value calculation
+    stocks_for_value = [s for s in stocks if s.get("operation_type") != "bonificacao"]
+    
+    total_invested = sum(s["quantity"] * s["average_price"] for s in stocks_for_value)
+    total_current = sum(s["quantity"] * (s.get("current_price") or s["average_price"]) for s in stocks_for_value)
     total_dividends = sum(d["amount"] for d in dividends)
     
     snapshot = PortfolioSnapshot(
