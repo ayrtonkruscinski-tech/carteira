@@ -1182,96 +1182,33 @@ async def recalculate_dividends_for_ticker(user_id: str, ticker: str, portfolio_
     """
     Recalcula todos os proventos de um ticker baseado nas quantidades atuais.
     Chamado quando a quantidade de um ativo é alterada.
+    
+    Estratégia: Deleta os proventos existentes do ticker e notifica o usuário para re-sincronizar.
+    Isso garante que os valores serão recalculados com as quantidades corretas.
     """
-    # Get all stocks for this ticker (may have multiple purchase dates)
+    # Get all stocks for this ticker
     query = {"user_id": user_id, "ticker": ticker}
     if portfolio_id:
         query["portfolio_id"] = portfolio_id
     
     user_stocks = await db.stocks.find(query, {"_id": 0}).to_list(100)
     if not user_stocks:
-        return
+        return {"deleted": 0, "message": "No stocks found"}
     
-    # Get all dividends for this ticker
+    # Delete all dividends for this ticker - they need to be re-synced
     div_query = {"user_id": user_id, "ticker": ticker}
     if portfolio_id:
         div_query["portfolio_id"] = portfolio_id
     
-    dividends = await db.dividends.find(div_query).to_list(10000)
+    result = await db.dividends.delete_many(div_query)
     
-    today = datetime.now(timezone.utc).date()
+    logger.info(f"Cleared {result.deleted_count} dividends for {ticker} - quantity changed, needs re-sync")
     
-    for div in dividends:
-        ex_date_str = div.get("ex_date", "")
-        if not ex_date_str:
-            continue
-        
-        try:
-            dt_com_obj = datetime.strptime(ex_date_str[:10], "%Y-%m-%d").date()
-        except:
-            continue
-        
-        # Skip if data_com is in the future
-        if today < dt_com_obj:
-            continue
-        
-        # Check for sales on this date (loses rights to dividend)
-        has_sale_on_date = any(
-            s.get("operation_type") == "venda" and 
-            s.get("purchase_date") and
-            s.get("purchase_date")[:10] == ex_date_str[:10]
-            for s in user_stocks
-        )
-        
-        if has_sale_on_date:
-            # Delete dividend - user sold and lost rights
-            await db.dividends.delete_one({"_id": div["_id"]})
-            logger.info(f"Deleted dividend for {ticker} on {ex_date_str} - sale registered")
-            continue
-        
-        # Calculate eligible shares (purchased BEFORE or ON ex-date, excluding bonificações)
-        total_eligible_shares = 0
-        for s in user_stocks:
-            p_date_str = s.get("purchase_date")
-            op_type = s.get("operation_type", "compra")
-            
-            # Only purchases (not sales or bonificações)
-            if not p_date_str or op_type != "compra":
-                continue
-            
-            try:
-                p_dt = datetime.strptime(p_date_str[:10], "%Y-%m-%d").date()
-            except:
-                continue
-            
-            if p_dt <= dt_com_obj:  # Before or ON ex-date
-                total_eligible_shares += s.get("quantity", 0)
-        
-        if total_eligible_shares <= 0:
-            # No eligible shares - delete dividend
-            await db.dividends.delete_one({"_id": div["_id"]})
-            logger.info(f"Deleted dividend for {ticker} on {ex_date_str} - no eligible shares")
-            continue
-        
-        # Get original per-share value from the dividend type/amount
-        # We need to reverse-calculate the per-share value
-        # Since we don't store per-share value, we need to fetch it again or estimate
-        # For now, we'll use a simpler approach: re-sync this ticker's dividends
-        
-        # Actually, the best approach is to store the per_share_value in the dividend
-        # For now, let's use the stored amount and just update based on new quantity ratio
-        # This is a workaround - ideally we should re-scrape
-        
-        old_amount = div.get("amount", 0)
-        
-        # We need to find the original per-share value
-        # Since dividends may have been created with different quantities,
-        # we'll trigger a re-sync for this ticker to get accurate values
-        
-    # The safest approach: delete all dividends for this ticker and re-sync
-    # This ensures accurate values based on current quantities
-    await db.dividends.delete_many({"user_id": user_id, "ticker": ticker})
-    logger.info(f"Cleared dividends for {ticker} - will be re-synced on next sync")
+    return {
+        "deleted": result.deleted_count,
+        "ticker": ticker,
+        "message": f"{result.deleted_count} proventos removidos. Sincronize novamente para recalcular."
+    }
 
 @api_router.delete("/portfolio/stocks/all")
 async def delete_all_stocks(user: User = Depends(get_current_user)):
