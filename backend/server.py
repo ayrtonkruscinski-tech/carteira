@@ -2142,12 +2142,12 @@ async def sync_dividends(user: User = Depends(get_current_user), portfolio_id: O
 
     unique_tickers = list(set(s["ticker"] for s in stocks))
     today = datetime.now(timezone.utc).date()
-    synced, updated = 0, 0
+    synced, updated, bonificacoes_aplicadas = 0, 0, 0
     sem = asyncio.Semaphore(5) 
 
     async with httpx.AsyncClient(follow_redirects=True) as client:
         async def process_ticker(ticker):
-            nonlocal synced, updated
+            nonlocal synced, updated, bonificacoes_aplicadas
             async with sem:
                 user_stocks = [s for s in stocks if s["ticker"] == ticker]
                 page = 1
@@ -2160,14 +2160,99 @@ async def sync_dividends(user: User = Depends(get_current_user), portfolio_id: O
                         
                         # REGRA: Só sincroniza se já passou da Data Com
                         if today < dt_com_obj: continue
-
-                        # Cálculo de quantidade total elegível
+                        
+                        # Verificar se há venda na data com - se houver, ignora este ticker para esta data
+                        has_sale_on_date = any(
+                            s.get("operation_type") == "venda" and 
+                            s.get("purchase_date") and
+                            s.get("purchase_date")[:10] == div["data_com"]
+                            for s in user_stocks
+                        )
+                        if has_sale_on_date:
+                            logger.info(f"Ignorando {ticker} na data {div['data_com']} - há venda registrada")
+                            continue
+                        
+                        # Tratamento especial para BONIFICAÇÃO
+                        if div.get("is_bonificacao"):
+                            # Calcula ações elegíveis (compradas ANTES ou NA data com)
+                            eligible_stocks = []
+                            for s in user_stocks:
+                                p_date_str = s.get("purchase_date")
+                                op_type = s.get("operation_type", "compra")
+                                if not p_date_str or op_type != "compra": continue
+                                p_dt = datetime.strptime(p_date_str[:10], "%Y-%m-%d").date()
+                                if p_dt <= dt_com_obj:  # Antes ou NA data com
+                                    eligible_stocks.append(s)
+                            
+                            if not eligible_stocks: continue
+                            
+                            # Valor da bonificação é a % (ex: 10 = 10%)
+                            # Se valor for < 1, provavelmente é decimal (0.10 = 10%)
+                            bonus_percent = div["valor"]
+                            if bonus_percent > 1:
+                                bonus_percent = bonus_percent / 100  # Converte 10 -> 0.10
+                            
+                            # Aplica bonificação em cada lançamento elegível
+                            for s in eligible_stocks:
+                                old_qty = s.get("quantity", 0)
+                                old_price = s.get("average_price", 0)
+                                
+                                # Nova quantidade após bonificação
+                                bonus_shares = old_qty * bonus_percent
+                                new_qty = old_qty + bonus_shares
+                                
+                                # Novo preço médio (total investido / nova quantidade)
+                                total_invested = old_qty * old_price
+                                new_avg_price = total_invested / new_qty if new_qty > 0 else old_price
+                                
+                                # Verifica se já aplicou esta bonificação
+                                bonif_key = f"bonif_{ticker}_{div['data_com']}"
+                                existing_bonif = await db.bonificacoes.find_one({
+                                    "user_id": user.user_id,
+                                    "stock_id": s.get("stock_id"),
+                                    "data_com": div["data_com"]
+                                })
+                                
+                                if not existing_bonif:
+                                    # Atualiza o lançamento no banco
+                                    await db.stocks.update_one(
+                                        {"stock_id": s.get("stock_id"), "user_id": user.user_id},
+                                        {"$set": {
+                                            "quantity": round(new_qty, 6),
+                                            "average_price": round(new_avg_price, 2),
+                                            "updated_at": datetime.now(timezone.utc).isoformat()
+                                        }}
+                                    )
+                                    
+                                    # Registra que aplicou a bonificação
+                                    await db.bonificacoes.insert_one({
+                                        "bonificacao_id": f"bonif_{uuid.uuid4().hex[:12]}",
+                                        "user_id": user.user_id,
+                                        "stock_id": s.get("stock_id"),
+                                        "ticker": ticker,
+                                        "data_com": div["data_com"],
+                                        "percentual": bonus_percent,
+                                        "quantidade_anterior": old_qty,
+                                        "quantidade_nova": round(new_qty, 6),
+                                        "preco_anterior": old_price,
+                                        "preco_novo": round(new_avg_price, 2),
+                                        "created_at": datetime.now(timezone.utc).isoformat()
+                                    })
+                                    
+                                    bonificacoes_aplicadas += 1
+                                    logger.info(f"Bonificação aplicada: {ticker} - {old_qty} -> {new_qty:.2f} ações, PM: {old_price:.2f} -> {new_avg_price:.2f}")
+                            
+                            continue  # Bonificação processada, não salva como dividendo
+                        
+                        # Processamento normal de dividendos
+                        # Cálculo de quantidade total elegível (compradas ANTES ou NA Data Com)
                         total_shares = 0
                         for s in user_stocks:
                             p_date_str = s.get("purchase_date")
-                            if not p_date_str: continue
+                            op_type = s.get("operation_type", "compra")
+                            if not p_date_str or op_type != "compra": continue
                             p_dt = datetime.strptime(p_date_str[:10], "%Y-%m-%d").date()
-                            if p_dt <= dt_com_obj:
+                            if p_dt <= dt_com_obj:  # Antes ou NA data com
                                 total_shares += s.get("quantity", 0)
                         
                         if total_shares <= 0: continue
@@ -2210,7 +2295,7 @@ async def sync_dividends(user: User = Depends(get_current_user), portfolio_id: O
 
         await asyncio.gather(*(process_ticker(t) for t in unique_tickers))
 
-    return {"novos": synced, "atualizados": updated}
+    return {"novos": synced, "atualizados": updated, "bonificacoes": bonificacoes_aplicadas}
 
 # ==================== VALUATION ROUTES ====================
 
