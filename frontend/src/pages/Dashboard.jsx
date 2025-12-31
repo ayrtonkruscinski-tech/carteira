@@ -358,21 +358,29 @@ export default function Dashboard() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Rentabilidade</p>
+                  <p className="text-sm text-muted-foreground mb-1">Resultado do Dia</p>
                   <div className="flex items-center gap-2">
                     <TooltipUI>
                       <TooltipTrigger asChild>
-                        <p className={`text-2xl font-bold font-mono cursor-help ${(summary?.gain_percent || 0) >= 0 ? 'text-primary' : 'text-destructive'}`} data-testid="gain-percent">
-                          {(summary?.gain_percent || 0) >= 0 ? '+' : ''}{(summary?.gain_percent || 0).toFixed(2)}%
-                        </p>
+                        <div className="cursor-help">
+                          <p className={`text-2xl font-bold font-mono ${(summary?.daily_gain || 0) >= 0 ? 'text-primary' : 'text-destructive'}`} data-testid="daily-gain">
+                            {formatCurrency(summary?.daily_gain || 0)}
+                          </p>
+                          <p className={`text-sm font-mono ${(summary?.daily_gain_percent || 0) >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                            {(summary?.daily_gain_percent || 0) >= 0 ? '+' : ''}{(summary?.daily_gain_percent || 0).toFixed(2)}%
+                          </p>
+                        </div>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p className="font-mono text-sm">
-                          {(summary?.total_gain || 0) >= 0 ? '+' : ''}{formatCurrency(summary?.total_gain || 0)}
+                        <p className="text-xs text-muted-foreground">
+                          Variação desde a abertura da B3 (10h)
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Zerado diariamente antes do pregão
                         </p>
                       </TooltipContent>
                     </TooltipUI>
-                    {(summary?.gain_percent || 0) >= 0 ? (
+                    {(summary?.daily_gain || 0) >= 0 ? (
                       <TrendingUp className="w-5 h-5 text-primary" />
                     ) : (
                       <TrendingDown className="w-5 h-5 text-destructive" />
@@ -390,10 +398,24 @@ export default function Dashboard() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Lucro/Prejuízo</p>
-                  <p className={`text-2xl font-bold font-mono ${(summary?.total_gain || 0) >= 0 ? 'text-primary' : 'text-destructive'}`} data-testid="total-gain">
-                    {formatCurrency(summary?.total_gain || 0)}
-                  </p>
+                  <p className="text-sm text-muted-foreground mb-1">Resultado Total</p>
+                  <TooltipUI>
+                    <TooltipTrigger asChild>
+                      <div className="cursor-help">
+                        <p className={`text-2xl font-bold font-mono ${(summary?.total_gain || 0) >= 0 ? 'text-primary' : 'text-destructive'}`} data-testid="total-gain">
+                          {formatCurrency(summary?.total_gain || 0)}
+                        </p>
+                        <p className={`text-sm font-mono ${(summary?.gain_percent || 0) >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                          {(summary?.gain_percent || 0) >= 0 ? '+' : ''}{(summary?.gain_percent || 0).toFixed(2)}%
+                        </p>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs text-muted-foreground">
+                        Ganho/Perda total desde o início
+                      </p>
+                    </TooltipContent>
+                  </TooltipUI>
                 </div>
                 <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${(summary?.total_gain || 0) >= 0 ? 'bg-primary/10' : 'bg-destructive/10'}`}>
                   {(summary?.total_gain || 0) >= 0 ? (
