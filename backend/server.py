@@ -3260,6 +3260,7 @@ async def analyze_portfolio(user: User = Depends(get_current_user)):
                     "ticker": ticker,
                     "name": stock.get("name", ticker),
                     "sector": stock.get("sector", "Não informado"),
+                    "asset_type": stock.get("asset_type", "acao"),
                     "quantity": 0,
                     "invested": 0,
                     "current": 0,
@@ -3279,66 +3280,96 @@ async def analyze_portfolio(user: User = Depends(get_current_user)):
             data["gain_percent"] = ((data["current"] / data["invested"]) - 1) * 100 if data["invested"] > 0 else 0
             data["portfolio_percent"] = (data["current"] / total_current) * 100 if total_current > 0 else 0
         
-        # Calculate dividends by ticker
-        dividends_by_ticker = {}
-        total_dividends = 0
+        # Calculate proventos by ticker (received and pending)
+        today = datetime.now(timezone.utc).date()
+        proventos_by_ticker = {}
+        proventos_received = 0
+        proventos_pending = 0
+        
         for div in dividends:
             ticker = div["ticker"]
-            dividends_by_ticker[ticker] = dividends_by_ticker.get(ticker, 0) + div["amount"]
-            total_dividends += div["amount"]
+            amount = div.get("amount", 0)
+            payment_date_str = div.get("payment_date", "")
+            
+            if ticker not in proventos_by_ticker:
+                proventos_by_ticker[ticker] = {"received": 0, "pending": 0}
+            
+            # Check if payment date has passed
+            try:
+                payment_date = datetime.strptime(payment_date_str[:10], "%Y-%m-%d").date() if payment_date_str else None
+                if payment_date and payment_date <= today:
+                    proventos_by_ticker[ticker]["received"] += amount
+                    proventos_received += amount
+                else:
+                    proventos_by_ticker[ticker]["pending"] += amount
+                    proventos_pending += amount
+            except:
+                proventos_by_ticker[ticker]["received"] += amount
+                proventos_received += amount
+        
+        total_proventos = proventos_received + proventos_pending
         
         # Build portfolio description
         portfolio_desc = []
         for ticker, data in sorted(portfolio_summary.items(), key=lambda x: -x[1]["current"]):
-            div_received = dividends_by_ticker.get(ticker, 0)
+            prov_data = proventos_by_ticker.get(ticker, {"received": 0, "pending": 0})
+            asset_type_label = "FII" if data["asset_type"] == "fii" else "Ação"
             portfolio_desc.append(
-                f"- {ticker} ({data['sector']}): {data['quantity']} ações, "
+                f"- {ticker} ({data['sector']}, {asset_type_label}): {data['quantity']:.0f} cotas/ações, "
                 f"PM R${data['average_price']:.2f}, Atual R${data.get('current_price', 0):.2f}, "
                 f"Rendimento {data['gain_percent']:+.1f}%, "
                 f"Peso {data['portfolio_percent']:.1f}%, "
-                f"Dividendos recebidos R${div_received:.2f}"
+                f"Proventos recebidos R${prov_data['received']:.2f}, a receber R${prov_data['pending']:.2f}"
             )
         
         total_gain = total_current - total_invested
         total_gain_percent = ((total_current / total_invested) - 1) * 100 if total_invested > 0 else 0
-        total_return = total_gain + total_dividends
+        total_return = total_gain + proventos_received
         total_return_percent = (total_return / total_invested) * 100 if total_invested > 0 else 0
         
-        prompt = f"""Analise esta carteira de ações brasileiras de forma completa e estratégica:
+        # Calculate yield on cost (proventos / invested)
+        yield_on_cost = (proventos_received / total_invested) * 100 if total_invested > 0 else 0
+        
+        prompt = f"""Analise esta carteira de investimentos brasileira de forma completa e estratégica:
 
 RESUMO DA CARTEIRA:
 - Total Investido: R$ {total_invested:,.2f}
 - Valor Atual: R$ {total_current:,.2f}
 - Ganho de Capital: R$ {total_gain:,.2f} ({total_gain_percent:+.1f}%)
-- Dividendos Recebidos: R$ {total_dividends:,.2f}
-- Retorno Total: R$ {total_return:,.2f} ({total_return_percent:+.1f}%)
+- Proventos Recebidos: R$ {proventos_received:,.2f}
+- Proventos a Receber: R$ {proventos_pending:,.2f}
+- Total de Proventos: R$ {total_proventos:,.2f}
+- Yield on Cost (Proventos/Investido): {yield_on_cost:.2f}%
+- Retorno Total (Ganho + Proventos Recebidos): R$ {total_return:,.2f} ({total_return_percent:+.1f}%)
 - Número de Ativos: {len(portfolio_summary)}
 
-COMPOSIÇÃO:
+COMPOSIÇÃO DETALHADA:
 {chr(10).join(portfolio_desc)}
 
 Por favor, forneça uma análise completa em português incluindo:
 
-1. **DIVERSIFICAÇÃO**: Avalie a diversificação setorial e de ativos. A carteira está bem diversificada?
+1. **DIVERSIFICAÇÃO**: Avalie a diversificação setorial e por tipo de ativo (Ações vs FIIs). A carteira está bem diversificada?
 
 2. **CONCENTRAÇÃO**: Identifique riscos de concentração excessiva em algum ativo ou setor.
 
-3. **QUALIDADE DOS ATIVOS**: Comente sobre a qualidade geral das empresas na carteira.
+3. **RENDA PASSIVA**: Analise os proventos recebidos e a receber. O yield on cost está adequado? Os FIIs e ações estão gerando boa renda?
 
-4. **PONTOS FORTES**: Quais são os pontos fortes desta carteira?
+4. **QUALIDADE DOS ATIVOS**: Comente sobre a qualidade geral das empresas e fundos na carteira.
 
-5. **PONTOS DE ATENÇÃO**: Quais aspectos merecem atenção ou podem ser melhorados?
+5. **PONTOS FORTES**: Quais são os pontos fortes desta carteira?
 
-6. **SUGESTÕES**: Dê 2-3 sugestões práticas para otimizar a carteira.
+6. **PONTOS DE ATENÇÃO**: Quais aspectos merecem atenção ou podem ser melhorados?
 
-7. **NOTA GERAL**: Dê uma nota de 0 a 10 para a carteira e justifique brevemente.
+7. **SUGESTÕES**: Dê 2-3 sugestões práticas para otimizar a carteira considerando renda passiva e crescimento.
+
+8. **NOTA GERAL**: Dê uma nota de 0 a 10 para a carteira e justifique brevemente.
 
 Seja objetivo e direto, use linguagem acessível."""
 
         chat = LlmChat(
             api_key=api_key,
             session_id=f"portfolio_analysis_{user.user_id}",
-            system_message="Você é um consultor financeiro especializado em análise de carteiras de ações brasileiras. Forneça análises estratégicas, objetivas e acionáveis."
+            system_message="Você é um consultor financeiro especializado em análise de carteiras de investimentos brasileiras (Ações e FIIs). Forneça análises estratégicas, objetivas e acionáveis, considerando tanto crescimento de capital quanto geração de renda passiva através de proventos."
         ).with_model("openai", "gpt-4o-mini")
         
         response = await chat.send_message(UserMessage(text=prompt))
@@ -3350,7 +3381,10 @@ Seja objetivo e direto, use linguagem acessível."""
                 "total_current": round(total_current, 2),
                 "total_gain": round(total_gain, 2),
                 "total_gain_percent": round(total_gain_percent, 2),
-                "total_dividends": round(total_dividends, 2),
+                "proventos_received": round(proventos_received, 2),
+                "proventos_pending": round(proventos_pending, 2),
+                "total_proventos": round(total_proventos, 2),
+                "yield_on_cost": round(yield_on_cost, 2),
                 "total_return": round(total_return, 2),
                 "total_return_percent": round(total_return_percent, 2),
                 "stocks_count": len(portfolio_summary),
