@@ -325,13 +325,13 @@ export const Layout = ({ children }) => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
         {children}
       </main>
 
       {/* Footer Disclaimer */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-background border-t border-border py-3 px-4 pr-20 z-30">
-        <p className="text-xs text-muted-foreground text-center max-w-4xl mx-auto">
+      <footer className="fixed bottom-0 left-0 right-0 bg-background border-t border-border py-3 px-4 z-30" style={{ paddingRight: '220px' }}>
+        <p className="text-xs text-muted-foreground text-center max-w-3xl mx-auto">
           <span className="font-semibold">Exoneração de Responsabilidade:</span> Os dados relativos a cotações e proventos são provenientes de bases de terceiros, não assumindo esta plataforma responsabilidade por eventuais inconsistências ou omissões.
         </p>
       </footer>
