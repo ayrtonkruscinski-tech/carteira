@@ -124,6 +124,7 @@ export default function Dividends() {
           ticker: formData.ticker,
           amount: parseFloat(formData.amount),
           payment_date: formData.payment_date,
+          ex_date: formData.ex_date || null,  // Data Com
           type: formData.type,
         }),
       });
