@@ -1476,6 +1476,139 @@ async def delete_stock(stock_id: str, user: User = Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Stock not found")
     return {"message": "Stock deleted"}
 
+
+@api_router.get("/portfolio/ideal-distribution")
+async def get_ideal_distribution(user: User = Depends(get_current_user), portfolio_id: Optional[str] = None):
+    """
+    Analyze current portfolio and suggest ideal distribution based on:
+    - Risk profile
+    - Asset diversification
+    - Sector balance
+    - Brazilian market best practices
+    """
+    # Build query
+    query = {"user_id": user.user_id}
+    if portfolio_id:
+        query["portfolio_id"] = portfolio_id
+    
+    stocks = await db.stocks.find(query, {"_id": 0}).to_list(1000)
+    
+    if not stocks:
+        return {
+            "distribution": [],
+            "recommendation": "Adicione ativos à sua carteira para receber recomendações personalizadas.",
+            "adjustments": []
+        }
+    
+    # Calculate current distribution
+    total_value = 0
+    by_type = {"acao": 0, "fii": 0, "renda_fixa": 0}
+    by_sector = {}
+    
+    for stock in stocks:
+        if stock.get("operation_type") == "venda":
+            continue
+        value = stock.get("quantity", 0) * (stock.get("current_price") or stock.get("average_price", 0))
+        total_value += value
+        
+        asset_type = stock.get("asset_type", "acao")
+        by_type[asset_type] = by_type.get(asset_type, 0) + value
+        
+        sector = stock.get("sector") or "Outros"
+        by_sector[sector] = by_sector.get(sector, 0) + value
+    
+    if total_value == 0:
+        return {
+            "distribution": [],
+            "recommendation": "Sem valor investido para análise.",
+            "adjustments": []
+        }
+    
+    # Current percentages
+    current_acao = (by_type["acao"] / total_value) * 100 if total_value > 0 else 0
+    current_fii = (by_type["fii"] / total_value) * 100 if total_value > 0 else 0
+    current_rf = (by_type["renda_fixa"] / total_value) * 100 if total_value > 0 else 0
+    
+    # Analyze risk profile based on current allocation
+    # More aggressive = more stocks, conservative = more fixed income
+    is_aggressive = current_acao > 60
+    is_conservative = current_rf > 40
+    
+    # Ideal distribution based on balanced moderate profile
+    # This can be customized based on user preferences later
+    ideal_distribution = [
+        {"name": "Ações", "percent": 40, "color": "#3B82F6", "current": round(current_acao, 1)},
+        {"name": "FIIs", "percent": 30, "color": "#10B981", "current": round(current_fii, 1)},
+        {"name": "Renda Fixa", "percent": 30, "color": "#F59E0B", "current": round(current_rf, 1)},
+    ]
+    
+    # Calculate adjustments needed
+    adjustments = []
+    
+    for item in ideal_distribution:
+        diff = item["percent"] - item["current"]
+        if abs(diff) > 5:  # Only suggest if difference > 5%
+            adjustments.append({
+                "category": item["name"],
+                "current": item["current"],
+                "target": item["percent"],
+                "action": "aumentar" if diff > 0 else "reduzir",
+                "diff": round(abs(diff), 1)
+            })
+    
+    # Generate recommendation
+    recommendations = []
+    
+    # Sector diversification analysis
+    num_sectors = len([s for s in by_sector.keys() if s != "Outros"])
+    if num_sectors < 3:
+        recommendations.append("Considere diversificar em mais setores para reduzir risco.")
+    
+    # Asset type analysis
+    if current_acao > 70:
+        recommendations.append("Sua carteira está muito concentrada em ações. Considere aumentar FIIs e Renda Fixa para maior estabilidade.")
+    elif current_fii > 50:
+        recommendations.append("Alta concentração em FIIs. Considere balancear com ações para maior potencial de crescimento.")
+    elif current_rf > 50:
+        recommendations.append("Carteira muito conservadora. Se seu horizonte for longo prazo, considere aumentar renda variável.")
+    
+    # Number of assets
+    num_stocks = len([s for s in stocks if s.get("operation_type") != "venda"])
+    if num_stocks < 5:
+        recommendations.append("Poucos ativos na carteira. Diversifique com mais empresas para diluir riscos específicos.")
+    elif num_stocks > 30:
+        recommendations.append("Muitos ativos podem dificultar o acompanhamento. Considere focar nos melhores.")
+    
+    # FII yield consideration
+    if current_fii < 20 and current_fii > 0:
+        recommendations.append("FIIs podem aumentar sua renda passiva mensal. Considere aumentar essa posição.")
+    
+    if not recommendations:
+        recommendations.append("Sua carteira está bem diversificada! Continue monitorando e rebalanceando periodicamente.")
+    
+    # Build final recommendation text
+    recommendation_text = " ".join(recommendations)
+    
+    # Sector distribution for display
+    sector_distribution = [
+        {"name": sector, "percent": round((value / total_value) * 100, 1), "color": ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16"][i % 8]}
+        for i, (sector, value) in enumerate(sorted(by_sector.items(), key=lambda x: -x[1]))
+    ]
+    
+    return {
+        "distribution": ideal_distribution,
+        "recommendation": recommendation_text,
+        "adjustments": adjustments,
+        "current_by_sector": sector_distribution,
+        "stats": {
+            "total_value": total_value,
+            "num_assets": num_stocks,
+            "num_sectors": num_sectors,
+            "profile": "Agressivo" if is_aggressive else ("Conservador" if is_conservative else "Moderado")
+        }
+    }
+
+
 @api_router.get("/portfolio/summary")
 async def get_portfolio_summary(user: User = Depends(get_current_user), portfolio_id: Optional[str] = None):
     # Build query based on portfolio_id
