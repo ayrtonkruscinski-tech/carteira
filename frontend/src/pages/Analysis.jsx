@@ -397,12 +397,14 @@ export default function Analysis() {
                       {analysis.analysis}
                     </div>
                   </div>
-                  <div className="pt-4 border-t border-border">
+                  <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/50 rounded-lg">
+                    <p className="text-sm text-yellow-200 font-bold">
+                      ⚠️ Análise gerada por IA. Não constitui recomendação de investimento. Consulte um profissional antes de investir.
+                    </p>
+                  </div>
+                  <div className="pt-4 border-t border-border mt-4">
                     <p className="text-xs text-muted-foreground">
                       Gerado em: {new Date(analysis.generated_at).toLocaleString("pt-BR")}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      ⚠️ Esta análise é gerada por IA e não constitui recomendação de investimento.
                     </p>
                   </div>
                 </div>
