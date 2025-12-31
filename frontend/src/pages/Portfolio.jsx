@@ -418,6 +418,12 @@ export default function Portfolio() {
       purchase_date: "",
       operation_type: "compra",
       include_in_results: true,
+      asset_type: "acao",
+      fixed_income_type: "",
+      maturity_date: "",
+      rate: "",
+      rate_type: "",
+      issuer: "",
       current_price: "",
       dividend_yield: "",
       sector: "",
@@ -427,6 +433,15 @@ export default function Portfolio() {
     setSearchResult(null);
     setSearchTicker("");
     setIsAddDialogOpen(false);
+  };
+
+  // Auto-detect asset type when ticker changes
+  const handleTickerChange = (ticker) => {
+    setFormData(prev => ({
+      ...prev,
+      ticker,
+      asset_type: detectAssetType(ticker),
+    }));
   };
 
   const formatCurrency = (value) => {
