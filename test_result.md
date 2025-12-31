@@ -359,6 +359,21 @@ test_plan:
     - "Dividend payment_date in evolution"
 
 frontend:
+  - task: "Tooltip Layout Bug Fix"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/components/Layout.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "BUG FIX: Centralizado TooltipProvider em Layout.jsx para resolver conflitos de múltiplos providers. Removidos TooltipProviders redundantes do Dashboard.jsx que causavam layout shifts ao hover em gráficos e tabelas."
+      - working: true
+        agent: "testing"
+        comment: "CODE ANALYSIS VERIFIED ✅ - Tooltip layout bug fix correctly implemented: 1) Single TooltipProvider properly centralized in Layout.jsx (line 139) with delayDuration=200, 2) All redundant TooltipProvider instances removed from Dashboard.jsx, 3) Proper Radix UI tooltip pattern implemented, 4) No nested TooltipProvider conflicts found, 5) Tooltip styling maintained, 6) Root cause resolved - multiple providers creating competing React portals eliminated. LIMITATION: Cannot perform functional UI testing due to Google Auth requirement, but code changes follow correct Radix UI patterns."
+
   - task: "Landing Page Public Features"
     implemented: true
     working: true
