@@ -390,6 +390,7 @@ export const Layout = ({ children }) => {
       {/* Floating Support Button */}
       <FloatingSupport />
     </div>
+    </TooltipProvider>
   );
 };
 
