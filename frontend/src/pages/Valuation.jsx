@@ -100,7 +100,7 @@ export default function Valuation() {
           roe: data.roe?.toString() || prev.roe,
           payout: data.payout?.toString() || prev.payout,
         }));
-        toast.success(`Dados de ${ticker} carregados do Investidor10`);
+        toast.success(`Dados de ${ticker} carregados de fonte externa`);
       }
     } catch (error) {
       console.error("Fetch valuation data error:", error);
