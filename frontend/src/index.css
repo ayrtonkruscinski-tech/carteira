@@ -75,6 +75,20 @@
     }
 }
 
+/* Fix Recharts tooltip causing layout shifts */
+.recharts-wrapper {
+    overflow: visible !important;
+}
+
+.recharts-tooltip-wrapper {
+    z-index: 1000 !important;
+    pointer-events: none !important;
+}
+
+.recharts-surface {
+    overflow: visible !important;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
     width: 8px;
