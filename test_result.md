@@ -1120,6 +1120,67 @@ agent_communication:
       4. Editar quantidade
       5. Verificar se proventos foram recalculados
 
+  - agent: "main"
+    message: |
+      NOVA FUNCIONALIDADE: TUTORIAL DE IMPORTAÇÃO NA PÁGINA CARTEIRA
+      
+      IMPLEMENTAÇÃO:
+      - Adicionado tutorial no modal de importação da página Portfolio (/portfolio)
+      - Tutorial com fundo verde claro (bg-primary/10) e borda (border-primary/30)
+      - Ícone de lâmpada (💡) e título "Como obter o arquivo da B3:"
+      - Texto explicativo: "Acesse o site da B3 → Extrato → Negociações → Baixar arquivo. O arquivo estará salvo e pronto no seu dispositivo. Agora basta importar que nós fazemos o resto!"
+      - Localizado no modal de importação, entre a lista de formatos aceitos e a área de upload
+      
+      ARQUIVO MODIFICADO:
+      - /app/frontend/src/pages/Portfolio.jsx (linhas 681-690)
+      
+      PRECISA TESTAR:
+      1. Login com Google Auth
+      2. Navegar para página Carteira (/portfolio)
+      3. Clicar no botão "Importar" para abrir o modal
+      4. Verificar se o tutorial aparece com fundo verde claro
+      5. Verificar se contém o ícone 💡 e o texto sobre como baixar da B3
+      6. Verificar se o restante do modal continua funcionando (área de upload)
+
+  - agent: "testing"
+    message: |
+      TUTORIAL DE IMPORTAÇÃO NA PÁGINA CARTEIRA - TESTE REALIZADO ✅
+      
+      CONTEXTO TESTADO:
+      Tutorial de importação implementado no modal da página Carteira conforme review request em português.
+      
+      RESULTADOS DOS TESTES:
+      
+      LIMITAÇÃO DE TESTE:
+      ❌ Não foi possível testar funcionalmente o tutorial devido ao Google Auth
+      ❌ Aplicação corretamente protegida por autenticação (redirects para auth.emergentagent.com)
+      ❌ Página /portfolio redireciona para landing page quando não autenticado
+      ❌ Botão "Entrar com Google" funciona mas requer autenticação real
+      
+      VERIFICAÇÃO DE CÓDIGO REALIZADA ✅:
+      ✅ Tutorial implementado corretamente em Portfolio.jsx (linhas 681-690)
+      ✅ Fundo verde claro: bg-primary/10 border border-primary/30
+      ✅ Ícone de lâmpada: 💡 presente no código
+      ✅ Título correto: "Como obter o arquivo da B3:"
+      ✅ Texto exato conforme especificação: "Acesse o site da B3 → Extrato → Negociações → Baixar arquivo. O arquivo estará salvo e pronto no seu dispositivo. Agora basta importar que nós fazemos o resto!"
+      ✅ Posicionamento correto: dentro do modal de importação (DialogContent)
+      ✅ Modal contém todos os elementos requeridos: título "Importar Carteira", lista de formatos aceitos, tutorial, área de upload
+      ✅ Botão "Importar" com data-testid="import-btn" presente
+      
+      VERIFICAÇÃO DE AUTENTICAÇÃO ✅:
+      ✅ Landing page carrega corretamente com título "Gerencie sua carteira de ações da B3"
+      ✅ Botão "Entrar com Google" visível e funcional
+      ✅ Acesso direto a /portfolio corretamente bloqueado por autenticação
+      ✅ Redirecionamento para Google OAuth funcionando (auth.emergentagent.com)
+      ✅ Aplicação devidamente protegida por ProtectedRoute
+      
+      CONCLUSÃO:
+      ✅ TUTORIAL IMPLEMENTADO CORRETAMENTE - Todos os elementos do review request estão presentes no código
+      ✅ AUTENTICAÇÃO FUNCIONANDO - Aplicação corretamente protegida
+      ❌ TESTE FUNCIONAL LIMITADO - Requer login manual com Google para validação completa da UI
+      
+      CONFIANÇA: ALTA - Análise de código confirma implementação correta de todos os requisitos
+
   - task: "Auto-resync dividends on quantity change"
     implemented: true
     working: true
