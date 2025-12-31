@@ -765,14 +765,25 @@ export default function Portfolio() {
                         <div className="border-t border-border pt-2 mt-2">
                           <p className="text-xs text-muted-foreground mb-2">Lançamentos:</p>
                           <div className="space-y-1 max-h-24 overflow-y-auto">
-                            {stock.entries.map((entry, idx) => (
-                              <div key={entry.stock_id} className="text-xs flex justify-between text-muted-foreground">
-                                <span>{entry.quantity} × {formatCurrency(entry.average_price)}</span>
-                                {entry.purchase_date && (
-                                  <span>{new Date(entry.purchase_date).toLocaleDateString('pt-BR')}</span>
-                                )}
-                              </div>
-                            ))}
+                            {stock.entries.map((entry, idx) => {
+                              // Format date without timezone issues
+                              const formatDateBR = (dateStr) => {
+                                if (!dateStr) return "";
+                                const parts = dateStr.split("-");
+                                if (parts.length === 3) {
+                                  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                                }
+                                return dateStr;
+                              };
+                              return (
+                                <div key={entry.stock_id} className="text-xs flex justify-between text-muted-foreground">
+                                  <span>{entry.quantity} × {formatCurrency(entry.average_price)}</span>
+                                  {entry.purchase_date && (
+                                    <span>{formatDateBR(entry.purchase_date)}</span>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       )}
