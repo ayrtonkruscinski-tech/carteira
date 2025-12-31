@@ -710,10 +710,36 @@ export default function Portfolio() {
         {/* Ad Banner */}
         <AdBannerHorizontal />
 
+        {/* Filtros e Ordenação */}
+        {groupedStocks.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-card p-4 rounded-lg border border-border">
+            <div className="flex items-center gap-2">
+              <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Ordenar por:</span>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[180px] bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SORT_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {sortedStocks.length} lançamento{sortedStocks.length !== 1 ? 's' : ''} 
+              {totalPages > 1 && ` • Página ${currentPage} de ${totalPages}`}
+            </div>
+          </div>
+        )}
+
         {/* Stocks Grid */}
-        {groupedStocks.length > 0 ? (
+        {paginatedStocks.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {groupedStocks.map((stock) => {
+            {paginatedStocks.map((stock) => {
               const currentPrice = stock.current_price || stock.average_price;
               const totalValue = stock.quantity * currentPrice;
               const totalInvested = stock.quantity * stock.average_price;
