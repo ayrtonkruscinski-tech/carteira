@@ -677,6 +677,18 @@ export default function Portfolio() {
                     <li>Planilha Excel (.xlsx)</li>
                     <li>CSV genérico (ticker, quantidade, preco)</li>
                   </ul>
+                  
+                  {/* Tutorial B3 */}
+                  <div className="bg-primary/10 border border-primary/30 rounded-lg p-4">
+                    <p className="text-sm text-foreground font-medium mb-2 flex items-center gap-2">
+                      <span className="text-primary">💡</span> Como obter o arquivo da B3:
+                    </p>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Acesse o site da <span className="text-primary font-medium">B3</span> → <span className="text-foreground">Extrato</span> → <span className="text-foreground">Negociações</span> → <span className="text-foreground">Baixar arquivo</span>. 
+                      O arquivo estará salvo e pronto no seu dispositivo. Agora basta importar que nós fazemos o resto!
+                    </p>
+                  </div>
+                  
                   <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
                     <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                     <input
