@@ -325,9 +325,16 @@ export const Layout = ({ children }) => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-16">
         {children}
       </main>
+
+      {/* Footer Disclaimer */}
+      <footer className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border py-2 px-4 z-40">
+        <p className="text-xs text-muted-foreground text-center max-w-4xl mx-auto">
+          <span className="font-semibold">Exoneração de Responsabilidade:</span> Os dados relativos a cotações e proventos são provenientes de bases de terceiros, não assumindo esta plataforma responsabilidade por eventuais inconsistências ou omissões.
+        </p>
+      </footer>
 
       {/* Create Portfolio Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
