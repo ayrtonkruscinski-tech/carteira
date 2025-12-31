@@ -1397,14 +1397,16 @@ def parse_cei_csv(content: str) -> List[dict]:
                     elif 'medio' in h_normalized or 'médio' in h_normalized:
                         preco_col = h
                 
-                # Look for date columns - "Data do Negócio"
+                # Look for date columns - "Data do Negócio" or "Data e Hora"
                 if data_col is None:
                     if 'data' in h_normalized:
                         if 'negocio' in h_normalized or 'negociacao' in h_normalized:
                             data_col = h
+                        elif 'hora' in h_normalized:  # "Data e Hora" from XP CSV
+                            data_col = h
                         elif 'compra' in h_normalized or 'aquisicao' in h_normalized:
                             data_col = h
-                        elif h_normalized in ['data', 'date', 'dt', 'data do negocio']:
+                        elif h_normalized in ['data', 'date', 'dt', 'data do negocio', 'data e hora']:
                             data_col = h
             
             logger.info(f"CEI columns found - Produto: {produto_col}, Qtd: {qtd_col}, Preco: {preco_col}, Data: {data_col}")
