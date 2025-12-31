@@ -136,6 +136,7 @@ export const Layout = ({ children }) => {
   };
 
   return (
+    <TooltipProvider delayDuration={200}>
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="glass sticky top-0 z-50 border-b border-border">
