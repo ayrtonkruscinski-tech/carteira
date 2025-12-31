@@ -791,66 +791,60 @@ export default function Dashboard() {
                             {formatCurrency(stock.currentValue)}
                           </td>
                           <td className={`py-3 px-4 text-right font-mono font-medium ${stock.variation >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                            <TooltipProvider>
-                              <TooltipUI>
-                                <TooltipTrigger asChild>
-                                  <span className="cursor-help border-b border-dashed border-current">
-                                    {stock.variation >= 0 ? '+' : ''}{stock.variation.toFixed(2)}%
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p className="font-mono">
-                                    {stock.gain >= 0 ? '+' : ''}{formatCurrency(stock.gain)}
-                                  </p>
-                                </TooltipContent>
-                              </TooltipUI>
-                            </TooltipProvider>
+                            <TooltipUI>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-help border-b border-dashed border-current">
+                                  {stock.variation >= 0 ? '+' : ''}{stock.variation.toFixed(2)}%
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="font-mono">
+                                  {stock.gain >= 0 ? '+' : ''}{formatCurrency(stock.gain)}
+                                </p>
+                              </TooltipContent>
+                            </TooltipUI>
                           </td>
                           <td className="py-3 px-4 text-right font-mono text-accent">
-                            <TooltipProvider>
-                              <TooltipUI>
-                                <TooltipTrigger asChild>
-                                  <span className="cursor-help border-b border-dashed border-accent">
-                                    {formatCurrency(stock.dividendsReceived)}
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent className="p-3">
-                                  <div className="space-y-2">
-                                    <div className="flex justify-between gap-4">
-                                      <span className="text-muted-foreground">Recebido:</span>
-                                      <span className="font-mono text-accent">{formatCurrency(stock.dividendsReceived)}</span>
-                                    </div>
-                                    <div className="flex justify-between gap-4">
-                                      <span className="text-muted-foreground">A Receber:</span>
-                                      <span className="font-mono text-blue-400">{formatCurrency(stock.dividendsPending)}</span>
-                                    </div>
-                                    <div className="border-t border-border pt-2 flex justify-between gap-4">
-                                      <span className="text-muted-foreground font-medium">Total:</span>
-                                      <span className="font-mono font-bold">{formatCurrency(stock.totalDividends)}</span>
-                                    </div>
+                            <TooltipUI>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-help border-b border-dashed border-accent">
+                                  {formatCurrency(stock.dividendsReceived)}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="p-3">
+                                <div className="space-y-2">
+                                  <div className="flex justify-between gap-4">
+                                    <span className="text-muted-foreground">Recebido:</span>
+                                    <span className="font-mono text-accent">{formatCurrency(stock.dividendsReceived)}</span>
                                   </div>
-                                </TooltipContent>
-                              </TooltipUI>
-                            </TooltipProvider>
+                                  <div className="flex justify-between gap-4">
+                                    <span className="text-muted-foreground">A Receber:</span>
+                                    <span className="font-mono text-blue-400">{formatCurrency(stock.dividendsPending)}</span>
+                                  </div>
+                                  <div className="border-t border-border pt-2 flex justify-between gap-4">
+                                    <span className="text-muted-foreground font-medium">Total:</span>
+                                    <span className="font-mono font-bold">{formatCurrency(stock.totalDividends)}</span>
+                                  </div>
+                                </div>
+                              </TooltipContent>
+                            </TooltipUI>
                           </td>
                           <td className={`py-3 px-4 text-right font-mono font-medium ${stock.profitability >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                            <TooltipProvider>
-                              <TooltipUI>
-                                <TooltipTrigger asChild>
-                                  <span className="cursor-help border-b border-dashed border-current">
-                                    {stock.profitability >= 0 ? '+' : ''}{stock.profitability.toFixed(2)}%
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p className="font-mono">
-                                    {stock.totalReturn >= 0 ? '+' : ''}{formatCurrency(stock.totalReturn)}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    (Ganho + Dividendos)
-                                  </p>
-                                </TooltipContent>
-                              </TooltipUI>
-                            </TooltipProvider>
+                            <TooltipUI>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-help border-b border-dashed border-current">
+                                  {stock.profitability >= 0 ? '+' : ''}{stock.profitability.toFixed(2)}%
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="font-mono">
+                                  {stock.totalReturn >= 0 ? '+' : ''}{formatCurrency(stock.totalReturn)}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  (Ganho + Dividendos)
+                                </p>
+                              </TooltipContent>
+                            </TooltipUI>
                           </td>
                           <td className="py-3 px-4 text-right font-mono text-muted-foreground">
                             {stock.portfolioPercent.toFixed(1)}%
