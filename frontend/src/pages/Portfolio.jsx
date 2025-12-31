@@ -355,18 +355,37 @@ export default function Portfolio() {
   };
 
   // Agrupar ações por ticker para exibição consolidada
-  // Não agrupar - cada lançamento aparece separado
-  // Apenas adiciona stock_ids para compatibilidade
-  const groupedStocks = stocks.map(stock => ({
-    ...stock,
-    stock_ids: [stock.stock_id],
-    entries: [{
-      stock_id: stock.stock_id,
-      quantity: stock.quantity,
-      average_price: stock.average_price,
-      purchase_date: stock.purchase_date
-    }]
-  }));
+  // Agrupar por ticker + data de compra
+  // Mesma data = agrupa no mesmo card
+  // Datas diferentes = cards separados
+  const groupedStocks = stocks.reduce((acc, stock) => {
+    // Chave de agrupamento: ticker + data
+    const key = `${stock.ticker}_${stock.purchase_date || 'sem_data'}`;
+    const existing = acc.find(s => `${s.ticker}_${s.purchase_date || 'sem_data'}` === key);
+    
+    if (existing) {
+      // Mesmo ticker + mesma data: agrupa (calcula preço médio ponderado)
+      const totalQuantity = existing.quantity + stock.quantity;
+      const newAveragePrice = (
+        (existing.quantity * existing.average_price) + 
+        (stock.quantity * stock.average_price)
+      ) / totalQuantity;
+      
+      existing.quantity = totalQuantity;
+      existing.average_price = newAveragePrice;
+      if (stock.current_price) {
+        existing.current_price = stock.current_price;
+      }
+      existing.stock_ids = [...(existing.stock_ids || [existing.stock_id]), stock.stock_id];
+    } else {
+      // Ticker diferente OU data diferente: novo card
+      acc.push({
+        ...stock,
+        stock_ids: [stock.stock_id]
+      });
+    }
+    return acc;
+  }, []);
 
   if (loading) {
     return (
