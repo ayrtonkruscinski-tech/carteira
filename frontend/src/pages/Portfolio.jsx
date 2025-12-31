@@ -166,16 +166,45 @@ export default function Portfolio() {
   const handleSearch = async () => {
     if (!searchTicker) return;
     try {
-      const response = await fetch(`${API}/stocks/search/${searchTicker}`);
-      if (response.ok) {
-        const data = await response.json();
+      // Fetch stock data and detect asset type in parallel
+      const [searchResponse, typeResponse] = await Promise.all([
+        fetch(`${API}/stocks/search/${searchTicker}`),
+        fetch(`${API}/stocks/detect-type/${searchTicker}`)
+      ]);
+      
+      let assetType = "acao"; // default
+      let detectedName = "";
+      
+      // Process type detection
+      if (typeResponse.ok) {
+        const typeData = await typeResponse.json();
+        assetType = typeData.asset_type || "acao";
+        detectedName = typeData.name || "";
+        
+        if (typeData.source && typeData.source !== "pattern_fallback") {
+          const typeLabel = assetType === "fii" ? "FII" : "Ação";
+          toast.success(`${searchTicker.toUpperCase()} detectado como ${typeLabel}`);
+        }
+      }
+      
+      // Process search result
+      if (searchResponse.ok) {
+        const data = await searchResponse.json();
         setSearchResult(data);
         setFormData({
           ticker: data.ticker || "",
-          name: data.name || "",
+          name: data.name || detectedName || "",
           quantity: "",
           average_price: "",
           purchase_date: "",
+          operation_type: "compra",
+          include_in_results: true,
+          asset_type: assetType,
+          fixed_income_type: "",
+          maturity_date: "",
+          rate: "",
+          rate_type: "",
+          issuer: "",
           current_price: data.current_price?.toString() || "",
           dividend_yield: data.dividend_yield?.toString() || "",
           sector: data.sector || "",
