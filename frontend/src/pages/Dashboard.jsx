@@ -378,11 +378,33 @@ export default function Dashboard() {
     average_price: stock.quantity > 0 ? stock.totalInvested / stock.quantity : 0,
   }));
 
+  // Filter stocks for distribution chart based on selected filter
+  const filteredStocksForChart = distributionFilter === 'all' 
+    ? groupedStocks 
+    : groupedStocks.filter(s => s.asset_type === distributionFilter);
+
   const portfolioData = groupedStocks.map((stock, index) => ({
     name: stock.ticker,
     value: stock.quantity * (stock.current_price || stock.average_price),
     color: COLORS[index % COLORS.length],
+    asset_type: stock.asset_type,
   }));
+
+  // Filtered portfolio data for chart
+  const filteredPortfolioData = filteredStocksForChart.map((stock, index) => ({
+    name: stock.ticker,
+    value: stock.quantity * (stock.current_price || stock.average_price),
+    color: COLORS[index % COLORS.length],
+    asset_type: stock.asset_type,
+  }));
+
+  // Distribution filter options
+  const DISTRIBUTION_FILTERS = [
+    { value: 'all', label: 'Todos os Ativos' },
+    { value: 'acao', label: 'Ações (Renda Variável)' },
+    { value: 'fii', label: 'Fundos Imobiliários (FIIs)' },
+    { value: 'renda_fixa', label: 'Renda Fixa (Tesouro)' },
+  ];
 
   // Calculate total portfolio value for percentage calculations
   const totalPortfolioValue = groupedStocks.reduce((sum, stock) => {
