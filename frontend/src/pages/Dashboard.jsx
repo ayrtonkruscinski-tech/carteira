@@ -1121,63 +1121,134 @@ export default function Dashboard() {
                 <PieChart className="w-5 h-5 text-primary" />
                 Distribuição da Carteira
               </CardTitle>
-              <Select value={distributionFilter} onValueChange={setDistributionFilter}>
-                <SelectTrigger className="w-[200px] bg-input border-input text-sm">
-                  <SelectValue placeholder="Filtrar por tipo" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border-border">
-                  {DISTRIBUTION_FILTERS.map((filter) => (
-                    <SelectItem key={filter.value} value={filter.value}>
-                      {filter.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={showIdealDistribution ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    if (!idealDistribution && !loadingIdeal) {
+                      fetchIdealDistribution();
+                    } else {
+                      setShowIdealDistribution(!showIdealDistribution);
+                    }
+                  }}
+                  disabled={loadingIdeal}
+                  className={showIdealDistribution ? "bg-purple-600 hover:bg-purple-700" : ""}
+                >
+                  {loadingIdeal ? (
+                    <RefreshCw className="w-4 h-4 animate-spin mr-1" />
+                  ) : (
+                    <Sparkles className="w-4 h-4 mr-1" />
+                  )}
+                  {loadingIdeal ? 'Analisando...' : 'Ideal IA'}
+                </Button>
+                <Select value={distributionFilter} onValueChange={setDistributionFilter}>
+                  <SelectTrigger className="w-[180px] bg-input border-input text-sm">
+                    <SelectValue placeholder="Filtrar por tipo" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-border">
+                    {DISTRIBUTION_FILTERS.map((filter) => (
+                      <SelectItem key={filter.value} value={filter.value}>
+                        {filter.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent>
-              {filteredPortfolioData.length > 0 ? (
-                <div className="h-64 overflow-hidden">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RechartsPie>
-                      <Pie
-                        data={filteredPortfolioData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={90}
-                        paddingAngle={2}
-                        dataKey="value"
-                      >
-                        {filteredPortfolioData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }}
-                        contentStyle={{
-                          backgroundColor: '#121417',
-                          border: '1px solid #1E293B',
-                          borderRadius: '8px',
-                          color: '#E2E8F0',
-                        }}
-                        labelStyle={{ color: '#94A3B8' }}
-                        itemStyle={{ color: '#E2E8F0' }}
-                        formatter={(value) => {
-                          const percent = totalPortfolioValue > 0 ? ((value / totalPortfolioValue) * 100).toFixed(1) : 0;
-                          return [`${formatCurrency(value)} (${percent}%)`];
-                        }}
-                      />
-                    </RechartsPie>
-                  </ResponsiveContainer>
+              <div className={`grid ${showIdealDistribution && idealDistribution ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
+                {/* Current Distribution */}
+                <div>
+                  <p className="text-sm text-muted-foreground text-center mb-2">
+                    {showIdealDistribution && idealDistribution ? 'Distribuição Atual' : ''}
+                  </p>
+                  {filteredPortfolioData.length > 0 ? (
+                    <div className={showIdealDistribution && idealDistribution ? "h-48" : "h-64"} style={{ overflow: 'hidden' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RechartsPie>
+                          <Pie
+                            data={filteredPortfolioData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={showIdealDistribution && idealDistribution ? 40 : 60}
+                            outerRadius={showIdealDistribution && idealDistribution ? 65 : 90}
+                            paddingAngle={2}
+                            dataKey="value"
+                          >
+                            {filteredPortfolioData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }}
+                            contentStyle={{
+                              backgroundColor: '#121417',
+                              border: '1px solid #1E293B',
+                              borderRadius: '8px',
+                              color: '#E2E8F0',
+                            }}
+                            labelStyle={{ color: '#94A3B8' }}
+                            itemStyle={{ color: '#E2E8F0' }}
+                            formatter={(value) => {
+                              const percent = totalPortfolioValue > 0 ? ((value / totalPortfolioValue) * 100).toFixed(1) : 0;
+                              return [`${formatCurrency(value)} (${percent}%)`];
+                            }}
+                          />
+                        </RechartsPie>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <div className="h-48 flex items-center justify-center text-muted-foreground">
+                      {stocks.length === 0 
+                        ? 'Adicione ativos à sua carteira'
+                        : 'Nenhum ativo encontrado'
+                      }
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="h-64 flex items-center justify-center text-muted-foreground">
-                  {stocks.length === 0 
-                    ? 'Adicione ativos à sua carteira para ver a distribuição'
-                    : 'Nenhum ativo encontrado para este filtro'
-                  }
-                </div>
-              )}
+
+                {/* Ideal Distribution (AI) */}
+                {showIdealDistribution && idealDistribution && (
+                  <div>
+                    <p className="text-sm text-purple-400 text-center mb-2 flex items-center justify-center gap-1">
+                      <Sparkles className="w-3 h-3" />
+                      Distribuição Ideal (IA)
+                    </p>
+                    <div className="h-48" style={{ overflow: 'hidden' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RechartsPie>
+                          <Pie
+                            data={idealDistribution.distribution}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={40}
+                            outerRadius={65}
+                            paddingAngle={2}
+                            dataKey="percent"
+                          >
+                            {idealDistribution.distribution.map((entry, index) => (
+                              <Cell key={`cell-ideal-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }}
+                            contentStyle={{
+                              backgroundColor: '#121417',
+                              border: '1px solid #1E293B',
+                              borderRadius: '8px',
+                              color: '#E2E8F0',
+                            }}
+                            formatter={(value, name, props) => [`${value}%`, props.payload.name]}
+                          />
+                        </RechartsPie>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Legend */}
               {filteredPortfolioData.length > 0 && (
                 <div className="flex flex-wrap gap-3 mt-4">
                   {filteredPortfolioData.map((item, index) => {
@@ -1191,6 +1262,27 @@ export default function Dashboard() {
                       </div>
                     );
                   })}
+                </div>
+              )}
+
+              {/* AI Recommendation */}
+              {showIdealDistribution && idealDistribution && (
+                <div className="mt-4 p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                  <p className="text-xs text-purple-400 font-medium mb-2 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" />
+                    Recomendação da IA
+                  </p>
+                  <p className="text-sm text-muted-foreground">{idealDistribution.recommendation}</p>
+                  {idealDistribution.adjustments && idealDistribution.adjustments.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      <p className="text-xs text-muted-foreground font-medium">Ajustes sugeridos:</p>
+                      {idealDistribution.adjustments.map((adj, idx) => (
+                        <p key={idx} className={`text-xs ${adj.action === 'aumentar' ? 'text-green-400' : 'text-red-400'}`}>
+                          • {adj.category}: {adj.action} de {adj.current}% para {adj.target}%
+                        </p>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
