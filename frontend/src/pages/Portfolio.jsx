@@ -470,22 +470,43 @@ export default function Portfolio() {
       
       detectTypeTimeoutRef.current = setTimeout(async () => {
         try {
+          console.log(`Detecting asset type for: ${ticker}`);
           const response = await fetch(`${API}/stocks/detect-type/${ticker}`);
+          console.log(`Response status: ${response.status}`);
+          
           if (response.ok) {
             const data = await response.json();
-            setFormData(prev => ({
-              ...prev,
-              asset_type: data.asset_type || "acao",
-              name: data.name && !prev.name ? data.name : prev.name,
-            }));
+            console.log(`Detection result:`, data);
             
-            if (data.source !== "pattern_fallback") {
+            // Update form with detected type
+            setFormData(prev => {
+              const newData = {
+                ...prev,
+                asset_type: data.asset_type || "acao",
+              };
+              // Only set name if it's empty and we got one from API
+              if (data.name && !prev.name) {
+                newData.name = data.name;
+              }
+              console.log(`Updating formData asset_type to: ${newData.asset_type}`);
+              return newData;
+            });
+            
+            // Show toast for successful detection
+            if (data.source && data.source !== "pattern_fallback") {
               const typeLabel = data.asset_type === "fii" ? "FII" : "Ação";
               toast.success(`${ticker} detectado como ${typeLabel}`);
             }
+          } else {
+            console.log(`Detection failed with status: ${response.status}`);
+            // Fallback to pattern-based detection
+            setFormData(prev => ({
+              ...prev,
+              asset_type: detectAssetType(ticker),
+            }));
           }
         } catch (error) {
-          console.log("Asset type detection error:", error);
+          console.error("Asset type detection error:", error);
           // Fallback to pattern-based detection
           setFormData(prev => ({
             ...prev,
@@ -494,7 +515,7 @@ export default function Portfolio() {
         } finally {
           setDetectingType(false);
         }
-      }, 500); // 500ms debounce
+      }, 800); // 800ms debounce for better UX
     } else {
       setDetectingType(false);
     }
