@@ -616,7 +616,22 @@ export default function Portfolio() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="purchase_date">Data de Compra</Label>
+                      <Label htmlFor="operation_type">Tipo de Operação</Label>
+                      <Select
+                        value={formData.operation_type}
+                        onValueChange={(value) => setFormData({ ...formData, operation_type: value })}
+                      >
+                        <SelectTrigger className="bg-input border-input">
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="compra">Compra</SelectItem>
+                          <SelectItem value="venda">Venda</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="purchase_date">Data da Operação</Label>
                       <Input
                         id="purchase_date"
                         type="date"
@@ -626,6 +641,9 @@ export default function Portfolio() {
                         data-testid="purchase-date-input"
                       />
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="current_price">Preço Atual (R$)</Label>
                       <Input
@@ -638,9 +656,6 @@ export default function Portfolio() {
                         data-testid="current-price-input"
                       />
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="dividend_yield">Dividend Yield (%)</Label>
                       <Input
@@ -653,6 +668,9 @@ export default function Portfolio() {
                         data-testid="dividend-yield-input"
                       />
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="ceiling_price">Preço Teto (R$)</Label>
                       <Input
