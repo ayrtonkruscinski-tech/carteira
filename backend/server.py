@@ -1033,8 +1033,12 @@ async def get_portfolio_summary(user: User = Depends(get_current_user), portfoli
     
     stocks = await db.stocks.find(query, {"_id": 0}).to_list(1000)
     
-    total_invested = sum(s["quantity"] * s["average_price"] for s in stocks)
-    total_current = sum(s["quantity"] * (s.get("current_price") or s["average_price"]) for s in stocks)
+    # Filter out bonificações from portfolio value calculations
+    # Bonificações are free shares and should not count towards invested/current value
+    stocks_for_value = [s for s in stocks if s.get("operation_type") != "bonificacao"]
+    
+    total_invested = sum(s["quantity"] * s["average_price"] for s in stocks_for_value)
+    total_current = sum(s["quantity"] * (s.get("current_price") or s["average_price"]) for s in stocks_for_value)
     total_gain = total_current - total_invested
     gain_percent = (total_gain / total_invested * 100) if total_invested > 0 else 0
     
