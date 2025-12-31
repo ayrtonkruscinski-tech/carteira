@@ -1458,16 +1458,18 @@ def parse_cei_csv(content: str) -> List[dict]:
                                 price_str = price_str.replace(',', '.')
                             avg_price = float(price_str)
                     
-                    # Parse purchase date
+                    # Parse purchase date - FIXED: ignore time part (HH:MM:SS)
                     purchase_date = None
                     if data_col and row.get(data_col):
                         date_str = str(row.get(data_col, '')).strip()
                         if date_str:
+                            # Remove time part if present (e.g., "30/12/2025 11:08:09" -> "30/12/2025")
+                            date_str = date_str.split(' ')[0].strip()
                             # Try different date formats
                             for fmt in ['%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%d.%m.%Y']:
                                 try:
                                     parsed_date = datetime.strptime(date_str, fmt)
-                                    purchase_date = parsed_date.strftime('%Y-%m-%d')
+                                    purchase_date = f"{parsed_date.year:04d}-{parsed_date.month:02d}-{parsed_date.day:02d}"
                                     break
                                 except ValueError:
                                     continue
