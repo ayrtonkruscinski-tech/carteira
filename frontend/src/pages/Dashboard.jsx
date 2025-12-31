@@ -215,7 +215,10 @@ export default function Dashboard() {
     const currentValue = stock.quantity * currentPrice;
     const variation = ((currentPrice / stock.average_price) - 1) * 100;
     const gain = currentValue - investedValue;
-    const dividendsReceived = stockDividends[stock.ticker] || 0;
+    const stockDividendData = stockDividends[stock.ticker] || { received: 0, pending: 0 };
+    const dividendsReceived = stockDividendData.received || 0;
+    const dividendsPending = stockDividendData.pending || 0;
+    const totalDividends = dividendsReceived + dividendsPending;
     const totalReturn = gain + dividendsReceived;
     const profitability = investedValue > 0 ? (totalReturn / investedValue) * 100 : 0;
     const portfolioPercent = totalPortfolioValue > 0 ? (currentValue / totalPortfolioValue) * 100 : 0;
@@ -228,6 +231,8 @@ export default function Dashboard() {
       variation,
       gain,
       dividendsReceived,
+      dividendsPending,
+      totalDividends,
       totalReturn,
       profitability,
       portfolioPercent,
