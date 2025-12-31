@@ -2552,8 +2552,12 @@ async def analyze_portfolio(user: User = Depends(get_current_user)):
         
         for stock in stocks:
             ticker = stock["ticker"]
-            invested = stock["quantity"] * stock["average_price"]
+            # Skip bonificações for invested value calculation
+            is_bonificacao = stock.get("operation_type") == "bonificacao"
+            
             current = stock["quantity"] * (stock.get("current_price") or stock["average_price"])
+            # Only count invested if NOT bonificação
+            invested = 0 if is_bonificacao else stock["quantity"] * stock["average_price"]
             
             if ticker not in portfolio_summary:
                 portfolio_summary[ticker] = {
