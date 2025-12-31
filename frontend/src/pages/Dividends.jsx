@@ -727,6 +727,7 @@ export default function Dividends() {
                   <table className="w-full" data-testid="dividends-table">
                     <thead>
                       <tr className="border-b border-border">
+                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Data Com</th>
                         <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Data Pgto</th>
                         <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Ticker</th>
                         <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Tipo</th>
@@ -737,13 +738,25 @@ export default function Dividends() {
                     <tbody>
                       {paginatedDividends.map((dividend) => {
                         const isPaid = dividend.payment_date <= today;
+                        // Formata data sem problemas de timezone (usa split ao invés de Date)
+                        const formatDateBR = (dateStr) => {
+                          if (!dateStr) return "-";
+                          const parts = dateStr.split("-");
+                          if (parts.length === 3) {
+                            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                          }
+                          return dateStr;
+                        };
                         return (
                           <tr
                             key={dividend.dividend_id}
                             className="border-b border-border/50 hover:bg-muted/30 transition-colors"
                           >
+                            <td className="py-3 px-4 font-mono text-muted-foreground">
+                              {formatDateBR(dividend.ex_date)}
+                            </td>
                             <td className="py-3 px-4 font-mono text-foreground">
-                              {new Date(dividend.payment_date).toLocaleDateString("pt-BR")}
+                              {formatDateBR(dividend.payment_date)}
                             </td>
                             <td className="py-3 px-4">
                               <span className="font-mono font-semibold text-foreground">
