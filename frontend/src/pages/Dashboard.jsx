@@ -160,7 +160,7 @@ const StocksTable = ({ stocks, title, assetType, showFixedIncomeColumns = false,
                         </TooltipTrigger>
                         <TooltipContent>
                           <p className="font-mono">{stock.totalReturn >= 0 ? '+' : ''}{formatCurrency(stock.totalReturn)}</p>
-                          <p className="text-xs text-muted-foreground mt-1">(Ganho + Dividendos)</p>
+                          <p className="text-xs text-muted-foreground mt-1">(Ganho + Proventos)</p>
                         </TooltipContent>
                       </TooltipUI>
                     </td>
