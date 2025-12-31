@@ -1921,15 +1921,25 @@ async def import_file(file: UploadFile = File(...), portfolio_id: Optional[str] 
     imported = 0
     updated = 0
     
+    # Log parsed data for debugging
+    logger.info(f"Processing {len(stocks)} stock entries from file")
+    for s in stocks[:5]:  # Log first 5 entries
+        logger.info(f"  Parsed: {s['ticker']} qty={s['quantity']} price={s['average_price']} date={s.get('purchase_date')}")
+    
     for stock_data in stocks:
         ticker = stock_data["ticker"]
         purchase_date = stock_data.get("purchase_date")
+        
+        logger.info(f"Importing {ticker} with date={purchase_date}")
         
         # Check if stock already exists with same ticker AND purchase_date AND portfolio_id
         # This allows multiple entries for the same stock bought on different dates
         query = {"user_id": user.user_id, "ticker": ticker, "portfolio_id": portfolio_id}
         if purchase_date:
             query["purchase_date"] = purchase_date
+        else:
+            # If no purchase_date, also match records without purchase_date
+            query["purchase_date"] = {"$in": [None, ""]}
         
         existing = await db.stocks.find_one(query, {"_id": 0})
         
