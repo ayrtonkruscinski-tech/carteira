@@ -2530,16 +2530,33 @@ async def sync_dividends(user: User = Depends(get_current_user), portfolio_id: O
                                 "type": div["tipo"],
                                 "created_at": datetime.now(timezone.utc).isoformat()
                             })
-                            synced += 1
+                            if is_fii:
+                                synced_fiis += 1
+                            else:
+                                synced += 1
                     
                     # Para de buscar se os dividendos forem muito antigos (2 anos)
                     last_div_dt = datetime.strptime(data[-1]["data_com"], "%Y-%m-%d").date()
                     if last_div_dt < (today - timedelta(days=730)): break
                     page += 1
 
-        await asyncio.gather(*(process_ticker(t) for t in unique_tickers))
+        # Processa ações e FIIs em paralelo
+        tasks = []
+        for t in acoes_tickers:
+            tasks.append(process_ticker(t, is_fii=False))
+        for t in fii_tickers:
+            tasks.append(process_ticker(t, is_fii=True))
+        
+        await asyncio.gather(*tasks)
 
-    return {"novos": synced, "atualizados": updated, "bonificacoes": bonificacoes_aplicadas}
+    return {
+        "novos_acoes": synced, 
+        "novos_fiis": synced_fiis,
+        "total_novos": synced + synced_fiis,
+        "atualizados": updated, 
+        "bonificacoes": bonificacoes_aplicadas,
+        "message": f"Sincronizado: {synced} proventos de ações, {synced_fiis} proventos de FIIs"
+    }
 
 # ==================== VALUATION ROUTES ====================
 
