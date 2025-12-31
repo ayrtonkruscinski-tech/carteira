@@ -632,26 +632,33 @@ export default function Portfolio() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="average_price">Preço Médio (R$)</Label>
+                      <Label htmlFor="current_price">Preço Compra/Venda (R$)</Label>
                       <Input
-                        id="average_price"
+                        id="current_price"
                         type="number"
                         step="0.01"
-                        value={formData.average_price}
-                        onChange={(e) => setFormData({ ...formData, average_price: e.target.value })}
+                        value={formData.current_price}
+                        onChange={(e) => {
+                          setFormData({ 
+                            ...formData, 
+                            current_price: e.target.value,
+                            average_price: e.target.value  // Usa o mesmo valor para preço médio
+                          });
+                        }}
                         required
                         className="bg-input border-input font-mono"
-                        data-testid="average-price-input"
+                        data-testid="current-price-input"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="operation_type">Tipo de Operação</Label>
+                      <Label htmlFor="operation_type">Tipo de Operação *</Label>
                       <Select
                         value={formData.operation_type}
                         onValueChange={(value) => setFormData({ ...formData, operation_type: value })}
+                        required
                       >
                         <SelectTrigger className="bg-input border-input">
                           <SelectValue placeholder="Selecione" />
@@ -671,33 +678,6 @@ export default function Portfolio() {
                         onChange={(e) => setFormData({ ...formData, purchase_date: e.target.value })}
                         className="bg-input border-input"
                         data-testid="purchase-date-input"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="current_price">Preço Atual (R$)</Label>
-                      <Input
-                        id="current_price"
-                        type="number"
-                        step="0.01"
-                        value={formData.current_price}
-                        onChange={(e) => setFormData({ ...formData, current_price: e.target.value })}
-                        className="bg-input border-input font-mono"
-                        data-testid="current-price-input"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="dividend_yield">Dividend Yield (%)</Label>
-                      <Input
-                        id="dividend_yield"
-                        type="number"
-                        step="0.01"
-                        value={formData.dividend_yield}
-                        onChange={(e) => setFormData({ ...formData, dividend_yield: e.target.value })}
-                        className="bg-input border-input font-mono"
-                        data-testid="dividend-yield-input"
                       />
                     </div>
                   </div>
