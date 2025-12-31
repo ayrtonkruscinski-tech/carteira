@@ -1383,27 +1383,35 @@ def parse_cei_csv(content: str) -> List[dict]:
                     elif h_normalized == 'ativo' or h_normalized == 'ticker' or h_normalized == 'papel':
                         produto_col = h
                 
-                # Look for quantity column - including "Qtd. exec." from XP
+                # Look for quantity column - prioritize specific columns
+                # Priority: "Qtd. exec." > "Quantidade (Compra)" > "Quantidade (Líquida)" > generic
                 if 'quantidade' in h_normalized or 'qtd' in h_normalized:
-                    # Prioritize "Qtd. exec." over other qtd columns
                     if 'exec' in h_normalized:
-                        qtd_col = h  # Always override with exec
+                        qtd_col = h  # Highest priority
+                    elif 'compra' in h_normalized and (qtd_col is None or 'exec' not in qtd_col.lower()):
+                        qtd_col = h  # "Quantidade (Compra)"
+                    elif 'liquida' in h_normalized and qtd_col is None:
+                        qtd_col = h  # "Quantidade (Líquida)" as fallback
                     elif qtd_col is None:
                         qtd_col = h
                 
-                # Look for price column - including "Preco medio" from XP
-                if preco_col is None:
-                    if 'medio' in h_normalized or 'médio' in h_normalized:
-                        preco_col = h  # Prioritize "Preço médio" / "Preco medio"
-                    elif 'preco' in h_normalized or 'preço' in h_normalized:
-                        if preco_col is None:  # Only set if not already set by "medio"
-                            preco_col = h
+                # Look for price column - prioritize "Preço Médio (Compra)" > "Preco medio" > generic
+                if 'medio' in h_normalized or 'médio' in h_normalized:
+                    if 'compra' in h_normalized:
+                        preco_col = h  # "Preço Médio (Compra)" - highest priority
+                    elif preco_col is None or ('compra' not in (preco_col or '').lower()):
+                        preco_col = h
+                elif preco_col is None:
+                    if 'preco' in h_normalized or 'preço' in h_normalized:
+                        preco_col = h
                     elif 'unitario' in h_normalized or 'unitário' in h_normalized:
-                        if preco_col is None:
-                            preco_col = h
+                        preco_col = h
                 
-                # Look for date columns - "Data do Negócio" or "Data e Hora"
-                if data_col is None:
+                # Look for date columns - "Período (Inicial)" > "Data do Negócio" > "Data e Hora"
+                if 'periodo' in h_normalized or 'período' in h_normalized:
+                    if 'inicial' in h_normalized:
+                        data_col = h  # "Período (Inicial)" - first purchase date
+                elif data_col is None:
                     if 'data' in h_normalized:
                         if 'negocio' in h_normalized or 'negociacao' in h_normalized:
                             data_col = h
