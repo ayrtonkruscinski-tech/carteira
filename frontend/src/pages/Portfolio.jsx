@@ -775,11 +775,12 @@ export default function Portfolio() {
               const gain = totalValue - totalInvested;
               const gainPercent = ((currentPrice / stock.average_price) - 1) * 100;
               const atCeiling = stock.ceiling_price && currentPrice >= stock.ceiling_price;
+              const isVenda = stock.operation_type === "venda";
 
               return (
                 <Card
-                  key={`${stock.stock_id}_${stock.purchase_date}`}
-                  className={`bg-card border-border hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 ${atCeiling ? 'border-accent/50' : ''}`}
+                  key={`${stock.stock_id}_${stock.purchase_date}_${stock.operation_type}`}
+                  className={`bg-card border-border hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 ${atCeiling ? 'border-accent/50' : ''} ${isVenda ? 'border-l-4 border-l-destructive' : ''}`}
                   data-testid={`stock-card-${stock.ticker}`}
                 >
                   <CardHeader className="pb-2">
@@ -787,7 +788,8 @@ export default function Portfolio() {
                       <div>
                         <CardTitle className="font-mono text-xl text-foreground flex items-center gap-2">
                           {stock.ticker}
-                          {atCeiling && <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded">Teto!</span>}
+                          {isVenda && <span className="text-xs bg-destructive/20 text-destructive px-2 py-0.5 rounded">Venda</span>}
+                          {atCeiling && !isVenda && <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded">Teto!</span>}
                         </CardTitle>
                         <p className="text-sm text-muted-foreground">
                           {stock.name}
