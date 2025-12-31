@@ -417,32 +417,6 @@ export default function Dashboard() {
     },
   ].filter(item => item.value > 0); // Only show types that have value
 
-  // Filtered portfolio data for chart
-  const filteredPortfolioData = (() => {
-    if (distributionFilter === 'by_type') {
-      return distributionByType;
-    }
-    if (distributionFilter === 'by_sector') {
-      return distributionBySector;
-    }
-    return filteredStocksForChart.map((stock, index) => ({
-      name: stock.ticker,
-      value: stock.quantity * (stock.current_price || stock.average_price),
-      color: COLORS[index % COLORS.length],
-      asset_type: stock.asset_type,
-    }));
-  })();
-
-  // Distribution filter options
-  const DISTRIBUTION_FILTERS = [
-    { value: 'all', label: 'Todos os Ativos' },
-    { value: 'by_type', label: '% por Tipo de Ativo' },
-    { value: 'by_sector', label: '% por Segmento/Setor' },
-    { value: 'acao', label: 'Ações (Renda Variável)' },
-    { value: 'fii', label: 'Fundos Imobiliários (FIIs)' },
-    { value: 'renda_fixa', label: 'Renda Fixa (Tesouro)' },
-  ];
-
   // Distribution by sector/segment
   const distributionBySector = (() => {
     const sectorMap = {};
@@ -472,6 +446,32 @@ export default function Dashboard() {
       }))
       .sort((a, b) => b.value - a.value);
   })();
+
+  // Filtered portfolio data for chart
+  const filteredPortfolioData = (() => {
+    if (distributionFilter === 'by_type') {
+      return distributionByType;
+    }
+    if (distributionFilter === 'by_sector') {
+      return distributionBySector;
+    }
+    return filteredStocksForChart.map((stock, index) => ({
+      name: stock.ticker,
+      value: stock.quantity * (stock.current_price || stock.average_price),
+      color: COLORS[index % COLORS.length],
+      asset_type: stock.asset_type,
+    }));
+  })();
+
+  // Distribution filter options
+  const DISTRIBUTION_FILTERS = [
+    { value: 'all', label: 'Todos os Ativos' },
+    { value: 'by_type', label: '% por Tipo de Ativo' },
+    { value: 'by_sector', label: '% por Segmento/Setor' },
+    { value: 'acao', label: 'Ações (Renda Variável)' },
+    { value: 'fii', label: 'Fundos Imobiliários (FIIs)' },
+    { value: 'renda_fixa', label: 'Renda Fixa (Tesouro)' },
+  ];
 
   // Fetch ideal distribution from AI
   const fetchIdealDistribution = async () => {
