@@ -749,33 +749,6 @@ export default function Portfolio() {
                           </span>
                         </div>
                       )}
-                      {/* Mostrar lançamentos individuais se houver múltiplos */}
-                      {hasMultipleEntries && (
-                        <div className="border-t border-border pt-2 mt-2">
-                          <p className="text-xs text-muted-foreground mb-2">Lançamentos:</p>
-                          <div className="space-y-1 max-h-24 overflow-y-auto">
-                            {stock.entries.map((entry, idx) => {
-                              // Format date without timezone issues
-                              const formatDateBR = (dateStr) => {
-                                if (!dateStr) return "";
-                                const parts = dateStr.split("-");
-                                if (parts.length === 3) {
-                                  return `${parts[2]}/${parts[1]}/${parts[0]}`;
-                                }
-                                return dateStr;
-                              };
-                              return (
-                                <div key={entry.stock_id} className="text-xs flex justify-between text-muted-foreground">
-                                  <span>{entry.quantity} × {formatCurrency(entry.average_price)}</span>
-                                  {entry.purchase_date && (
-                                    <span>{formatDateBR(entry.purchase_date)}</span>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
                       <div className="border-t border-border pt-3">
                         <div className="flex justify-between">
                           <span className="text-sm text-muted-foreground">Valor Total</span>
