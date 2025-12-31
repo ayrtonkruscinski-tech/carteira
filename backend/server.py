@@ -97,21 +97,23 @@ def detect_asset_type_from_investidor10(ticker: str) -> dict:
         url_acao = f"https://investidor10.com.br/acoes/{ticker.lower()}/"
         response = httpx.get(url_acao, timeout=10.0, follow_redirects=True)
         
+        # Only consider valid if status is 200 (not 410 or other errors)
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'lxml')
-            # Check if it's a valid stock page (has stock name)
-            name_elem = soup.find('h1', class_='name-ticker') or soup.find('h1')
-            if name_elem:
-                name_text = name_elem.get_text(strip=True)
-                # Verify it's not a 404 or redirect page
-                if ticker.lower() in response.url.lower() and "acoes" in response.url.lower():
-                    logger.info(f"Detected {ticker} as AÇÃO from Investidor10")
-                    return {
-                        "ticker": ticker,
-                        "asset_type": "acao",
-                        "name": name_text,
-                        "source": "investidor10_acoes"
-                    }
+            h1 = soup.find('h1')
+            if h1:
+                name_text = h1.get_text(strip=True)
+                # Check it's not an error page
+                if "error" not in name_text.lower() and "oops" not in name_text.lower():
+                    # Verify it's the correct asset page
+                    if ticker.lower() in str(response.url).lower() and "/acoes/" in str(response.url).lower():
+                        logger.info(f"Detected {ticker} as AÇÃO from Investidor10")
+                        return {
+                            "ticker": ticker,
+                            "asset_type": "acao",
+                            "name": name_text,
+                            "source": "investidor10_acoes"
+                        }
     except Exception as e:
         logger.debug(f"Error checking ação {ticker}: {e}")
     
@@ -120,20 +122,23 @@ def detect_asset_type_from_investidor10(ticker: str) -> dict:
         url_fii = f"https://investidor10.com.br/fiis/{ticker.lower()}/"
         response = httpx.get(url_fii, timeout=10.0, follow_redirects=True)
         
+        # Only consider valid if status is 200
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'lxml')
-            name_elem = soup.find('h1', class_='name-ticker') or soup.find('h1')
-            if name_elem:
-                name_text = name_elem.get_text(strip=True)
-                # Verify it's a valid FII page
-                if ticker.lower() in response.url.lower() and "fiis" in response.url.lower():
-                    logger.info(f"Detected {ticker} as FII from Investidor10")
-                    return {
-                        "ticker": ticker,
-                        "asset_type": "fii",
-                        "name": name_text,
-                        "source": "investidor10_fiis"
-                    }
+            h1 = soup.find('h1')
+            if h1:
+                name_text = h1.get_text(strip=True)
+                # Check it's not an error page
+                if "error" not in name_text.lower() and "oops" not in name_text.lower():
+                    # Verify it's the correct FII page
+                    if ticker.lower() in str(response.url).lower() and "/fiis/" in str(response.url).lower():
+                        logger.info(f"Detected {ticker} as FII from Investidor10")
+                        return {
+                            "ticker": ticker,
+                            "asset_type": "fii",
+                            "name": name_text,
+                            "source": "investidor10_fiis"
+                        }
     except Exception as e:
         logger.debug(f"Error checking FII {ticker}: {e}")
     
