@@ -54,6 +54,38 @@ api_router = APIRouter(prefix="/api")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# ==================== HELPER FUNCTIONS ====================
+
+def detect_asset_type(ticker: str) -> str:
+    """
+    Auto-detect asset type based on Brazilian ticker patterns:
+    - Ações: end with 3, 4, 5, 6 (e.g., PETR4, VALE3)
+    - FIIs: end with 11 (e.g., HGLG11, MXRF11)
+    - BDRs: end with 34, 35 (treated as ações)
+    - Renda Fixa: manual entry only
+    """
+    ticker = ticker.upper().strip()
+    
+    # FIIs always end with 11
+    if ticker.endswith("11"):
+        return "fii"
+    
+    # Check last digit for stocks
+    if len(ticker) >= 5:
+        last_chars = ticker[-2:]
+        # BDRs (34, 35) are treated as variable income
+        if last_chars in ["34", "35"]:
+            return "acao"
+    
+    # Common stock endings
+    if len(ticker) >= 4:
+        last_char = ticker[-1]
+        if last_char in ["3", "4", "5", "6"]:
+            return "acao"
+    
+    # Default to ação for unknown patterns
+    return "acao"
+
 # ==================== MODELS ====================
 
 class User(BaseModel):
