@@ -174,15 +174,14 @@ export default function Valuation() {
 
   return (
     <Layout>
-      <TooltipProvider>
-        <div data-testid="valuation-page" className="space-y-8 animate-fade-in">
-          {/* Header */}
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Valuation - Preço Teto</h1>
-            <p className="text-muted-foreground">
-              Calcule o preço justo das ações usando métodos profissionais
-            </p>
-          </div>
+      <div data-testid="valuation-page" className="space-y-8 animate-fade-in">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Valuation - Preço Teto</h1>
+          <p className="text-muted-foreground">
+            Calcule o preço justo das ações usando métodos profissionais
+          </p>
+        </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Form */}
