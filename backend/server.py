@@ -2055,6 +2055,7 @@ async def add_dividend(dividend_data: DividendCreate, user: User = Depends(get_c
         portfolio_id=portfolio_id,
         amount=dividend_data.amount,
         payment_date=dividend_data.payment_date,
+        ex_date=dividend_data.ex_date,  # Data Com
         type=dividend_data.type
     )
     doc = dividend.model_dump()
