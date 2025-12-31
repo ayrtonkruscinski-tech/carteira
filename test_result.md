@@ -550,7 +550,7 @@ agent_communication:
       STOCKFOLIO LANDING PAGE TESTING - COMPREHENSIVE RESULTS ✅
       
       TESTED FUNCTIONALITY (as per review request):
-      ✅ Landing page loads correctly at https://smart-finance-273.preview.emergentagent.com
+      ✅ Landing page loads correctly at https://stockmaster-178.preview.emergentagent.com
       ✅ Main title: "Gerencie sua carteira de ações da B3" visible
       ✅ StockFolio branding present and visible
       ✅ "Entrar com Google" button in header working

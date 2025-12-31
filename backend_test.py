@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 
 class StockFolioAPITester:
-    def __init__(self, base_url="https://smart-finance-273.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://stockmaster-178.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.session_token = "demo_session_token_123"  # Updated to use demo session token
         self.tests_run = 0
