@@ -1186,10 +1186,33 @@ async def refresh_portfolio_prices(user: User = Depends(get_current_user)):
                     await db.alerts.insert_one(alert_doc)
                     alerts_created += 1
             
+            # Save current price as previous_close if it's a new day or not set
+            # This allows us to track daily variation
+            update_data = {
+                "current_price": new_price, 
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+            
+            # If previous_close is not set or it's a new trading day, update it
+            last_update = stock.get("updated_at", "")
+            if last_update:
+                try:
+                    last_update_date = last_update[:10]  # Get YYYY-MM-DD
+                    today_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+                    # If it's a new day, save current price as previous close before updating
+                    if last_update_date != today_date:
+                        update_data["previous_close"] = stock.get("current_price") or stock["average_price"]
+                except:
+                    pass
+            
+            # If previous_close was never set, initialize it
+            if not stock.get("previous_close"):
+                update_data["previous_close"] = stock.get("current_price") or stock["average_price"]
+            
             # Update this stock record
             await db.stocks.update_one(
                 {"stock_id": stock["stock_id"]},
-                {"$set": {"current_price": new_price, "updated_at": datetime.now(timezone.utc).isoformat()}}
+                {"$set": update_data}
             )
             updated += 1
     
