@@ -566,7 +566,7 @@ export default function Portfolio() {
               <DialogContent className="bg-card border-border max-w-lg">
                 <DialogHeader>
                   <DialogTitle className="text-foreground">
-                    {editingStock ? "Editar Ação" : "Adicionar Ação"}
+                    {editingStock ? "Editar Lançamento" : "Adicionar Lançamento"}
                   </DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
