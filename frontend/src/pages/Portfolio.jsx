@@ -840,7 +840,7 @@ export default function Portfolio() {
                         <span className="font-mono text-foreground">{stock.quantity.toFixed(0)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Preço Médio</span>
+                        <span className="text-sm text-muted-foreground">Preço C/V</span>
                         <span className="font-mono text-foreground">
                           {formatCurrency(stock.average_price)}
                         </span>
