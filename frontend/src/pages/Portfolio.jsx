@@ -53,7 +53,7 @@ const SECTORS = [
   "Outros",
 ];
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 12;
 
 const SORT_OPTIONS = [
   { value: "ticker_asc", label: "Nome (A-Z)" },
