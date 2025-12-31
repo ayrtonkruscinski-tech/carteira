@@ -398,6 +398,40 @@ export default function Portfolio() {
     return acc;
   }, []);
 
+  // Ordenar os stocks
+  const sortedStocks = [...groupedStocks].sort((a, b) => {
+    switch (sortBy) {
+      case "ticker_asc":
+        return a.ticker.localeCompare(b.ticker);
+      case "ticker_desc":
+        return b.ticker.localeCompare(a.ticker);
+      case "date_desc":
+        // Mais recente primeiro
+        if (!a.purchase_date && !b.purchase_date) return 0;
+        if (!a.purchase_date) return 1;
+        if (!b.purchase_date) return -1;
+        return b.purchase_date.localeCompare(a.purchase_date);
+      case "date_asc":
+        // Mais antiga primeiro
+        if (!a.purchase_date && !b.purchase_date) return 0;
+        if (!a.purchase_date) return 1;
+        if (!b.purchase_date) return -1;
+        return a.purchase_date.localeCompare(b.purchase_date);
+      default:
+        return 0;
+    }
+  });
+
+  // Paginação
+  const totalPages = Math.ceil(sortedStocks.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedStocks = sortedStocks.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  // Reset página quando mudar ordenação ou dados
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [sortBy, stocks.length]);
+
   if (loading) {
     return (
       <Layout>
