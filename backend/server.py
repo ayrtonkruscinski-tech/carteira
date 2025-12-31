@@ -1481,10 +1481,9 @@ async def delete_stock(stock_id: str, user: User = Depends(get_current_user)):
 async def get_ideal_distribution(user: User = Depends(get_current_user), portfolio_id: Optional[str] = None):
     """
     Analyze current portfolio and suggest ideal distribution based on:
+    - Current sector allocation
     - Risk profile
-    - Asset diversification
-    - Sector balance
-    - Brazilian market best practices
+    - Diversification best practices
     """
     # Build query
     query = {"user_id": user.user_id}
@@ -1500,10 +1499,10 @@ async def get_ideal_distribution(user: User = Depends(get_current_user), portfol
             "adjustments": []
         }
     
-    # Calculate current distribution
+    # Calculate current distribution by sector
     total_value = 0
-    by_type = {"acao": 0, "fii": 0, "renda_fixa": 0}
     by_sector = {}
+    by_type = {"acao": 0, "fii": 0, "renda_fixa": 0}
     
     for stock in stocks:
         if stock.get("operation_type") == "venda":
@@ -1511,11 +1510,11 @@ async def get_ideal_distribution(user: User = Depends(get_current_user), portfol
         value = stock.get("quantity", 0) * (stock.get("current_price") or stock.get("average_price", 0))
         total_value += value
         
-        asset_type = stock.get("asset_type", "acao")
-        by_type[asset_type] = by_type.get(asset_type, 0) + value
-        
         sector = stock.get("sector") or "Outros"
         by_sector[sector] = by_sector.get(sector, 0) + value
+        
+        asset_type = stock.get("asset_type", "acao")
+        by_type[asset_type] = by_type.get(asset_type, 0) + value
     
     if total_value == 0:
         return {
@@ -1524,87 +1523,132 @@ async def get_ideal_distribution(user: User = Depends(get_current_user), portfol
             "adjustments": []
         }
     
-    # Current percentages
+    # Calculate current percentages by sector
+    sector_percentages = {
+        sector: round((value / total_value) * 100, 1)
+        for sector, value in by_sector.items()
+    }
+    
+    # Sort sectors by current value (descending)
+    sorted_sectors = sorted(by_sector.items(), key=lambda x: -x[1])
+    num_sectors = len([s for s in by_sector.keys() if s != "Outros"])
+    
+    # Calculate ideal distribution based on current sectors
+    # Strategy: More balanced distribution among existing sectors
+    # Maximum allocation per sector should be around 25-30% for good diversification
+    
+    sector_colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', 
+                     '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1',
+                     '#14B8A6', '#A855F7', '#F43F5E', '#22C55E', '#0EA5E9']
+    
+    ideal_distribution = []
+    adjustments = []
+    
+    # Calculate ideal percentages based on number of sectors
+    # Aim for balanced distribution with slight preference for larger positions
+    if num_sectors > 0:
+        # Base allocation: equal distribution with max 30%
+        base_percent = min(30, 100 / num_sectors)
+        
+        for i, (sector, value) in enumerate(sorted_sectors):
+            current_percent = sector_percentages[sector]
+            
+            # Ideal: no sector should be more than 30% or less than 5% (if it exists)
+            if sector == "Outros":
+                ideal_percent = min(current_percent, 10)  # Keep "Outros" low
+            elif current_percent > 35:
+                ideal_percent = 25  # Reduce over-concentrated sectors
+            elif current_percent < 5 and current_percent > 0:
+                ideal_percent = 10  # Increase very small positions
+            else:
+                # Gradually balance towards more equal distribution
+                ideal_percent = round((base_percent + current_percent) / 2, 1)
+            
+            ideal_distribution.append({
+                "name": sector,
+                "percent": round(ideal_percent, 1),
+                "current": current_percent,
+                "color": sector_colors[i % len(sector_colors)]
+            })
+            
+            # Calculate adjustment needed
+            diff = ideal_percent - current_percent
+            if abs(diff) > 3:  # Only suggest if difference > 3%
+                adjustments.append({
+                    "category": sector,
+                    "current": current_percent,
+                    "target": round(ideal_percent, 1),
+                    "action": "aumentar" if diff > 0 else "reduzir",
+                    "diff": round(abs(diff), 1)
+                })
+    
+    # Normalize ideal distribution to 100%
+    total_ideal = sum(item["percent"] for item in ideal_distribution)
+    if total_ideal > 0 and abs(total_ideal - 100) > 1:
+        factor = 100 / total_ideal
+        for item in ideal_distribution:
+            item["percent"] = round(item["percent"] * factor, 1)
+    
+    # Generate recommendations
+    recommendations = []
+    
+    # Check for over-concentration
+    max_sector_percent = max(sector_percentages.values()) if sector_percentages else 0
+    if max_sector_percent > 40:
+        top_sector = max(sector_percentages.items(), key=lambda x: x[1])[0]
+        recommendations.append(f"Concentração elevada em '{top_sector}' ({max_sector_percent:.1f}%). Considere reduzir para no máximo 30%.")
+    
+    # Check for under-diversification
+    if num_sectors < 3:
+        recommendations.append("Poucos setores na carteira. Diversifique em pelo menos 4-5 setores diferentes para reduzir risco.")
+    elif num_sectors >= 5:
+        recommendations.append("Boa diversificação por setores!")
+    
+    # Check asset type balance
     current_acao = (by_type["acao"] / total_value) * 100 if total_value > 0 else 0
     current_fii = (by_type["fii"] / total_value) * 100 if total_value > 0 else 0
     current_rf = (by_type["renda_fixa"] / total_value) * 100 if total_value > 0 else 0
     
-    # Analyze risk profile based on current allocation
-    # More aggressive = more stocks, conservative = more fixed income
-    is_aggressive = current_acao > 60
-    is_conservative = current_rf > 40
+    # Suggest other asset types if missing
+    type_suggestions = []
+    if current_fii < 10 and current_acao > 50:
+        type_suggestions.append("FIIs (renda passiva mensal)")
+    if current_rf < 10 and (current_acao + current_fii) > 80:
+        type_suggestions.append("Renda Fixa (segurança)")
+    if current_acao < 20 and current_rf > 50:
+        type_suggestions.append("Ações (crescimento)")
     
-    # Ideal distribution based on balanced moderate profile
-    # This can be customized based on user preferences later
-    ideal_distribution = [
-        {"name": "Ações", "percent": 40, "color": "#3B82F6", "current": round(current_acao, 1)},
-        {"name": "FIIs", "percent": 30, "color": "#10B981", "current": round(current_fii, 1)},
-        {"name": "Renda Fixa", "percent": 30, "color": "#F59E0B", "current": round(current_rf, 1)},
-    ]
+    if type_suggestions:
+        recommendations.append(f"Considere diversificar também em: {', '.join(type_suggestions)}.")
     
-    # Calculate adjustments needed
-    adjustments = []
-    
-    for item in ideal_distribution:
-        diff = item["percent"] - item["current"]
-        if abs(diff) > 5:  # Only suggest if difference > 5%
-            adjustments.append({
-                "category": item["name"],
-                "current": item["current"],
-                "target": item["percent"],
-                "action": "aumentar" if diff > 0 else "reduzir",
-                "diff": round(abs(diff), 1)
-            })
-    
-    # Generate recommendation
-    recommendations = []
-    
-    # Sector diversification analysis
-    num_sectors = len([s for s in by_sector.keys() if s != "Outros"])
-    if num_sectors < 3:
-        recommendations.append("Considere diversificar em mais setores para reduzir risco.")
-    
-    # Asset type analysis
-    if current_acao > 70:
-        recommendations.append("Sua carteira está muito concentrada em ações. Considere aumentar FIIs e Renda Fixa para maior estabilidade.")
-    elif current_fii > 50:
-        recommendations.append("Alta concentração em FIIs. Considere balancear com ações para maior potencial de crescimento.")
-    elif current_rf > 50:
-        recommendations.append("Carteira muito conservadora. Se seu horizonte for longo prazo, considere aumentar renda variável.")
-    
-    # Number of assets
+    # Number of assets check
     num_stocks = len([s for s in stocks if s.get("operation_type") != "venda"])
     if num_stocks < 5:
-        recommendations.append("Poucos ativos na carteira. Diversifique com mais empresas para diluir riscos específicos.")
-    elif num_stocks > 30:
-        recommendations.append("Muitos ativos podem dificultar o acompanhamento. Considere focar nos melhores.")
-    
-    # FII yield consideration
-    if current_fii < 20 and current_fii > 0:
-        recommendations.append("FIIs podem aumentar sua renda passiva mensal. Considere aumentar essa posição.")
+        recommendations.append("Poucos ativos. Considere adicionar mais empresas para diluir riscos específicos.")
     
     if not recommendations:
-        recommendations.append("Sua carteira está bem diversificada! Continue monitorando e rebalanceando periodicamente.")
+        recommendations.append("Sua carteira está bem equilibrada! Continue monitorando periodicamente.")
     
-    # Build final recommendation text
     recommendation_text = " ".join(recommendations)
     
-    # Sector distribution for display
-    sector_distribution = [
-        {"name": sector, "percent": round((value / total_value) * 100, 1), "color": ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16"][i % 8]}
-        for i, (sector, value) in enumerate(sorted(by_sector.items(), key=lambda x: -x[1]))
-    ]
+    # Profile analysis
+    is_aggressive = current_acao > 60
+    is_conservative = current_rf > 40
     
     return {
         "distribution": ideal_distribution,
         "recommendation": recommendation_text,
         "adjustments": adjustments,
-        "current_by_sector": sector_distribution,
         "stats": {
             "total_value": total_value,
             "num_assets": num_stocks,
             "num_sectors": num_sectors,
-            "profile": "Agressivo" if is_aggressive else ("Conservador" if is_conservative else "Moderado")
+            "profile": "Agressivo" if is_aggressive else ("Conservador" if is_conservative else "Moderado"),
+            "by_type": {
+                "acoes": round(current_acao, 1),
+                "fiis": round(current_fii, 1),
+                "renda_fixa": round(current_rf, 1)
+            }
         }
     }
 
