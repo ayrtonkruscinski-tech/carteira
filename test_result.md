@@ -1207,3 +1207,18 @@ agent_communication:
       - working: true
         agent: "main"
         comment: "Auto-detecção já existia e funciona corretamente. Testado: MXRF11->fii, HGLG11->fii, PETR4->acao, VALE3->acao. Backend detect_asset_type() e frontend handleTickerChange() funcionando."
+
+  - task: "Tutorial de Importação na Página Carteira"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Portfolio.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Tutorial implementado no modal de importação da página Portfolio. Card com fundo verde claro (bg-primary/10), ícone 💡, título 'Como obter o arquivo da B3:' e texto explicativo sobre como baixar arquivo da B3. Localizado entre lista de formatos aceitos e área de upload."
+      - working: true
+        agent: "testing"
+        comment: "✅ TUTORIAL IMPLEMENTADO CORRETAMENTE - Análise de código confirma todos os elementos do review request presentes: 1) Fundo verde claro (bg-primary/10 border border-primary/30) ✅, 2) Ícone de lâmpada (💡) ✅, 3) Título 'Como obter o arquivo da B3:' ✅, 4) Texto exato conforme especificação ✅, 5) Posicionamento correto no modal de importação ✅, 6) Modal contém todos elementos requeridos (título, formatos aceitos, tutorial, upload) ✅. LIMITAÇÃO: Não foi possível testar funcionalmente devido ao Google Auth (aplicação corretamente protegida), mas código implementado corretamente."
