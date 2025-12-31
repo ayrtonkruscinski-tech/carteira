@@ -695,7 +695,17 @@ export default function Portfolio() {
                             </span>
                           )}
                         </CardTitle>
-                        <p className="text-sm text-muted-foreground">{stock.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {stock.name}
+                          {stock.purchase_date && (
+                            <span className="ml-2 text-xs text-blue-400">
+                              ({(() => {
+                                const parts = stock.purchase_date.split("-");
+                                return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : stock.purchase_date;
+                              })()})
+                            </span>
+                          )}
+                        </p>
                       </div>
                       <div className="flex gap-1">
                         <Button
