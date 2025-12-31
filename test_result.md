@@ -551,7 +551,7 @@ agent_communication:
       STOCKFOLIO LANDING PAGE TESTING - COMPREHENSIVE RESULTS ✅
       
       TESTED FUNCTIONALITY (as per review request):
-      ✅ Landing page loads correctly at https://stockmaster-178.preview.emergentagent.com
+      ✅ Landing page loads correctly at https://portfolio-tracker-114.preview.emergentagent.com
       ✅ Main title: "Gerencie sua carteira de ações da B3" visible
       ✅ StockFolio branding present and visible
       ✅ "Entrar com Google" button in header working
@@ -1059,7 +1059,7 @@ agent_communication:
       - Two cards with R$ values ✅
       
       MANUAL TESTING INSTRUCTIONS:
-      1. Login manually with Google account at https://stockmaster-178.preview.emergentagent.com
+      1. Login manually with Google account at https://portfolio-tracker-114.preview.emergentagent.com
       2. Navigate to Dashboard
       3. Verify "Evolução de Proventos" chart appears below "Evolução Patrimonial"
       4. Test period buttons (should highlight in purple when selected)

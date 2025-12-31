@@ -96,7 +96,7 @@ ALPHA_VANTAGE_KEY=xxxxx                        # API Key Alpha Vantage
 
 #### Frontend (`/app/frontend/.env`)
 ```env
-REACT_APP_BACKEND_URL=https://stockmaster-178.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://portfolio-tracker-114.preview.emergentagent.com
 WDS_SOCKET_PORT=443
 ENABLE_HEALTH_CHECK=false
 ```
