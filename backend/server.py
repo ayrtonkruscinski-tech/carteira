@@ -1025,17 +1025,56 @@ async def delete_stock(stock_id: str, user: User = Depends(get_current_user)):
     return {"message": "Stock deleted"}
 
 @api_router.get("/portfolio/summary")
-async def get_portfolio_summary(user: User = Depends(get_current_user)):
-    stocks = await db.stocks.find({"user_id": user.user_id}, {"_id": 0}).to_list(1000)
+async def get_portfolio_summary(user: User = Depends(get_current_user), portfolio_id: Optional[str] = None):
+    # Build query based on portfolio_id
+    query = {"user_id": user.user_id}
+    if portfolio_id:
+        query["portfolio_id"] = portfolio_id
+    
+    stocks = await db.stocks.find(query, {"_id": 0}).to_list(1000)
     
     total_invested = sum(s["quantity"] * s["average_price"] for s in stocks)
     total_current = sum(s["quantity"] * (s.get("current_price") or s["average_price"]) for s in stocks)
     total_gain = total_current - total_invested
     gain_percent = (total_gain / total_invested * 100) if total_invested > 0 else 0
     
+    # Calculate daily result (Resultado do Dia)
+    # B3 opens at 10:00 BRT (UTC-3), so we reset before that
+    # We use the previous_close price stored in stocks to calculate daily variation
+    now_utc = datetime.now(timezone.utc)
+    brt_offset = timedelta(hours=-3)
+    now_brt = now_utc + brt_offset
+    
+    # B3 market hours: 10:00 - 17:55 BRT
+    market_open_hour = 10
+    is_before_market_open = now_brt.hour < market_open_hour
+    
+    # Calculate daily result based on previous close prices
+    daily_gain = 0.0
+    previous_total = 0.0
+    
+    for s in stocks:
+        quantity = s["quantity"]
+        current_price = s.get("current_price") or s["average_price"]
+        # Use previous_close if available, otherwise use current_price (no change)
+        previous_close = s.get("previous_close") or current_price
+        
+        daily_gain += quantity * (current_price - previous_close)
+        previous_total += quantity * previous_close
+    
+    # If before market open, show zero (market hasn't moved yet today)
+    if is_before_market_open:
+        daily_gain = 0.0
+        daily_gain_percent = 0.0
+    else:
+        daily_gain_percent = (daily_gain / previous_total * 100) if previous_total > 0 else 0
+    
     # Get dividends and filter only those already paid
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    dividends = await db.dividends.find({"user_id": user.user_id}, {"_id": 0}).to_list(10000)
+    div_query = {"user_id": user.user_id}
+    if portfolio_id:
+        div_query["portfolio_id"] = portfolio_id
+    dividends = await db.dividends.find(div_query, {"_id": 0}).to_list(10000)
     
     # Only sum dividends where payment_date <= today
     total_dividends_received = sum(
@@ -1052,6 +1091,8 @@ async def get_portfolio_summary(user: User = Depends(get_current_user)):
         "total_current": round(total_current, 2),
         "total_gain": round(total_gain, 2),
         "gain_percent": round(gain_percent, 2),
+        "daily_gain": round(daily_gain, 2),
+        "daily_gain_percent": round(daily_gain_percent, 2),
         "total_dividends": round(total_dividends_received, 2),  # Only received dividends
         "total_dividends_pending": round(total_dividends_pending, 2),  # Pending dividends
         "stocks_count": len(stocks)
