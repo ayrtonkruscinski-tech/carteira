@@ -199,6 +199,14 @@ export default function Portfolio() {
       purchase_date: formData.purchase_date || null,
       operation_type: formData.operation_type || "compra",
       include_in_results: formData.include_in_results,
+      asset_type: formData.asset_type || "acao",
+      // Fixed income fields
+      fixed_income_type: formData.fixed_income_type || null,
+      maturity_date: formData.maturity_date || null,
+      rate: formData.rate ? parseFloat(formData.rate) : null,
+      rate_type: formData.rate_type || null,
+      issuer: formData.issuer || null,
+      // Other fields
       current_price: formData.current_price ? parseFloat(formData.current_price) : null,
       dividend_yield: formData.dividend_yield ? parseFloat(formData.dividend_yield) : null,
       sector: formData.sector || null,
@@ -231,6 +239,12 @@ export default function Portfolio() {
               purchase_date: payload.purchase_date,
               operation_type: payload.operation_type,
               include_in_results: payload.include_in_results,
+              asset_type: payload.asset_type,
+              fixed_income_type: payload.fixed_income_type,
+              maturity_date: payload.maturity_date,
+              rate: payload.rate,
+              rate_type: payload.rate_type,
+              issuer: payload.issuer,
               current_price: payload.current_price,
               dividend_yield: payload.dividend_yield,
               ceiling_price: payload.ceiling_price,
@@ -238,7 +252,7 @@ export default function Portfolio() {
           }
         );
         if (response.ok) {
-          toast.success("Ação atualizada com sucesso!");
+          toast.success("Lançamento atualizado com sucesso!");
           fetchStocks();
         }
       } else {
