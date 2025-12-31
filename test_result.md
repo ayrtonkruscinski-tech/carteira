@@ -993,3 +993,41 @@ agent_communication:
       ❌ Manual testing with real Google authentication required for full validation
       
       CONCLUSION: All dashboard card changes implemented correctly according to review request specifications.
+
+
+  - agent: "main"
+    message: |
+      NOVA FUNCIONALIDADE: GRÁFICO DE EVOLUÇÃO DE PROVENTOS
+      
+      IMPLEMENTAÇÃO:
+      - Adicionado novo gráfico "Evolução de Proventos" no Dashboard
+      - Localizado logo após o gráfico "Evolução Patrimonial"
+      - Usa os mesmos dados de portfolioEvolution (campo 'dividends')
+      - Gráfico do tipo AreaChart com cor roxa (#A855F7)
+      - Mostra evolução acumulada dos proventos ao longo do tempo
+      - Mesmos filtros de período (Semanal, Mensal, 12 Meses, 5 Anos, Máximo)
+      - Cards informativos: "Total Acumulado" e "No Período"
+      - Tooltip mostra valor acumulado e valor recebido no período
+      
+      ARQUIVO MODIFICADO:
+      - /app/frontend/src/pages/Dashboard.jsx
+      
+      PRECISA TESTAR:
+      1. Login com Google Auth
+      2. Navegar para Dashboard
+      3. Verificar novo gráfico "Evolução de Proventos" abaixo de "Evolução Patrimonial"
+      4. Verificar filtros de período funcionando
+      5. Verificar cards "Total Acumulado" e "No Período"
+      6. Verificar tooltip ao passar o mouse
+
+  - task: "Proventos Evolution Chart"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Dashboard.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Novo gráfico de evolução de proventos adicionado ao Dashboard. Gráfico AreaChart roxo mostrando proventos acumulados ao longo do tempo. Cards informativos com total acumulado e valor no período."
