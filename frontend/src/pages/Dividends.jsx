@@ -72,6 +72,7 @@ export default function Dividends() {
     ticker: "",
     amount: "",
     payment_date: "",
+    ex_date: "",
     type: "dividendo",
   });
   const [syncing, setSyncing] = useState(false);
@@ -144,6 +145,7 @@ export default function Dividends() {
       ticker: "",
       amount: "",
       payment_date: "",
+      ex_date: "",
       type: "dividendo",
     });
     setIsAddDialogOpen(false);
@@ -382,18 +384,27 @@ export default function Dividends() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="payment_date">Data Pagamento</Label>
-                    <Input
-                      id="payment_date"
-                      type="date"
-                      value={formData.payment_date}
-                      onChange={(e) => setFormData({ ...formData, payment_date: e.target.value })}
-                      required
-                      className="bg-input border-input"
-                      data-testid="date-input"
-                    />
-                  </div>
-                </div>
+    <Label htmlFor="ex_date">Data Com</Label>
+    <Input
+      id="ex_date"
+      type="date"
+      value={formData.ex_date}
+      onChange={(e) => setFormData({ ...formData, ex_date: e.target.value })}
+      className="bg-input border-input"
+    />
+  </div>
+  <div className="space-y-2">
+    <Label htmlFor="payment_date">Data Pagamento</Label>
+    <Input
+      id="payment_date"
+      type="date"
+      value={formData.payment_date}
+      onChange={(e) => setFormData({ ...formData, payment_date: e.target.value })}
+      required
+      className="bg-input border-input"
+    />
+  </div>
+</div>
 
                 <div className="space-y-2">
                   <Label htmlFor="type">Tipo</Label>

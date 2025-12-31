@@ -1,3 +1,4 @@
+
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
@@ -126,9 +127,10 @@ class Dividend(BaseModel):
     user_id: str
     stock_id: str
     ticker: str
-    portfolio_id: Optional[str] = None  # ID da carteira
+    portfolio_id: Optional[str] = None
     amount: float
     payment_date: str
+    ex_date: Optional[str] = None  # <--- ADICIONE ESTA LINHA (Data Com)
     type: str = "dividendo"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -480,100 +482,66 @@ def fetch_investidor10_fundamentals(ticker: str) -> dict:
     
     return data
 
-def fetch_investidor10_dividends(ticker: str) -> List[dict]:
-    """Fetch dividend history from Investidor10"""
-    dividends = []
-    
+async def fetch_investidor10_dividends_async(client: httpx.AsyncClient, ticker: str, page: int = 1) -> List[dict]:
+    """Busca histórico de dividendos de forma rápida e assíncrona."""
+    url = f"https://investidor10.com.br/acoes/{ticker.lower()}/?page={page}"
     try:
-        url = f"https://investidor10.com.br/acoes/{ticker.lower()}/"
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        }
-        
-        response = requests.get(url, headers=headers, timeout=15)
-        
+        response = await client.get(url, timeout=15.0)
         if response.status_code != 200:
-            logger.error(f"Investidor10 returned status {response.status_code} for {ticker}")
             return []
-        
+
         soup = BeautifulSoup(response.content, 'lxml')
+        table = soup.find('table', id='table-dividends-history')
+        if not table:
+            # Fallback caso o ID mude
+            for t in soup.find_all('table'):
+                if 'data com' in t.get_text().lower():
+                    table = t
+                    break
         
-        # Find dividend table - look for table with "data com" header
-        tables = soup.find_all('table')
+        if not table: return []
         
-        for table in tables:
-            headers_row = table.find('tr')
-            if not headers_row:
-                continue
-                
-            headers_text = [th.get_text(strip=True).lower() for th in headers_row.find_all(['th', 'td'])]
+        dividends = []
+        rows = table.find_all('tr')[1:]
+        for row in rows:
+            cells = row.find_all(['td', 'th'])
+            if len(cells) < 4: continue
             
-            # Check if this is the dividend table
-            if 'data com' in headers_text or 'data ex' in headers_text:
-                # Find column indices
-                tipo_idx = next((i for i, h in enumerate(headers_text) if 'tipo' in h), None)
-                data_com_idx = next((i for i, h in enumerate(headers_text) if 'data com' in h or 'data ex' in h), None)
-                pagamento_idx = next((i for i, h in enumerate(headers_text) if 'pagamento' in h or 'data pag' in h), None)
-                valor_idx = next((i for i, h in enumerate(headers_text) if 'valor' in h), None)
+            tipo = cells[0].get_text(strip=True)
+            # REGRA: Ignorar bonificações (não são dinheiro)
+            if "bonifica" in tipo.lower(): continue
+            
+            data_com_str = cells[1].get_text(strip=True)
+            pagamento_str = cells[2].get_text(strip=True)
+            valor_raw = cells[3].get_text(strip=True).replace('.', '').replace(',', '.')
+            
+            # Pula se estiver apenas provisionado sem data ou valor
+            if 'provisionado' in pagamento_str.lower() or not data_com_str: continue
+            
+            try:
+                # Conversão de datas DD/MM/YYYY -> YYYY-MM-DD
+                d_c = data_com_str.split('/')
+                data_com = f"{d_c[2]}-{d_c[1]}-{d_c[0]}"
                 
-                if data_com_idx is None or valor_idx is None:
-                    continue
+                d_p = pagamento_str.split('/')
+                data_pag = f"{d_p[2]}-{d_p[1]}-{d_p[0]}" if len(d_p) == 3 else data_com
                 
-                # Parse rows (skip header)
-                rows = table.find_all('tr')[1:]
+                # Limpa valor (remove R$, espaços, etc)
+                valor = float(re.sub(r'[^\d.]', '', valor_raw))
                 
-                for row in rows:
-                    cells = row.find_all(['td', 'th'])
-                    if len(cells) <= max(filter(None, [tipo_idx, data_com_idx, pagamento_idx, valor_idx])):
-                        continue
-                    
-                    try:
-                        tipo = cells[tipo_idx].get_text(strip=True) if tipo_idx is not None else "Dividendo"
-                        data_com_str = cells[data_com_idx].get_text(strip=True) if data_com_idx is not None else ""
-                        pagamento_str = cells[pagamento_idx].get_text(strip=True) if pagamento_idx is not None else ""
-                        valor_str = cells[valor_idx].get_text(strip=True) if valor_idx is not None else "0"
-                        
-                        # Skip provisioned dividends (not yet confirmed)
-                        if 'provisionado' in pagamento_str.lower() or 'provisionado' in tipo.lower():
-                            logger.debug(f"Skipping provisioned dividend for {ticker}: {tipo}")
-                            continue
-                        
-                        # Parse date (DD/MM/YYYY -> YYYY-MM-DD)
-                        data_com = None
-                        if data_com_str and '/' in data_com_str:
-                            parts = data_com_str.split('/')
-                            if len(parts) == 3:
-                                data_com = f"{parts[2]}-{parts[1]}-{parts[0]}"
-                        
-                        data_pagamento = None
-                        if pagamento_str and '/' in pagamento_str:
-                            parts = pagamento_str.split('/')
-                            if len(parts) == 3:
-                                data_pagamento = f"{parts[2]}-{parts[1]}-{parts[0]}"
-                        
-                        # Parse value (handle Brazilian format)
-                        valor_str = valor_str.replace('.', '').replace(',', '.')
-                        valor = float(valor_str) if valor_str else 0
-                        
-                        if data_com and valor > 0:
-                            dividends.append({
-                                "tipo": tipo,
-                                "data_com": data_com,
-                                "data_pagamento": data_pagamento,
-                                "valor": round(valor, 8)
-                            })
-                    except Exception as e:
-                        logger.error(f"Error parsing dividend row: {e}")
-                        continue
-                
-                break  # Found the dividend table, no need to continue
-        
-        logger.info(f"Investidor10: Found {len(dividends)} dividends for {ticker}")
-        
+                if valor > 0:
+                    dividends.append({
+                        "tipo": tipo, # Nome exato: "Juros Sobre Capital Próprio", etc.
+                        "data_com": data_com,
+                        "data_pagamento": data_pag,
+                        "valor": valor
+                    })
+            except: continue
+            
+        return dividends
     except Exception as e:
-        logger.error(f"Investidor10 scraper error for {ticker}: {e}")
-    
-    return dividends
+        logger.error(f"Erro ao buscar {ticker} pág {page}: {e}")
+        return []
 
 # ==================== TRADINGVIEW INTEGRATION ====================
 
@@ -2065,7 +2033,9 @@ async def get_dividends(user: User = Depends(get_current_user), portfolio_id: Op
     query = {"user_id": user.user_id}
     if portfolio_id:
         query["portfolio_id"] = portfolio_id
-    dividends = await db.dividends.find(query, {"_id": 0}).to_list(10000)
+    
+    # Busca e ordena pela data de pagamento mais recente
+    dividends = await db.dividends.find(query, {"_id": 0}).sort("payment_date", -1).to_list(10000)
     return dividends
 
 @api_router.post("/dividends")
@@ -2123,140 +2093,85 @@ async def delete_all_dividends(user: User = Depends(get_current_user), portfolio
 
 @api_router.post("/dividends/sync")
 async def sync_dividends(user: User = Depends(get_current_user), portfolio_id: Optional[str] = None):
-    """
-    Synchronize dividends from Investidor10 for all stocks in the user's portfolio.
-    This checks if the user held the stock on the 'data com' (ex-date) and creates dividend entries.
-    """
     query = {"user_id": user.user_id}
     if portfolio_id:
         query["portfolio_id"] = portfolio_id
+    
     stocks = await db.stocks.find(query, {"_id": 0}).to_list(1000)
-    
     if not stocks:
-        return {"message": "Nenhuma ação na carteira", "synced": 0, "total_tickers": 0}
-    
-    # Get unique tickers
+        return {"message": "Nenhuma ação na carteira", "synced": 0}
+
     unique_tickers = list(set(s["ticker"] for s in stocks))
-    
-    synced = 0
-    skipped = 0
-    errors = []
-    details = []
-    
-    for ticker in unique_tickers:
-        try:
-            # Fetch dividends from Investidor10
-            dividends_data = fetch_investidor10_dividends(ticker)
-            
-            if not dividends_data:
-                logger.info(f"No dividends found for {ticker}")
-                continue
-            
-            # Get all user stocks for this ticker (there might be multiple purchases)
-            user_stocks = [s for s in stocks if s["ticker"] == ticker]
-            
-            for div_data in dividends_data:
-                data_com = div_data.get("data_com")
-                data_pagamento = div_data.get("data_pagamento") or data_com
-                valor = div_data.get("valor", 0)
-                tipo = div_data.get("tipo", "Dividendo").lower()
-                
-                if not data_com or valor <= 0:
-                    continue
-                
-                # Check if user held the stock on data_com for each purchase
-                for stock in user_stocks:
-                    purchase_date = stock.get("purchase_date")
+    today = datetime.now(timezone.utc).date()
+    synced, updated = 0, 0
+    sem = asyncio.Semaphore(5) 
+
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        async def process_ticker(ticker):
+            nonlocal synced, updated
+            async with sem:
+                user_stocks = [s for s in stocks if s["ticker"] == ticker]
+                page = 1
+                while page <= 10:
+                    data = await fetch_investidor10_dividends_async(client, ticker, page)
+                    if not data: break
                     
-                    # If no purchase date is set, skip this dividend (we can't verify eligibility)
-                    if not purchase_date:
-                        logger.info(f"Skipping dividend for {ticker}: no purchase_date set for stock")
-                        skipped += 1
-                        continue
-                    
-                    try:
-                        # Parse dates for comparison
-                        if isinstance(purchase_date, str):
-                            purchase_dt = datetime.strptime(purchase_date, "%Y-%m-%d").date()
+                    for div in data:
+                        dt_com_obj = datetime.strptime(div["data_com"], "%Y-%m-%d").date()
+                        
+                        # REGRA: Só sincroniza se já passou da Data Com
+                        if today < dt_com_obj: continue
+
+                        # Cálculo de quantidade total elegível
+                        total_shares = 0
+                        for s in user_stocks:
+                            p_date_str = s.get("purchase_date")
+                            if not p_date_str: continue
+                            p_dt = datetime.strptime(p_date_str[:10], "%Y-%m-%d").date()
+                            if p_dt <= dt_com_obj:
+                                total_shares += s.get("quantity", 0)
+                        
+                        if total_shares <= 0: continue
+                        total_amount = round(div["valor"] * total_shares, 2)
+                        
+                        # Verifica duplicidade considerando o Tipo e Data Com
+                        existing = await db.dividends.find_one({
+                            "user_id": user.user_id,
+                            "ticker": ticker,
+                            "ex_date": div["data_com"], # Busca pela Data Com
+                            "payment_date": div["data_pagamento"],
+                            "type": div["tipo"]
+                        })
+                        
+                        if existing:
+                            if abs(existing.get("amount", 0) - total_amount) > 0.01:
+                                await db.dividends.update_one(
+                                    {"_id": existing["_id"]}, 
+                                    {"$set": {"amount": total_amount}}
+                                )
+                                updated += 1
                         else:
-                            purchase_dt = purchase_date
-                        
-                        data_com_dt = datetime.strptime(data_com, "%Y-%m-%d").date()
-                        
-                        # User must have purchased BEFORE or ON the data_com to be eligible
-                        # Stocks bought AFTER the data_com do NOT receive the dividend
-                        user_held_on_data_com = purchase_dt <= data_com_dt
-                        
-                    except Exception as e:
-                        logger.error(f"Date parsing error for {ticker}: {e}")
-                        skipped += 1
-                        continue
+                            await db.dividends.insert_one({
+                                "dividend_id": f"div_{uuid.uuid4().hex[:12]}",
+                                "user_id": user.user_id,
+                                "ticker": ticker,
+                                "portfolio_id": user_stocks[0].get("portfolio_id"),
+                                "amount": total_amount,
+                                "payment_date": div["data_pagamento"],
+                                "ex_date": div["data_com"], # <--- SALVA A DATA COM AQUI
+                                "type": div["tipo"],
+                                "created_at": datetime.now(timezone.utc).isoformat()
+                            })
+                            synced += 1
                     
-                    if not user_held_on_data_com:
-                        logger.debug(f"Skipping dividend for {ticker}: purchased {purchase_date} > data_com {data_com}")
-                        skipped += 1
-                        continue
-                    
-                    # Calculate total dividend amount based on quantity
-                    quantity = stock.get("quantity", 0)
-                    total_dividend = round(valor * quantity, 2)
-                    
-                    if total_dividend <= 0:
-                        continue
-                    
-                    # Check if this dividend already exists (avoid duplicates)
-                    existing = await db.dividends.find_one({
-                        "user_id": user.user_id,
-                        "ticker": ticker,
-                        "payment_date": data_pagamento,
-                        "amount": total_dividend
-                    })
-                    
-                    if existing:
-                        skipped += 1
-                        continue
-                    
-                    # Create dividend entry
-                    dividend = Dividend(
-                        user_id=user.user_id,
-                        stock_id=stock["stock_id"],
-                        ticker=ticker,
-                        portfolio_id=stock.get("portfolio_id"),  # Include portfolio_id from stock
-                        amount=total_dividend,
-                        payment_date=data_pagamento,
-                        type="jcp" if "jcp" in tipo or "juros" in tipo else "dividendo"
-                    )
-                    doc = dividend.model_dump()
-                    doc["created_at"] = doc["created_at"].isoformat()
-                    doc["ex_date"] = data_com  # Store the ex-date for reference
-                    await db.dividends.insert_one(doc)
-                    
-                    synced += 1
-                    details.append({
-                        "ticker": ticker,
-                        "amount": total_dividend,
-                        "payment_date": data_pagamento,
-                        "ex_date": data_com
-                    })
-                    
-                    logger.info(f"Synced dividend for {ticker}: R${total_dividend} (ex-date: {data_com})")
-                    
-        except Exception as e:
-            logger.error(f"Error syncing dividends for {ticker}: {e}")
-            errors.append({"ticker": ticker, "error": str(e)})
-    
-    result = {
-        "message": f"Sincronização concluída: {synced} dividendos adicionados",
-        "synced": synced,
-        "skipped": skipped,
-        "total_tickers": len(unique_tickers),
-        "details": details[:10]  # Return first 10 details
-    }
-    
-    if errors:
-        result["errors"] = errors
-    
-    return result
+                    # Para de buscar se os dividendos forem muito antigos (2 anos)
+                    last_div_dt = datetime.strptime(data[-1]["data_com"], "%Y-%m-%d").date()
+                    if last_div_dt < (today - timedelta(days=730)): break
+                    page += 1
+
+        await asyncio.gather(*(process_ticker(t) for t in unique_tickers))
+
+    return {"novos": synced, "atualizados": updated}
 
 # ==================== VALUATION ROUTES ====================
 
