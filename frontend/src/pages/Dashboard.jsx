@@ -562,7 +562,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             {portfolioEvolution.length > 0 ? (
-              <div className="h-72">
+              <div className="h-72 overflow-hidden">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={portfolioEvolution}>
                     <defs>
@@ -600,6 +600,8 @@ export default function Dashboard() {
                       tickFormatter={(value) => value >= 1000 ? `R$${(value/1000).toFixed(0)}k` : `R$${value.toFixed(0)}`}
                     />
                     <Tooltip
+                      cursor={{ fill: 'transparent' }}
+                      wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }}
                       contentStyle={{
                         backgroundColor: '#121417',
                         border: '1px solid #1E293B',
