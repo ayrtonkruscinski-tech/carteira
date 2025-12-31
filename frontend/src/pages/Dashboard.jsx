@@ -306,31 +306,43 @@ export default function Dashboard() {
     return labels[type] || type;
   };
 
-  // Sort stocks based on selected criteria
-  const sortedStocks = [...enrichedStocks].sort((a, b) => {
-    switch (sortBy) {
-      case 'ticker':
-        return a.ticker.localeCompare(b.ticker);
-      case 'value_desc':
-        return b.currentValue - a.currentValue;
-      case 'value_asc':
-        return a.currentValue - b.currentValue;
-      case 'variation_desc':
-        return b.variation - a.variation;
-      case 'variation_asc':
-        return a.variation - b.variation;
-      case 'profitability_desc':
-        return b.profitability - a.profitability;
-      case 'profitability_asc':
-        return a.profitability - b.profitability;
-      case 'portfolio_percent_desc':
-        return b.portfolioPercent - a.portfolioPercent;
-      case 'portfolio_percent_asc':
-        return a.portfolioPercent - b.portfolioPercent;
-      default:
-        return 0;
-    }
-  });
+  // Sort stocks function
+  const sortStocks = (stocksList) => {
+    return [...stocksList].sort((a, b) => {
+      switch (sortBy) {
+        case 'ticker':
+          return a.ticker.localeCompare(b.ticker);
+        case 'value_desc':
+          return b.currentValue - a.currentValue;
+        case 'value_asc':
+          return a.currentValue - b.currentValue;
+        case 'variation_desc':
+          return b.variation - a.variation;
+        case 'variation_asc':
+          return a.variation - b.variation;
+        case 'profitability_desc':
+          return b.profitability - a.profitability;
+        case 'profitability_asc':
+          return a.profitability - b.profitability;
+        case 'portfolio_percent_desc':
+          return b.portfolioPercent - a.portfolioPercent;
+        case 'portfolio_percent_asc':
+          return a.portfolioPercent - b.portfolioPercent;
+        default:
+          return 0;
+      }
+    });
+  };
+
+  // Sort stocks based on selected criteria (legacy - for all stocks)
+  const sortedStocks = sortStocks(enrichedStocks);
+
+  // Sorted stocks by type
+  const sortedStocksByType = {
+    acao: sortStocks(stocksByType.acao),
+    fii: sortStocks(stocksByType.fii),
+    renda_fixa: sortStocks(stocksByType.renda_fixa),
+  };
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', {
