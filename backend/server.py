@@ -1144,6 +1144,31 @@ async def get_portfolio_summary(user: User = Depends(get_current_user), portfoli
     
     daily_gain_percent = (daily_gain / previous_total * 100) if previous_total > 0 else 0
     
+    # Calculate breakdown by asset type
+    asset_types = ["acao", "fii", "renda_fixa"]
+    breakdown = {}
+    
+    for asset_type in asset_types:
+        type_stocks = [s for s in stocks if s.get("asset_type", "acao") == asset_type]
+        type_stocks_no_bonus = [s for s in type_stocks if s.get("operation_type") != "bonificacao"]
+        
+        type_invested = sum(s["quantity"] * s["average_price"] for s in type_stocks_no_bonus)
+        type_current = sum(s["quantity"] * (s.get("current_price") or s["average_price"]) for s in type_stocks)
+        type_gain = type_current - type_invested
+        type_gain_percent = (type_gain / type_invested * 100) if type_invested > 0 else 0
+        
+        # Calculate invested percentage
+        invested_percent = (type_invested / total_invested * 100) if total_invested > 0 else 0
+        
+        breakdown[asset_type] = {
+            "invested": round(type_invested, 2),
+            "current": round(type_current, 2),
+            "gain": round(type_gain, 2),
+            "gain_percent": round(type_gain_percent, 2),
+            "invested_percent": round(invested_percent, 2),
+            "count": len(type_stocks)
+        }
+    
     # Get dividends and filter only those already paid
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     div_query = {"user_id": user.user_id}
@@ -1168,9 +1193,10 @@ async def get_portfolio_summary(user: User = Depends(get_current_user), portfoli
         "gain_percent": round(gain_percent, 2),
         "daily_gain": round(daily_gain, 2),
         "daily_gain_percent": round(daily_gain_percent, 2),
-        "total_dividends": round(total_dividends_received, 2),  # Only received dividends
-        "total_dividends_pending": round(total_dividends_pending, 2),  # Pending dividends
-        "stocks_count": len(stocks)
+        "total_dividends": round(total_dividends_received, 2),
+        "total_dividends_pending": round(total_dividends_pending, 2),
+        "stocks_count": len(stocks),
+        "breakdown": breakdown
     }
 
 @api_router.post("/portfolio/refresh-prices")
