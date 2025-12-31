@@ -1384,13 +1384,12 @@ def parse_cei_csv(content: str) -> List[dict]:
                         produto_col = h
                 
                 # Look for quantity column - including "Qtd. exec." from XP
-                if qtd_col is None:
-                    if 'quantidade' in h_normalized or 'qtd' in h_normalized:
-                        # Prioritize "Qtd. exec." over other qtd columns
-                        if 'exec' in h_normalized:
-                            qtd_col = h
-                        elif qtd_col is None:
-                            qtd_col = h
+                if 'quantidade' in h_normalized or 'qtd' in h_normalized:
+                    # Prioritize "Qtd. exec." over other qtd columns
+                    if 'exec' in h_normalized:
+                        qtd_col = h  # Always override with exec
+                    elif qtd_col is None:
+                        qtd_col = h
                 
                 # Look for price column - including "Preco medio" from XP
                 if preco_col is None:
