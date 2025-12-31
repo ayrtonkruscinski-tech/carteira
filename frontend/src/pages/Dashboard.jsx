@@ -360,16 +360,44 @@ export default function Dashboard() {
             <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard</h1>
             <p className="text-muted-foreground">Visão geral da sua carteira de investimentos</p>
           </div>
-          <Button
-            onClick={handleRefreshPrices}
-            disabled={refreshing}
-            className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
-            data-testid="refresh-prices-btn"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'Atualizando...' : 'Atualizar Preços'}
-          </Button>
+          <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
+            {/* Auto-refresh toggle */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setAutoRefresh(!autoRefresh)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  autoRefresh ? 'bg-primary' : 'bg-muted'
+                }`}
+                data-testid="auto-refresh-toggle"
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    autoRefresh ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <span className="text-xs text-muted-foreground">
+                Auto (60s)
+              </span>
+            </div>
+            <Button
+              onClick={handleRefreshPrices}
+              disabled={refreshing}
+              className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
+              data-testid="refresh-prices-btn"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${refreshing || autoRefresh ? 'animate-spin' : ''}`} />
+              {refreshing ? 'Atualizando...' : 'Atualizar Preços'}
+            </Button>
+          </div>
         </div>
+
+        {/* Last refresh indicator */}
+        {lastRefresh && (
+          <div className="text-xs text-muted-foreground text-right -mt-4">
+            Última atualização: {lastRefresh.toLocaleTimeString('pt-BR')}
+          </div>
+        )}
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
