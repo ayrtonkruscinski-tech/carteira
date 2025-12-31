@@ -1171,20 +1171,18 @@ async def update_stock(stock_id: str, stock_data: StockUpdate, user: User = Depe
     date_changed = old_purchase_date != new_purchase_date
     
     if quantity_changed or date_changed:
-        # Recalculate all dividends for this ticker
-        await recalculate_dividends_for_ticker(user.user_id, ticker, stock.get("portfolio_id"))
-        logger.info(f"Recalculated dividends for {ticker} - quantity: {old_quantity} -> {new_quantity}")
+        # Re-sync dividends for this ticker automatically
+        resync_result = await resync_dividends_for_ticker(user.user_id, ticker, stock.get("portfolio_id"))
+        logger.info(f"Auto-resynced dividends for {ticker} - quantity: {old_quantity} -> {new_quantity}, result: {resync_result}")
+        stock["dividends_resynced"] = resync_result
     
     return stock
 
 
-async def recalculate_dividends_for_ticker(user_id: str, ticker: str, portfolio_id: str = None):
+async def resync_dividends_for_ticker(user_id: str, ticker: str, portfolio_id: str = None):
     """
-    Recalcula todos os proventos de um ticker baseado nas quantidades atuais.
-    Chamado quando a quantidade de um ativo é alterada.
-    
-    Estratégia: Deleta os proventos existentes do ticker e notifica o usuário para re-sincronizar.
-    Isso garante que os valores serão recalculados com as quantidades corretas.
+    Remove proventos existentes de um ticker e re-sincroniza com valores atualizados.
+    Chamado automaticamente quando a quantidade de um ativo é alterada.
     """
     # Get all stocks for this ticker
     query = {"user_id": user_id, "ticker": ticker}
@@ -1193,12 +1191,112 @@ async def recalculate_dividends_for_ticker(user_id: str, ticker: str, portfolio_
     
     user_stocks = await db.stocks.find(query, {"_id": 0}).to_list(100)
     if not user_stocks:
-        return {"deleted": 0, "message": "No stocks found"}
+        return {"deleted": 0, "synced": 0, "message": "No stocks found"}
     
-    # Delete all dividends for this ticker - they need to be re-synced
+    # Delete all dividends for this ticker
     div_query = {"user_id": user_id, "ticker": ticker}
     if portfolio_id:
         div_query["portfolio_id"] = portfolio_id
+    
+    delete_result = await db.dividends.delete_many(div_query)
+    deleted_count = delete_result.deleted_count
+    
+    # Determine if FII or stock
+    asset_type = user_stocks[0].get("asset_type", detect_asset_type(ticker))
+    is_fii = asset_type == "fii"
+    
+    # Re-sync dividends for this specific ticker
+    today = datetime.now(timezone.utc).date()
+    synced = 0
+    
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        page = 1
+        while page <= 10:
+            # Use appropriate scraper function
+            if is_fii:
+                data = await fetch_investidor10_fii_dividends_async(client, ticker, page)
+            else:
+                data = await fetch_investidor10_dividends_async(client, ticker, page)
+            
+            if not data:
+                break
+            
+            for div in data:
+                dt_com_obj = datetime.strptime(div["data_com"], "%Y-%m-%d").date()
+                
+                # Skip future dividends
+                if today < dt_com_obj:
+                    continue
+                
+                # Check for sales on this date
+                has_sale_on_date = any(
+                    s.get("operation_type") == "venda" and 
+                    s.get("purchase_date") and
+                    s.get("purchase_date")[:10] == div["data_com"]
+                    for s in user_stocks
+                )
+                if has_sale_on_date:
+                    continue
+                
+                # Calculate eligible shares
+                total_eligible_shares = 0
+                eligible_portfolio_id = None
+                for s in user_stocks:
+                    p_date_str = s.get("purchase_date")
+                    op_type = s.get("operation_type", "compra")
+                    
+                    if not p_date_str or op_type != "compra":
+                        continue
+                    
+                    try:
+                        p_dt = datetime.strptime(p_date_str[:10], "%Y-%m-%d").date()
+                    except:
+                        continue
+                    
+                    if p_dt <= dt_com_obj:
+                        total_eligible_shares += s.get("quantity", 0)
+                        if not eligible_portfolio_id:
+                            eligible_portfolio_id = s.get("portfolio_id")
+                
+                if total_eligible_shares <= 0:
+                    continue
+                
+                # Skip bonificações (handled separately)
+                if div.get("is_bonificacao"):
+                    continue
+                
+                # Calculate total amount
+                total_amount = round(div["valor"] * total_eligible_shares, 2)
+                
+                # Insert dividend
+                await db.dividends.insert_one({
+                    "dividend_id": f"div_{uuid.uuid4().hex[:12]}",
+                    "user_id": user_id,
+                    "ticker": ticker,
+                    "portfolio_id": eligible_portfolio_id or portfolio_id,
+                    "amount": total_amount,
+                    "payment_date": div["data_pagamento"],
+                    "ex_date": div["data_com"],
+                    "type": div["tipo"],
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                })
+                synced += 1
+            
+            # Stop if dividends are too old (2 years)
+            if data:
+                last_div_dt = datetime.strptime(data[-1]["data_com"], "%Y-%m-%d").date()
+                if last_div_dt < (today - timedelta(days=730)):
+                    break
+            page += 1
+    
+    logger.info(f"Resynced {ticker}: deleted {deleted_count}, synced {synced} dividends")
+    
+    return {
+        "deleted": deleted_count,
+        "synced": synced,
+        "ticker": ticker,
+        "message": f"Proventos recalculados: {synced} sincronizados"
+    }
     
     result = await db.dividends.delete_many(div_query)
     
