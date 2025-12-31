@@ -9,6 +9,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
+import {
+  Tooltip as TooltipUI,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../components/ui/tooltip";
 import { TrendingUp, TrendingDown, Wallet, PieChart, Coins, BarChart3, RefreshCw, Bell, ArrowUpDown } from "lucide-react";
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, LineChart, Line } from "recharts";
 import { toast } from "sonner";
