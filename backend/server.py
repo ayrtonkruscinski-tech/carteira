@@ -1595,21 +1595,6 @@ async def get_portfolio_evolution(user: User = Depends(get_current_user), period
         current_date = next_date
     
     return evolution
-                "invested": round(total_invested, 2),
-                "current": round(total_current, 2),
-                "dividends": round(cumulative_dividends, 2),
-                "dividends_period": round(period_dividends, 2),  # Dividends in this specific period
-                "total": round(total_current + cumulative_dividends, 2),
-                "gain": round(appreciation_gain, 2),
-                "gain_percent": round((appreciation_gain / total_invested) * 100, 2) if total_invested > 0 else 0,
-                "total_return": round(appreciation_gain + cumulative_dividends, 2),
-                "total_return_percent": round(((appreciation_gain + cumulative_dividends) / total_invested) * 100, 2) if total_invested > 0 else 0
-            })
-        
-        previous_dividends = cumulative_dividends
-        current_date = next_date
-    
-    return evolution
 
 @api_router.post("/portfolio/snapshot")
 async def create_portfolio_snapshot(user: User = Depends(get_current_user)):
