@@ -384,6 +384,32 @@ frontend:
         comment: "FLOATING SUPPORT FUNCTIONALITY VERIFIED ✅ - Both floating buttons working correctly: 1) Pink donation button (bg-pink-500) opens modal with correct PIX keys and copy functionality, 2) Green support button (bg-primary) opens menu with Suporte/Feedback options, 3) Support modal displays correct email (ayrtonkruscinski@hotmail.com), 4) Email client button present and functional, 5) All modals close properly with Escape key, 6) UI elements positioned correctly in bottom-right corner. Component fully functional as specified."
 
 agent_communication:
+  - agent: "main"
+    message: |
+      BUG FIX: Layout quebra ao hover/click em gráficos e tabelas
+      
+      PROBLEMA IDENTIFICADO:
+      - Dashboard.jsx tinha 11 instâncias separadas de TooltipProvider
+      - Múltiplos TooltipProvider aninhados causavam conflitos com o portal do Radix UI
+      - Isso resultava em layout shifts quando tooltips eram ativados
+      
+      CORREÇÃO APLICADA:
+      1. Adicionado um único TooltipProvider no Layout.jsx (wrapping todo o conteúdo)
+      2. Removido o import de TooltipProvider do Dashboard.jsx
+      3. Removidas todas as 5 instâncias de <TooltipProvider>...</TooltipProvider> wrapping individual no Dashboard.jsx
+      
+      ARQUIVOS MODIFICADOS:
+      - /app/frontend/src/components/Layout.jsx (adicionado TooltipProvider com delayDuration=200)
+      - /app/frontend/src/pages/Dashboard.jsx (removidos TooltipProviders redundantes)
+      
+      TESTE NECESSÁRIO:
+      - Login com Google
+      - Navegar para Dashboard
+      - Passar mouse sobre os gráficos (Evolução Patrimonial, Distribuição, Dividendos)
+      - Passar mouse sobre valores na tabela "Suas Ações" (Variação, Dividendos, Rentabilidade)
+      - Verificar que o layout NÃO quebra mais
+      - Testar página Dividendos também
+      
   - agent: "testing"
     message: |
       STOCKFOLIO LANDING PAGE TESTING - COMPREHENSIVE RESULTS ✅
