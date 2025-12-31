@@ -839,7 +839,7 @@ export default function Portfolio() {
                     <div className="space-y-3">
                       <div className="flex justify-between">
                         <span className="text-sm text-muted-foreground">Quantidade Total</span>
-                        <span className="font-mono text-foreground">{stock.quantity.toFixed(0)}</span>
+                        <span className="font-mono text-foreground">{stock.quantity.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-muted-foreground">Preço C/V</span>
