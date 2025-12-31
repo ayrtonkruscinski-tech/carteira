@@ -1023,6 +1023,8 @@ export default function Dashboard() {
             stocks={sortedStocksByType.acao} 
             title={getAssetTypeLabel('acao')}
             assetType="acao"
+            breakdown={summary?.breakdown?.acao}
+            formatCurrency={formatCurrency}
           />
           
           {/* Fundos Imobiliários (FIIs) */}
@@ -1030,6 +1032,8 @@ export default function Dashboard() {
             stocks={sortedStocksByType.fii} 
             title={getAssetTypeLabel('fii')}
             assetType="fii"
+            breakdown={summary?.breakdown?.fii}
+            formatCurrency={formatCurrency}
           />
           
           {/* Renda Fixa (Tesouro) */}
@@ -1038,6 +1042,8 @@ export default function Dashboard() {
             title={getAssetTypeLabel('renda_fixa')}
             assetType="renda_fixa"
             showFixedIncomeColumns={true}
+            breakdown={summary?.breakdown?.renda_fixa}
+            formatCurrency={formatCurrency}
           />
 
           {/* Empty State */}
