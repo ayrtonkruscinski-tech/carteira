@@ -358,6 +358,7 @@ test_plan:
     - "Warren Buffett Valuation Pre-fill"
     - "Dividend payment_date in evolution"
     - "Dashboard Cards Rename and Daily Result"
+    - "Proventos Evolution Chart"
 
 frontend:
   - task: "Dashboard Cards Rename and Daily Result"
