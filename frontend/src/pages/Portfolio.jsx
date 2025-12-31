@@ -374,13 +374,18 @@ export default function Portfolio() {
   // Agrupar por ticker + data de compra
   // Mesma data = agrupa no mesmo card
   // Datas diferentes = cards separados
+  // Operações diferentes (compra/venda) também ficam separadas
   const groupedStocks = stocks.reduce((acc, stock) => {
-    // Chave de agrupamento: ticker + data
-    const key = `${stock.ticker}_${stock.purchase_date || 'sem_data'}`;
-    const existing = acc.find(s => `${s.ticker}_${s.purchase_date || 'sem_data'}` === key);
+    // Chave de agrupamento: ticker + data + tipo de operação
+    const opType = stock.operation_type || "compra";
+    const key = `${stock.ticker}_${stock.purchase_date || 'sem_data'}_${opType}`;
+    const existing = acc.find(s => {
+      const sOpType = s.operation_type || "compra";
+      return `${s.ticker}_${s.purchase_date || 'sem_data'}_${sOpType}` === key;
+    });
     
     if (existing) {
-      // Mesmo ticker + mesma data: agrupa (calcula preço médio ponderado)
+      // Mesmo ticker + mesma data + mesmo tipo: agrupa (calcula preço médio ponderado)
       const totalQuantity = existing.quantity + stock.quantity;
       const newAveragePrice = (
         (existing.quantity * existing.average_price) + 
@@ -394,9 +399,10 @@ export default function Portfolio() {
       }
       existing.stock_ids = [...(existing.stock_ids || [existing.stock_id]), stock.stock_id];
     } else {
-      // Ticker diferente OU data diferente: novo card
+      // Ticker diferente OU data diferente OU tipo diferente: novo card
       acc.push({
         ...stock,
+        operation_type: opType,
         stock_ids: [stock.stock_id]
       });
     }
