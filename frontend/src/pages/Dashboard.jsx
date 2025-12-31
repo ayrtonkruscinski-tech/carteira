@@ -1293,6 +1293,11 @@ export default function Dashboard() {
                       ))}
                     </div>
                   )}
+                  <div className="mt-3 p-2 bg-yellow-500/10 border border-yellow-500/50 rounded">
+                    <p className="text-xs text-yellow-200 font-bold">
+                      ⚠️ Análise gerada por IA. Não constitui recomendação de investimento. Consulte um profissional antes de investir.
+                    </p>
+                  </div>
                 </div>
               )}
             </CardContent>
