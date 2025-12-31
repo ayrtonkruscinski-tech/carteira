@@ -62,6 +62,38 @@ const SORT_OPTIONS = [
   { value: "date_asc", label: "Data (Mais Antiga)" },
 ];
 
+const ASSET_TYPES = [
+  { value: "acao", label: "Ação (Renda Variável)" },
+  { value: "fii", label: "Fundo Imobiliário (FII)" },
+  { value: "renda_fixa", label: "Renda Fixa" },
+];
+
+const FIXED_INCOME_TYPES = [
+  { value: "CDB", label: "CDB" },
+  { value: "LCI", label: "LCI" },
+  { value: "LCA", label: "LCA" },
+  { value: "Tesouro Selic", label: "Tesouro Selic" },
+  { value: "Tesouro IPCA+", label: "Tesouro IPCA+" },
+  { value: "Tesouro Prefixado", label: "Tesouro Prefixado" },
+  { value: "Debenture", label: "Debênture" },
+  { value: "CRI", label: "CRI" },
+  { value: "CRA", label: "CRA" },
+];
+
+const RATE_TYPES = [
+  { value: "CDI", label: "% do CDI" },
+  { value: "IPCA+", label: "IPCA +" },
+  { value: "Prefixado", label: "Prefixado" },
+];
+
+// Auto-detect asset type based on ticker
+const detectAssetType = (ticker) => {
+  if (!ticker) return "acao";
+  const t = ticker.toUpperCase().trim();
+  if (t.endsWith("11")) return "fii";
+  return "acao";
+};
+
 export default function Portfolio() {
   const [stocks, setStocks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -86,8 +118,16 @@ export default function Portfolio() {
     quantity: "",
     average_price: "",
     purchase_date: "",
-    operation_type: "compra",  // "compra", "venda" ou "bonificacao"
-    include_in_results: true,  // Para vendas: incluir no dashboard
+    operation_type: "compra",
+    include_in_results: true,
+    asset_type: "acao",
+    // Fixed income specific fields
+    fixed_income_type: "",
+    maturity_date: "",
+    rate: "",
+    rate_type: "",
+    issuer: "",
+    // Other fields
     current_price: "",
     dividend_yield: "",
     sector: "",
