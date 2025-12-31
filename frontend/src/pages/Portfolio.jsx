@@ -1001,6 +1001,46 @@ export default function Portfolio() {
           </AlertDialogContent>
         </AlertDialog>
 
+        {/* Sale Confirmation Dialog - Incluir no Dashboard */}
+        <AlertDialog open={saleConfirmDialogOpen} onOpenChange={setSaleConfirmDialogOpen}>
+          <AlertDialogContent className="bg-card border-border">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-foreground">Registrar Venda</AlertDialogTitle>
+              <AlertDialogDescription className="text-muted-foreground">
+                Deseja incluir o lucro/prejuízo desta venda no resultado geral do Dashboard?
+                <br /><br />
+                <span className="text-xs">
+                  • <strong>Sim</strong>: O resultado da venda será contabilizado na rentabilidade total.<br />
+                  • <strong>Não</strong>: A venda será registrada mas não afetará os indicadores do Dashboard.
+                </span>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex gap-2">
+              <AlertDialogCancel 
+                onClick={() => {
+                  setSaleConfirmDialogOpen(false);
+                  setPendingSalePayload(null);
+                }}
+                className="bg-muted text-foreground hover:bg-muted/80"
+              >
+                Cancelar
+              </AlertDialogCancel>
+              <Button
+                variant="outline"
+                onClick={() => handleSaleConfirm(false)}
+              >
+                Não Incluir
+              </Button>
+              <Button
+                onClick={() => handleSaleConfirm(true)}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                Sim, Incluir
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* Delete All Stocks Confirmation Dialog */}
         <AlertDialog open={deleteAllDialogOpen} onOpenChange={setDeleteAllDialogOpen}>
           <AlertDialogContent className="bg-card border-border">
