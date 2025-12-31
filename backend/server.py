@@ -1187,28 +1187,31 @@ async def refresh_portfolio_prices(user: User = Depends(get_current_user)):
                     await db.alerts.insert_one(alert_doc)
                     alerts_created += 1
             
-            # Save current price as previous_close if it's a new day or not set
-            # This allows us to track daily variation
+            # Save current price as previous_close if it's a new day (based on BRT timezone)
+            # This allows us to track daily variation - resets at 00:01 BRT
+            now_utc = datetime.now(timezone.utc)
+            brt_offset = timedelta(hours=-3)
+            now_brt = now_utc + brt_offset
+            today_brt = now_brt.strftime("%Y-%m-%d")
+            
             update_data = {
                 "current_price": new_price, 
                 "updated_at": datetime.now(timezone.utc).isoformat()
             }
             
-            # If previous_close is not set or it's a new trading day, update it
-            last_update = stock.get("updated_at", "")
-            if last_update:
-                try:
-                    last_update_date = last_update[:10]  # Get YYYY-MM-DD
-                    today_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-                    # If it's a new day, save current price as previous close before updating
-                    if last_update_date != today_date:
-                        update_data["previous_close"] = stock.get("current_price") or stock["average_price"]
-                except:
-                    pass
+            # Check if we need to update previous_close (new day in BRT)
+            previous_close_date = stock.get("previous_close_date", "")
+            
+            # If it's a new day in BRT, save current price as previous close
+            if previous_close_date != today_brt:
+                # Save the current price (before update) as the previous close
+                update_data["previous_close"] = stock.get("current_price") or stock["average_price"]
+                update_data["previous_close_date"] = today_brt
             
             # If previous_close was never set, initialize it
             if not stock.get("previous_close"):
                 update_data["previous_close"] = stock.get("current_price") or stock["average_price"]
+                update_data["previous_close_date"] = today_brt
             
             # Update this stock record
             await db.stocks.update_one(
