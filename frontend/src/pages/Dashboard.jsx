@@ -56,6 +56,8 @@ export default function Dashboard() {
   const [sortBy, setSortBy] = useState('ticker');
   const [stockDividends, setStockDividends] = useState({});
   const [evolutionPeriod, setEvolutionPeriod] = useState('1m');
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState(null);
   const [chartVisibility, setChartVisibility] = useState({
     invested: true,
     current: true,
@@ -66,6 +68,39 @@ export default function Dashboard() {
   const portfolioContext = usePortfolioSafe();
   const currentPortfolio = portfolioContext?.currentPortfolio;
   const portfolioLoading = portfolioContext?.loading;
+
+  // Auto-refresh prices every 60 seconds
+  useEffect(() => {
+    if (!autoRefresh || portfolioLoading) return;
+    
+    const autoRefreshPrices = async () => {
+      if (refreshing) return; // Skip if already refreshing
+      
+      try {
+        const response = await fetch(`${API}/portfolio/refresh-prices`, {
+          method: 'POST',
+          credentials: 'include',
+        });
+        if (response.ok) {
+          setLastRefresh(new Date());
+          fetchData();
+        }
+      } catch (error) {
+        console.error('Auto-refresh error:', error);
+      }
+    };
+    
+    // Initial refresh after 5 seconds (to let the page load first)
+    const initialTimeout = setTimeout(autoRefreshPrices, 5000);
+    
+    // Then refresh every 60 seconds
+    const interval = setInterval(autoRefreshPrices, 60000);
+    
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
+  }, [autoRefresh, portfolioLoading, refreshing]);
 
   useEffect(() => {
     if (!portfolioLoading) {
