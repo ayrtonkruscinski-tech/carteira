@@ -603,6 +603,81 @@ async def fetch_investidor10_dividends_async(client: httpx.AsyncClient, ticker: 
         logger.error(f"Erro ao buscar {ticker} pág {page}: {e}")
         return []
 
+
+async def fetch_investidor10_fii_dividends_async(client: httpx.AsyncClient, ticker: str, page: int = 1) -> List[dict]:
+    """Busca histórico de proventos de FIIs do Investidor10."""
+    # FIIs usam URL diferente
+    url = f"https://investidor10.com.br/fiis/{ticker.lower()}/?page={page}"
+    try:
+        response = await client.get(url, timeout=15.0)
+        if response.status_code != 200:
+            logger.warning(f"FII {ticker}: status {response.status_code}")
+            return []
+
+        soup = BeautifulSoup(response.content, 'lxml')
+        
+        # Procura a tabela de dividendos do FII
+        table = soup.find('table', id='table-dividends-history')
+        if not table:
+            # Fallback: procura tabela com "data com" ou "pagamento"
+            for t in soup.find_all('table'):
+                text = t.get_text().lower()
+                if 'data com' in text or 'pagamento' in text or 'rendimento' in text:
+                    table = t
+                    break
+        
+        if not table:
+            logger.warning(f"FII {ticker}: tabela de dividendos não encontrada")
+            return []
+        
+        dividends = []
+        rows = table.find_all('tr')[1:]  # Pula header
+        
+        for row in rows:
+            cells = row.find_all(['td', 'th'])
+            if len(cells) < 4: continue
+            
+            tipo = cells[0].get_text(strip=True)
+            data_com_str = cells[1].get_text(strip=True)
+            pagamento_str = cells[2].get_text(strip=True)
+            valor_raw = cells[3].get_text(strip=True).replace('.', '').replace(',', '.')
+            
+            # Pula se estiver apenas provisionado sem data ou valor
+            if 'provisionado' in pagamento_str.lower() or not data_com_str: continue
+            
+            try:
+                # Conversão de datas DD/MM/YYYY -> YYYY-MM-DD
+                d_c = data_com_str.split('/')
+                if len(d_c) != 3: continue
+                data_com = f"{d_c[2]}-{d_c[1]}-{d_c[0]}"
+                
+                d_p = pagamento_str.split('/')
+                data_pag = f"{d_p[2]}-{d_p[1]}-{d_p[0]}" if len(d_p) == 3 else data_com
+                
+                # Limpa valor (remove R$, espaços, etc)
+                valor = float(re.sub(r'[^\d.]', '', valor_raw))
+                
+                # FIIs geralmente não têm bonificação, mas tratamos caso tenha
+                is_bonificacao = "bonifica" in tipo.lower()
+                
+                if valor > 0:
+                    dividends.append({
+                        "tipo": tipo,
+                        "data_com": data_com,
+                        "data_pagamento": data_pag,
+                        "valor": valor,
+                        "is_bonificacao": is_bonificacao
+                    })
+            except Exception as e:
+                logger.debug(f"FII {ticker}: erro ao parsear linha: {e}")
+                continue
+        
+        logger.info(f"FII {ticker}: encontrados {len(dividends)} proventos na página {page}")
+        return dividends
+    except Exception as e:
+        logger.error(f"Erro ao buscar FII {ticker} pág {page}: {e}")
+        return []
+
 # ==================== TRADINGVIEW INTEGRATION ====================
 
 def fetch_tradingview_quote(ticker: str) -> dict:
