@@ -1018,6 +1018,278 @@ PETR4,Petrobras PN,50,40.00,20/01/2024,Petróleo"""
         print("   ✅ Updated import and dividend sync functionality test completed")
         return True
 
+    def test_detect_asset_type_backend(self):
+        """Test detect_asset_type function in backend - REVIEW REQUEST TEST"""
+        print("\n🔍 Testing detect_asset_type Backend Function...")
+        
+        # Test cases from review request
+        test_cases = [
+            {"ticker": "MXRF11", "expected": "fii", "description": "FII ending in 11"},
+            {"ticker": "HGLG11", "expected": "fii", "description": "FII ending in 11"},
+            {"ticker": "PETR4", "expected": "acao", "description": "Stock ending in 4"},
+            {"ticker": "VALE3", "expected": "acao", "description": "Stock ending in 3"},
+            {"ticker": "ITUB4", "expected": "acao", "description": "Stock ending in 4"},
+            {"ticker": "BBDC4", "expected": "acao", "description": "Stock ending in 4"},
+            {"ticker": "WEGE3", "expected": "acao", "description": "Stock ending in 3"},
+            {"ticker": "ABEV3", "expected": "acao", "description": "Stock ending in 3"},
+        ]
+        
+        all_passed = True
+        
+        for test_case in test_cases:
+            ticker = test_case["ticker"]
+            expected = test_case["expected"]
+            description = test_case["description"]
+            
+            print(f"   🧪 Testing {ticker} ({description})...")
+            
+            # We'll test this by creating a stock without asset_type and checking if it's auto-detected
+            stock_data = {
+                "ticker": ticker,
+                "name": f"Test {ticker}",
+                "quantity": 1,
+                "average_price": 10.00,
+                "purchase_date": "2024-01-01"
+                # Note: NOT providing asset_type to test auto-detection
+            }
+            
+            success, response = self.run_test(f"Test Auto-Detect {ticker}", "POST", "portfolio/stocks", 200, stock_data)
+            
+            if success and response:
+                detected_type = response.get('asset_type')
+                if detected_type == expected:
+                    print(f"   ✅ {ticker} correctly detected as '{detected_type}'")
+                else:
+                    print(f"   ❌ {ticker} detected as '{detected_type}', expected '{expected}'")
+                    all_passed = False
+            else:
+                print(f"   ❌ Failed to create stock for {ticker}")
+                all_passed = False
+        
+        if all_passed:
+            print("   ✅ All detect_asset_type tests passed")
+        else:
+            print("   ❌ Some detect_asset_type tests failed")
+        
+        return all_passed
+
+    def test_auto_resync_dividends_on_quantity_change(self):
+        """Test auto-resync dividends when quantity changes - REVIEW REQUEST TEST"""
+        print("\n🔍 Testing Auto-Resync Dividends on Quantity Change...")
+        
+        # Step 1: Clean up for test
+        print("   🗑️  Step 1: Cleaning up for clean test...")
+        success, _ = self.run_test("Delete All Dividends", "DELETE", "dividends/all", 200)
+        if not success:
+            print("❌ Failed to delete all dividends")
+            return False
+        
+        success, _ = self.run_test("Delete All Stocks", "DELETE", "portfolio/stocks/all", 200)
+        if not success:
+            print("❌ Failed to delete all stocks")
+            return False
+        
+        print("   ✅ Clean test environment prepared")
+        
+        # Step 2: Add MXRF11 with 1 cota (as per review request scenario)
+        print("   📈 Step 2: Adding MXRF11 with 1 cota...")
+        stock_data = {
+            "ticker": "MXRF11",
+            "name": "Maxi Renda FII",
+            "quantity": 1,
+            "average_price": 10.50,
+            "purchase_date": "2024-01-01",
+            "asset_type": "fii"  # Explicitly set as FII
+        }
+        
+        success, add_response = self.run_test("Add MXRF11 1 cota", "POST", "portfolio/stocks", 200, stock_data)
+        if not success:
+            print("❌ Failed to add MXRF11 stock")
+            return False
+        
+        stock_id = add_response.get('stock_id')
+        print(f"   ✅ Added MXRF11 with stock_id: {stock_id}")
+        
+        # Verify asset_type was detected correctly
+        detected_type = add_response.get('asset_type')
+        if detected_type != 'fii':
+            print(f"   ❌ Asset type not detected correctly: {detected_type} (expected 'fii')")
+            return False
+        print(f"   ✅ Asset type correctly detected as: {detected_type}")
+        
+        # Step 3: Sync dividends for 1 cota
+        print("   🔄 Step 3: Syncing dividends for 1 cota...")
+        success, sync_response = self.run_test("Initial Dividend Sync", "POST", "dividends/sync", 200)
+        if not success:
+            print("❌ Initial dividend sync failed")
+            return False
+        
+        initial_synced = sync_response.get('synced', 0)
+        print(f"   📊 Initial sync: {initial_synced} dividends synced")
+        
+        # Get initial dividends
+        success, initial_dividends = self.run_test("Get Initial Dividends", "GET", "dividends", 200)
+        if not success:
+            print("❌ Failed to get initial dividends")
+            return False
+        
+        initial_dividend_count = len(initial_dividends) if isinstance(initial_dividends, list) else 0
+        print(f"   📊 Initial dividend count: {initial_dividend_count}")
+        
+        # Calculate total initial dividend amount
+        initial_total_amount = sum(d.get('amount', 0) for d in initial_dividends)
+        print(f"   💰 Initial total dividend amount: R${initial_total_amount:.2f}")
+        
+        # Step 4: Update quantity to 500 cotas (as per review request)
+        print("   📈 Step 4: Updating quantity from 1 to 500 cotas...")
+        update_data = {
+            "quantity": 500
+        }
+        
+        success, update_response = self.run_test(f"Update MXRF11 quantity to 500", "PUT", f"portfolio/stocks/{stock_id}", 200, update_data)
+        if not success:
+            print("❌ Failed to update stock quantity")
+            return False
+        
+        # Step 5: Check if dividends_resynced field is present
+        print("   🔍 Step 5: Checking for dividends_resynced field...")
+        dividends_resynced = update_response.get('dividends_resynced')
+        
+        if dividends_resynced is None:
+            print("   ❌ dividends_resynced field not found in response")
+            return False
+        
+        print(f"   ✅ dividends_resynced field present: {dividends_resynced}")
+        
+        # Validate dividends_resynced structure
+        if isinstance(dividends_resynced, dict):
+            deleted_count = dividends_resynced.get('deleted', 0)
+            synced_count = dividends_resynced.get('synced', 0)
+            ticker = dividends_resynced.get('ticker', '')
+            message = dividends_resynced.get('message', '')
+            
+            print(f"   📊 Resync result: deleted {deleted_count}, synced {synced_count} for {ticker}")
+            print(f"   📝 Message: {message}")
+            
+            if deleted_count > 0 and synced_count > 0:
+                print("   ✅ Dividends were resynced (deleted old, synced new)")
+            else:
+                print("   ⚠️  Resync may not have worked as expected")
+        else:
+            print(f"   ⚠️  dividends_resynced has unexpected format: {dividends_resynced}")
+        
+        # Step 6: Verify new dividends reflect 500 cotas
+        print("   🔍 Step 6: Verifying new dividends reflect 500 cotas...")
+        success, final_dividends = self.run_test("Get Final Dividends", "GET", "dividends", 200)
+        if not success:
+            print("❌ Failed to get final dividends")
+            return False
+        
+        final_dividend_count = len(final_dividends) if isinstance(final_dividends, list) else 0
+        print(f"   📊 Final dividend count: {final_dividend_count}")
+        
+        # Calculate total final dividend amount
+        final_total_amount = sum(d.get('amount', 0) for d in final_dividends)
+        print(f"   💰 Final total dividend amount: R${final_total_amount:.2f}")
+        
+        # Check if amounts increased proportionally (should be ~500x more)
+        if initial_total_amount > 0 and final_total_amount > 0:
+            ratio = final_total_amount / initial_total_amount
+            print(f"   📊 Amount ratio (final/initial): {ratio:.2f}")
+            
+            # Should be close to 500 (500 cotas vs 1 cota)
+            if 450 <= ratio <= 550:  # Allow some tolerance
+                print("   ✅ Dividend amounts correctly recalculated for new quantity")
+            else:
+                print(f"   ❌ Dividend amounts not proportionally updated (expected ~500x, got {ratio:.2f}x)")
+                return False
+        else:
+            print("   ⚠️  Cannot verify proportional increase (zero amounts)")
+        
+        # Step 7: Verify stock quantity was updated
+        print("   🔍 Step 7: Verifying stock quantity was updated...")
+        updated_quantity = update_response.get('quantity')
+        if updated_quantity == 500:
+            print(f"   ✅ Stock quantity correctly updated to: {updated_quantity}")
+        else:
+            print(f"   ❌ Stock quantity not updated correctly: {updated_quantity} (expected 500)")
+            return False
+        
+        print("   ✅ Auto-resync dividends on quantity change test completed successfully")
+        return True
+
+    def test_auto_detect_asset_type_on_create(self):
+        """Test auto-detect asset type when creating stocks - REVIEW REQUEST TEST"""
+        print("\n🔍 Testing Auto-Detect Asset Type on Stock Creation...")
+        
+        # Test cases from review request
+        test_cases = [
+            {"ticker": "MXRF11", "expected": "fii", "description": "FII ending in 11"},
+            {"ticker": "HGLG11", "expected": "fii", "description": "FII ending in 11"},
+            {"ticker": "PETR4", "expected": "acao", "description": "Stock ending in 4"},
+            {"ticker": "VALE3", "expected": "acao", "description": "Stock ending in 3"},
+        ]
+        
+        all_passed = True
+        
+        for i, test_case in enumerate(test_cases):
+            ticker = test_case["ticker"]
+            expected = test_case["expected"]
+            description = test_case["description"]
+            
+            print(f"   🧪 Test {i+1}: Creating {ticker} without asset_type ({description})...")
+            
+            # Create stock WITHOUT providing asset_type to test auto-detection
+            stock_data = {
+                "ticker": ticker,
+                "name": f"Test {ticker}",
+                "quantity": 100,
+                "average_price": 10.00 + i,  # Vary price to avoid conflicts
+                "purchase_date": f"2024-01-{15+i:02d}"  # Vary date to avoid conflicts
+                # Note: NOT providing asset_type to test auto-detection
+            }
+            
+            success, response = self.run_test(f"Create {ticker} Auto-Detect", "POST", "portfolio/stocks", 200, stock_data)
+            
+            if success and response:
+                detected_type = response.get('asset_type')
+                stock_id = response.get('stock_id')
+                
+                print(f"   📊 {ticker} created with stock_id: {stock_id}")
+                print(f"   📊 Detected asset_type: {detected_type}")
+                
+                if detected_type == expected:
+                    print(f"   ✅ {ticker} correctly auto-detected as '{detected_type}'")
+                else:
+                    print(f"   ❌ {ticker} auto-detected as '{detected_type}', expected '{expected}'")
+                    all_passed = False
+                
+                # Verify other fields are correct
+                if response.get('ticker') == ticker:
+                    print(f"   ✅ Ticker correctly set: {response.get('ticker')}")
+                else:
+                    print(f"   ❌ Ticker incorrect: {response.get('ticker')}")
+                    all_passed = False
+                
+                if response.get('quantity') == stock_data['quantity']:
+                    print(f"   ✅ Quantity correctly set: {response.get('quantity')}")
+                else:
+                    print(f"   ❌ Quantity incorrect: {response.get('quantity')}")
+                    all_passed = False
+                    
+            else:
+                print(f"   ❌ Failed to create stock for {ticker}")
+                all_passed = False
+            
+            print()  # Add spacing between tests
+        
+        if all_passed:
+            print("   ✅ All auto-detect asset type tests passed")
+        else:
+            print("   ❌ Some auto-detect asset type tests failed")
+        
+        return all_passed
+
 def main():
     print("🚀 Starting StockFolio API Tests - New Features")
     print("=" * 50)
