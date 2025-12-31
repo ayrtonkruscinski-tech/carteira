@@ -661,17 +661,38 @@ export default function Portfolio() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="ticker">Ticker</Label>
+                      <Label htmlFor="ticker">Ticker / Nome</Label>
                       <Input
                         id="ticker"
                         value={formData.ticker}
-                        onChange={(e) => setFormData({ ...formData, ticker: e.target.value.toUpperCase() })}
+                        onChange={(e) => handleTickerChange(e.target.value.toUpperCase())}
                         required
                         disabled={editingStock}
                         className="bg-input border-input font-mono"
                         data-testid="ticker-input"
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="asset_type">Tipo de Ativo</Label>
+                      <Select
+                        value={formData.asset_type}
+                        onValueChange={(value) => setFormData({ ...formData, asset_type: value })}
+                      >
+                        <SelectTrigger className="bg-input border-input">
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover border-border">
+                          {ASSET_TYPES.map((type) => (
+                            <SelectItem key={type.value} value={type.value}>
+                              {type.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="name">Nome</Label>
                       <Input
@@ -684,9 +705,6 @@ export default function Portfolio() {
                         data-testid="name-input"
                       />
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="quantity">Quantidade</Label>
                       <Input
@@ -700,6 +718,87 @@ export default function Portfolio() {
                         data-testid="quantity-input"
                       />
                     </div>
+                  </div>
+
+                  {/* Fixed Income specific fields */}
+                  {formData.asset_type === "renda_fixa" && (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="fixed_income_type">Tipo de Título</Label>
+                          <Select
+                            value={formData.fixed_income_type}
+                            onValueChange={(value) => setFormData({ ...formData, fixed_income_type: value })}
+                          >
+                            <SelectTrigger className="bg-input border-input">
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-popover border-border">
+                              {FIXED_INCOME_TYPES.map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="issuer">Emissor</Label>
+                          <Input
+                            id="issuer"
+                            value={formData.issuer}
+                            onChange={(e) => setFormData({ ...formData, issuer: e.target.value })}
+                            placeholder="Ex: Banco XYZ"
+                            className="bg-input border-input"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="rate">Taxa</Label>
+                          <Input
+                            id="rate"
+                            type="number"
+                            step="0.01"
+                            value={formData.rate}
+                            onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
+                            placeholder="Ex: 110"
+                            className="bg-input border-input font-mono"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="rate_type">Tipo de Taxa</Label>
+                          <Select
+                            value={formData.rate_type}
+                            onValueChange={(value) => setFormData({ ...formData, rate_type: value })}
+                          >
+                            <SelectTrigger className="bg-input border-input">
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-popover border-border">
+                              {RATE_TYPES.map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="maturity_date">Vencimento</Label>
+                          <Input
+                            id="maturity_date"
+                            type="date"
+                            value={formData.maturity_date}
+                            onChange={(e) => setFormData({ ...formData, maturity_date: e.target.value })}
+                            className="bg-input border-input"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="current_price">Preço Compra/Venda (R$)</Label>
                       <Input
@@ -711,7 +810,7 @@ export default function Portfolio() {
                           setFormData({ 
                             ...formData, 
                             current_price: e.target.value,
-                            average_price: e.target.value  // Usa o mesmo valor para preço médio
+                            average_price: e.target.value
                           });
                         }}
                         required
