@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
-import { Plus, Trash2, Edit2, Search, Briefcase, Upload, Download, FileText } from "lucide-react";
+import { Plus, Trash2, Edit2, Search, Briefcase, Upload, Download, FileText, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
 import { toast } from "sonner";
 import { usePortfolioSafe } from "../context/PortfolioContext";
 import { AdBannerHorizontal } from "../components/AdBanner";
@@ -53,6 +53,15 @@ const SECTORS = [
   "Outros",
 ];
 
+const ITEMS_PER_PAGE = 10;
+
+const SORT_OPTIONS = [
+  { value: "ticker_asc", label: "Nome (A-Z)" },
+  { value: "ticker_desc", label: "Nome (Z-A)" },
+  { value: "date_desc", label: "Data (Mais Recente)" },
+  { value: "date_asc", label: "Data (Mais Antiga)" },
+];
+
 export default function Portfolio() {
   const [stocks, setStocks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -66,6 +75,8 @@ export default function Portfolio() {
   const [searchResult, setSearchResult] = useState(null);
   const [importing, setImporting] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
+  const [sortBy, setSortBy] = useState("date_desc");
+  const [currentPage, setCurrentPage] = useState(1);
   const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     ticker: "",
