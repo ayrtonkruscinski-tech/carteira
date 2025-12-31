@@ -58,11 +58,8 @@ logger = logging.getLogger(__name__)
 
 def detect_asset_type(ticker: str) -> str:
     """
-    Auto-detect asset type based on Brazilian ticker patterns:
-    - Ações: end with 3, 4, 5, 6 (e.g., PETR4, VALE3)
-    - FIIs: end with 11 (e.g., HGLG11, MXRF11)
-    - BDRs: end with 34, 35 (treated as ações)
-    - Renda Fixa: manual entry only
+    Auto-detect asset type based on Brazilian ticker patterns (fallback).
+    Use detect_asset_type_from_investidor10() for accurate detection.
     """
     ticker = ticker.upper().strip()
     
@@ -85,6 +82,70 @@ def detect_asset_type(ticker: str) -> str:
     
     # Default to ação for unknown patterns
     return "acao"
+
+
+def detect_asset_type_from_investidor10(ticker: str) -> dict:
+    """
+    Detect asset type by checking if ticker exists on Investidor10.
+    Checks both https://investidor10.com.br/acoes/ and https://investidor10.com.br/fiis/
+    Returns dict with asset_type, name, and source.
+    """
+    ticker = ticker.upper().strip()
+    
+    # Try stocks first
+    try:
+        url_acao = f"https://investidor10.com.br/acoes/{ticker.lower()}/"
+        response = httpx.get(url_acao, timeout=10.0, follow_redirects=True)
+        
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.content, 'lxml')
+            # Check if it's a valid stock page (has stock name)
+            name_elem = soup.find('h1', class_='name-ticker') or soup.find('h1')
+            if name_elem:
+                name_text = name_elem.get_text(strip=True)
+                # Verify it's not a 404 or redirect page
+                if ticker.lower() in response.url.lower() and "acoes" in response.url.lower():
+                    logger.info(f"Detected {ticker} as AÇÃO from Investidor10")
+                    return {
+                        "ticker": ticker,
+                        "asset_type": "acao",
+                        "name": name_text,
+                        "source": "investidor10_acoes"
+                    }
+    except Exception as e:
+        logger.debug(f"Error checking ação {ticker}: {e}")
+    
+    # Try FIIs
+    try:
+        url_fii = f"https://investidor10.com.br/fiis/{ticker.lower()}/"
+        response = httpx.get(url_fii, timeout=10.0, follow_redirects=True)
+        
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.content, 'lxml')
+            name_elem = soup.find('h1', class_='name-ticker') or soup.find('h1')
+            if name_elem:
+                name_text = name_elem.get_text(strip=True)
+                # Verify it's a valid FII page
+                if ticker.lower() in response.url.lower() and "fiis" in response.url.lower():
+                    logger.info(f"Detected {ticker} as FII from Investidor10")
+                    return {
+                        "ticker": ticker,
+                        "asset_type": "fii",
+                        "name": name_text,
+                        "source": "investidor10_fiis"
+                    }
+    except Exception as e:
+        logger.debug(f"Error checking FII {ticker}: {e}")
+    
+    # Fallback to pattern-based detection
+    fallback_type = detect_asset_type(ticker)
+    logger.info(f"Using fallback detection for {ticker}: {fallback_type}")
+    return {
+        "ticker": ticker,
+        "asset_type": fallback_type,
+        "name": None,
+        "source": "pattern_fallback"
+    }
 
 # ==================== MODELS ====================
 
