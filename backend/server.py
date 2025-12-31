@@ -1721,10 +1721,10 @@ def parse_generic_csv(content: str) -> List[dict]:
             # Map common header variations (case insensitive)
             header_map = {
                 'ticker': ['ticker', 'codigo', 'código', 'symbol', 'ativo', 'papel', 'acao', 'ação', 'code', 'stock'],
-                'name': ['name', 'nome', 'empresa', 'description', 'descricao', 'descrição', 'produto', 'ativo'],
-                'quantity': ['quantity', 'quantidade', 'qtd', 'qtde', 'shares', 'qty', 'quant'],
-                'average_price': ['average_price', 'preco_medio', 'preço_médio', 'avg_price', 'cost', 'preco', 'preço', 'pm', 'custo', 'valor'],
-                'purchase_date': ['purchase_date', 'data_compra', 'date', 'data', 'dt_compra'],
+                'name': ['name', 'nome', 'empresa', 'description', 'descricao', 'descrição', 'produto'],
+                'quantity': ['quantity', 'quantidade', 'qtd', 'qtde', 'shares', 'qty', 'quant', 'qtd._exec.', 'qtd_exec'],
+                'average_price': ['average_price', 'preco_medio', 'preço_médio', 'avg_price', 'cost', 'preco', 'preço', 'pm', 'custo', 'preco_medio', 'preço médio'],
+                'purchase_date': ['purchase_date', 'data_compra', 'date', 'data', 'dt_compra', 'data_e_hora', 'data e hora'],
                 'sector': ['sector', 'setor', 'industry', 'segmento']
             }
             
