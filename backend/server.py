@@ -1036,12 +1036,15 @@ async def get_portfolio_summary(user: User = Depends(get_current_user), portfoli
     
     stocks = await db.stocks.find(query, {"_id": 0}).to_list(1000)
     
-    # Filter out bonificações from portfolio value calculations
-    # Bonificações are free shares and should not count towards invested/current value
-    stocks_for_value = [s for s in stocks if s.get("operation_type") != "bonificacao"]
+    # Bonificações should NOT count as invested (you didn't pay for them)
+    # But bonificações SHOULD count in current value and result (you own them)
+    stocks_without_bonificacao = [s for s in stocks if s.get("operation_type") != "bonificacao"]
     
-    total_invested = sum(s["quantity"] * s["average_price"] for s in stocks_for_value)
-    total_current = sum(s["quantity"] * (s.get("current_price") or s["average_price"]) for s in stocks_for_value)
+    # Invested = only what you paid (excludes bonificações)
+    total_invested = sum(s["quantity"] * s["average_price"] for s in stocks_without_bonificacao)
+    # Current = everything you own (includes bonificações)
+    total_current = sum(s["quantity"] * (s.get("current_price") or s["average_price"]) for s in stocks)
+    # Result = current - invested (bonificações appear as gain)
     total_gain = total_current - total_invested
     gain_percent = (total_gain / total_invested * 100) if total_invested > 0 else 0
     
@@ -1053,11 +1056,11 @@ async def get_portfolio_summary(user: User = Depends(get_current_user), portfoli
     now_brt = now_utc + brt_offset
     today_brt = now_brt.strftime("%Y-%m-%d")
     
-    # Calculate daily result based on previous close prices
+    # Calculate daily result based on previous close prices (all stocks including bonificações)
     daily_gain = 0.0
     previous_total = 0.0
     
-    # Use stocks_for_value (excluding bonificações) for daily gain calculation too
+    # Use all stocks for daily gain calculation (bonificações also have daily variation)
     for s in stocks_for_value:
         quantity = s["quantity"]
         current_price = s.get("current_price") or s["average_price"]
