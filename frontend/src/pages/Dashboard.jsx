@@ -379,7 +379,7 @@ export default function Dashboard() {
   }));
 
   // Filter stocks for distribution chart based on selected filter
-  const filteredStocksForChart = distributionFilter === 'all' 
+  const filteredStocksForChart = distributionFilter === 'all' || distributionFilter === 'by_type'
     ? groupedStocks 
     : groupedStocks.filter(s => s.asset_type === distributionFilter);
 
@@ -390,26 +390,48 @@ export default function Dashboard() {
     asset_type: stock.asset_type,
   }));
 
-  // Filtered portfolio data for chart
-  const filteredPortfolioData = filteredStocksForChart.map((stock, index) => ({
-    name: stock.ticker,
-    value: stock.quantity * (stock.current_price || stock.average_price),
-    color: COLORS[index % COLORS.length],
-    asset_type: stock.asset_type,
-  }));
-
-  // Distribution filter options
-  const DISTRIBUTION_FILTERS = [
-    { value: 'all', label: 'Todos os Ativos' },
-    { value: 'acao', label: 'Ações (Renda Variável)' },
-    { value: 'fii', label: 'Fundos Imobiliários (FIIs)' },
-    { value: 'renda_fixa', label: 'Renda Fixa (Tesouro)' },
-  ];
-
   // Calculate total portfolio value for percentage calculations
   const totalPortfolioValue = groupedStocks.reduce((sum, stock) => {
     return sum + stock.quantity * (stock.current_price || stock.average_price);
   }, 0);
+
+  // Distribution by asset type (for "Por Tipo de Ativo" filter)
+  const distributionByType = [
+    {
+      name: 'Ações',
+      value: groupedStocks.filter(s => s.asset_type === 'acao').reduce((sum, s) => sum + s.quantity * (s.current_price || s.average_price), 0),
+      color: '#00E599',
+    },
+    {
+      name: 'FIIs',
+      value: groupedStocks.filter(s => s.asset_type === 'fii').reduce((sum, s) => sum + s.quantity * (s.current_price || s.average_price), 0),
+      color: '#3B82F6',
+    },
+    {
+      name: 'Renda Fixa',
+      value: groupedStocks.filter(s => s.asset_type === 'renda_fixa').reduce((sum, s) => sum + s.quantity * (s.current_price || s.average_price), 0),
+      color: '#F59E0B',
+    },
+  ].filter(item => item.value > 0); // Only show types that have value
+
+  // Filtered portfolio data for chart
+  const filteredPortfolioData = distributionFilter === 'by_type'
+    ? distributionByType
+    : filteredStocksForChart.map((stock, index) => ({
+        name: stock.ticker,
+        value: stock.quantity * (stock.current_price || stock.average_price),
+        color: COLORS[index % COLORS.length],
+        asset_type: stock.asset_type,
+      }));
+
+  // Distribution filter options
+  const DISTRIBUTION_FILTERS = [
+    { value: 'all', label: 'Todos os Ativos' },
+    { value: 'by_type', label: '% por Tipo de Ativo' },
+    { value: 'acao', label: 'Ações (Renda Variável)' },
+    { value: 'fii', label: 'Fundos Imobiliários (FIIs)' },
+    { value: 'renda_fixa', label: 'Renda Fixa (Tesouro)' },
+  ];
 
   // Enrich grouped stocks with calculated metrics
   const enrichedStocks = groupedStocks.map(stock => {
