@@ -541,6 +541,62 @@ def fetch_investidor10_fundamentals(ticker: str) -> dict:
     
     return data
 
+
+def fetch_investidor10_dividends_sync(ticker: str) -> List[dict]:
+    """Busca histórico de dividendos de forma síncrona (para uso em endpoints simples)."""
+    url = f"https://investidor10.com.br/acoes/{ticker.lower()}/"
+    try:
+        response = httpx.get(url, timeout=15.0, follow_redirects=True)
+        if response.status_code != 200:
+            return []
+
+        soup = BeautifulSoup(response.content, 'lxml')
+        table = soup.find('table', id='table-dividends-history')
+        if not table:
+            for t in soup.find_all('table'):
+                if 'data com' in t.get_text().lower():
+                    table = t
+                    break
+        
+        if not table:
+            return []
+        
+        dividends = []
+        rows = table.find_all('tr')[1:]
+        for row in rows:
+            cells = row.find_all(['td', 'th'])
+            if len(cells) < 4:
+                continue
+            
+            tipo = cells[0].get_text(strip=True)
+            data_com_str = cells[1].get_text(strip=True)
+            pagamento_str = cells[2].get_text(strip=True)
+            valor_raw = cells[3].get_text(strip=True).replace('.', '').replace(',', '.')
+            
+            if 'provisionado' in pagamento_str.lower() or not data_com_str:
+                continue
+            
+            try:
+                d_c = data_com_str.split('/')
+                data_com = f"{d_c[2]}-{d_c[1]}-{d_c[0]}"
+                
+                valor = float(re.sub(r'[^\d.]', '', valor_raw))
+                
+                if valor > 0 and "bonifica" not in tipo.lower():
+                    dividends.append({
+                        "tipo": tipo,
+                        "data_com": data_com,
+                        "valor": valor
+                    })
+            except:
+                continue
+            
+        return dividends
+    except Exception as e:
+        logger.error(f"Erro ao buscar dividendos sync {ticker}: {e}")
+        return []
+
+
 async def fetch_investidor10_dividends_async(client: httpx.AsyncClient, ticker: str, page: int = 1) -> List[dict]:
     """Busca histórico de dividendos e bonificações de forma rápida e assíncrona."""
     url = f"https://investidor10.com.br/acoes/{ticker.lower()}/?page={page}"
