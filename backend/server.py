@@ -1642,18 +1642,21 @@ def parse_xlsx(file_bytes: bytes) -> List[dict]:
                                 price_str = price_str.replace(',', '.')
                             avg_price = float(price_str) if price_str else 0
                 
-                # Parse purchase date
+                # Parse purchase date - FIXED: avoid timezone issues
                 purchase_date = None
                 if date_idx is not None and len(row) > date_idx and row[date_idx] is not None:
                     date_val = row[date_idx]
                     if isinstance(date_val, datetime):
-                        purchase_date = date_val.strftime('%Y-%m-%d')
+                        # Excel datetime - extract date components directly to avoid timezone issues
+                        purchase_date = f"{date_val.year:04d}-{date_val.month:02d}-{date_val.day:02d}"
                     elif date_val:
                         date_str = str(date_val).strip()
+                        # Remove time part if present (e.g., "23/12/2025 10:18:44" -> "23/12/2025")
+                        date_str = date_str.split(' ')[0].strip()
                         for fmt in ['%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%d.%m.%Y']:
                             try:
                                 parsed_date = datetime.strptime(date_str, fmt)
-                                purchase_date = parsed_date.strftime('%Y-%m-%d')
+                                purchase_date = f"{parsed_date.year:04d}-{parsed_date.month:02d}-{parsed_date.day:02d}"
                                 break
                             except ValueError:
                                 continue
