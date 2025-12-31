@@ -657,7 +657,6 @@ export default function Valuation() {
             </div>
           </div>
         </div>
-      </TooltipProvider>
     </Layout>
   );
 }
