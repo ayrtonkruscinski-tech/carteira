@@ -1378,9 +1378,9 @@ def parse_cei_csv(content: str) -> List[dict]:
                         produto_col = h
                     elif 'codigo' in h_normalized or 'código' in h_normalized:
                         produto_col = h
-                    elif 'produto' in h_normalized or 'ativo' in h_normalized:
+                    elif 'produto' in h_normalized:
                         produto_col = h
-                    elif 'ticker' in h_normalized or 'papel' in h_normalized:
+                    elif h_normalized == 'ativo' or h_normalized == 'ticker' or h_normalized == 'papel':
                         produto_col = h
                 
                 # Look for quantity column
