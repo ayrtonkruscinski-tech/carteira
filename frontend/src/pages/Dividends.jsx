@@ -660,7 +660,7 @@ export default function Dividends() {
             </CardHeader>
             <CardContent>
               {summary?.by_ticker?.length > 0 ? (
-                <div className="h-64">
+                <div className="h-64 overflow-hidden">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -678,6 +678,7 @@ export default function Dividends() {
                         ))}
                       </Pie>
                       <Tooltip
+                        wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }}
                         contentStyle={{
                           backgroundColor: "#121417",
                           border: "1px solid #1E293B",
