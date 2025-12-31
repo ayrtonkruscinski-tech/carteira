@@ -119,6 +119,13 @@ class StockCreate(BaseModel):
     purchase_date: Optional[str] = None
     operation_type: str = "compra"  # "compra", "venda" ou "bonificacao"
     include_in_results: bool = True  # Para vendas: incluir lucro/perda no dashboard
+    asset_type: Optional[str] = None  # "acao", "fii", "renda_fixa" - auto-detectado se não informado
+    # Campos específicos para Renda Fixa
+    fixed_income_type: Optional[str] = None  # "CDB", "LCI", "LCA", "Tesouro Selic", etc.
+    maturity_date: Optional[str] = None  # Data de vencimento
+    rate: Optional[float] = None  # Taxa
+    rate_type: Optional[str] = None  # "CDI", "IPCA+", "Prefixado"
+    issuer: Optional[str] = None  # Emissor
     sector: Optional[str] = None
     current_price: Optional[float] = None
     dividend_yield: Optional[float] = None
@@ -131,6 +138,12 @@ class StockUpdate(BaseModel):
     purchase_date: Optional[str] = None
     operation_type: Optional[str] = None  # "compra", "venda" ou "bonificacao"
     include_in_results: Optional[bool] = None
+    asset_type: Optional[str] = None  # "acao", "fii", "renda_fixa"
+    fixed_income_type: Optional[str] = None
+    maturity_date: Optional[str] = None
+    rate: Optional[float] = None
+    rate_type: Optional[str] = None
+    issuer: Optional[str] = None
     current_price: Optional[float] = None
     dividend_yield: Optional[float] = None
     ceiling_price: Optional[float] = None
