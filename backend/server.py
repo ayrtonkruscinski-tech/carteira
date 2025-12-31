@@ -1061,7 +1061,7 @@ async def get_portfolio_summary(user: User = Depends(get_current_user), portfoli
     previous_total = 0.0
     
     # Use all stocks for daily gain calculation (bonificações also have daily variation)
-    for s in stocks_for_value:
+    for s in stocks:
         quantity = s["quantity"]
         current_price = s.get("current_price") or s["average_price"]
         # Use previous_close if available and from a previous day, otherwise use current_price (no change)
