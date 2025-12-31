@@ -900,19 +900,31 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Portfolio Distribution */}
           <Card className="bg-card border-border">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="flex items-center gap-2">
                 <PieChart className="w-5 h-5 text-primary" />
                 Distribuição da Carteira
               </CardTitle>
+              <Select value={distributionFilter} onValueChange={setDistributionFilter}>
+                <SelectTrigger className="w-[200px] bg-input border-input text-sm">
+                  <SelectValue placeholder="Filtrar por tipo" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border">
+                  {DISTRIBUTION_FILTERS.map((filter) => (
+                    <SelectItem key={filter.value} value={filter.value}>
+                      {filter.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </CardHeader>
             <CardContent>
-              {stocks.length > 0 ? (
+              {filteredPortfolioData.length > 0 ? (
                 <div className="h-64 overflow-hidden">
                   <ResponsiveContainer width="100%" height="100%">
                     <RechartsPie>
                       <Pie
-                        data={portfolioData}
+                        data={filteredPortfolioData}
                         cx="50%"
                         cy="50%"
                         innerRadius={60}
@@ -920,7 +932,7 @@ export default function Dashboard() {
                         paddingAngle={2}
                         dataKey="value"
                       >
-                        {portfolioData.map((entry, index) => (
+                        {filteredPortfolioData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
@@ -941,12 +953,15 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="h-64 flex items-center justify-center text-muted-foreground">
-                  Adicione ações à sua carteira para ver a distribuição
+                  {stocks.length === 0 
+                    ? 'Adicione ativos à sua carteira para ver a distribuição'
+                    : 'Nenhum ativo encontrado para este filtro'
+                  }
                 </div>
               )}
-              {stocks.length > 0 && (
+              {filteredPortfolioData.length > 0 && (
                 <div className="flex flex-wrap gap-3 mt-4">
-                  {portfolioData.map((item, index) => (
+                  {filteredPortfolioData.map((item, index) => (
                     <div key={index} className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
                       <span className="text-sm text-muted-foreground">{item.name}</span>
