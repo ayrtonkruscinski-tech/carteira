@@ -95,6 +95,7 @@ class Stock(BaseModel):
     quantity: float
     average_price: float
     purchase_date: Optional[str] = None
+    operation_type: str = "compra"  # "compra" ou "venda"
     sector: Optional[str] = None
     current_price: Optional[float] = None
     dividend_yield: Optional[float] = None
@@ -108,6 +109,7 @@ class StockCreate(BaseModel):
     quantity: float
     average_price: float
     purchase_date: Optional[str] = None
+    operation_type: str = "compra"  # "compra" ou "venda"
     sector: Optional[str] = None
     current_price: Optional[float] = None
     dividend_yield: Optional[float] = None
@@ -118,6 +120,7 @@ class StockUpdate(BaseModel):
     quantity: Optional[float] = None
     average_price: Optional[float] = None
     purchase_date: Optional[str] = None
+    operation_type: Optional[str] = None  # "compra" ou "venda"
     current_price: Optional[float] = None
     dividend_yield: Optional[float] = None
     ceiling_price: Optional[float] = None
