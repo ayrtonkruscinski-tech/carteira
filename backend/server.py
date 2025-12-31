@@ -95,7 +95,8 @@ class Stock(BaseModel):
     quantity: float
     average_price: float
     purchase_date: Optional[str] = None
-    operation_type: str = "compra"  # "compra" ou "venda"
+    operation_type: str = "compra"  # "compra", "venda" ou "bonificacao"
+    include_in_results: bool = True  # Para vendas: incluir lucro/perda no dashboard
     sector: Optional[str] = None
     current_price: Optional[float] = None
     dividend_yield: Optional[float] = None
