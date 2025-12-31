@@ -449,13 +449,42 @@ export default function Portfolio() {
     setIsAddDialogOpen(false);
   };
 
-  // Auto-detect asset type when ticker changes
-  const handleTickerChange = (ticker) => {
+  // Auto-detect asset type when ticker changes by checking Investidor10
+  const handleTickerChange = async (ticker) => {
+    // Update ticker immediately
     setFormData(prev => ({
       ...prev,
       ticker,
-      asset_type: detectAssetType(ticker),
     }));
+
+    // Only fetch asset type if ticker has minimum length
+    if (ticker.length >= 4) {
+      try {
+        const response = await fetch(`${API}/stocks/detect-type/${ticker}`);
+        if (response.ok) {
+          const data = await response.json();
+          setFormData(prev => ({
+            ...prev,
+            ticker,
+            asset_type: data.asset_type || "acao",
+            name: data.name || prev.name,
+          }));
+          
+          if (data.source !== "pattern_fallback") {
+            const typeLabel = data.asset_type === "fii" ? "FII" : "Ação";
+            toast.success(`${ticker} detectado como ${typeLabel}`);
+          }
+        }
+      } catch (error) {
+        console.log("Asset type detection error:", error);
+        // Fallback to pattern-based detection
+        setFormData(prev => ({
+          ...prev,
+          ticker,
+          asset_type: detectAssetType(ticker),
+        }));
+      }
+    }
   };
 
   const formatCurrency = (value) => {
