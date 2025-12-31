@@ -360,20 +360,18 @@ export default function Dashboard() {
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Rentabilidade</p>
                   <div className="flex items-center gap-2">
-                    <TooltipProvider>
-                      <TooltipUI>
-                        <TooltipTrigger asChild>
-                          <p className={`text-2xl font-bold font-mono cursor-help ${(summary?.gain_percent || 0) >= 0 ? 'text-primary' : 'text-destructive'}`} data-testid="gain-percent">
-                            {(summary?.gain_percent || 0) >= 0 ? '+' : ''}{(summary?.gain_percent || 0).toFixed(2)}%
-                          </p>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="font-mono text-sm">
-                            {(summary?.total_gain || 0) >= 0 ? '+' : ''}{formatCurrency(summary?.total_gain || 0)}
-                          </p>
-                        </TooltipContent>
-                      </TooltipUI>
-                    </TooltipProvider>
+                    <TooltipUI>
+                      <TooltipTrigger asChild>
+                        <p className={`text-2xl font-bold font-mono cursor-help ${(summary?.gain_percent || 0) >= 0 ? 'text-primary' : 'text-destructive'}`} data-testid="gain-percent">
+                          {(summary?.gain_percent || 0) >= 0 ? '+' : ''}{(summary?.gain_percent || 0).toFixed(2)}%
+                        </p>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="font-mono text-sm">
+                          {(summary?.total_gain || 0) >= 0 ? '+' : ''}{formatCurrency(summary?.total_gain || 0)}
+                        </p>
+                      </TooltipContent>
+                    </TooltipUI>
                     {(summary?.gain_percent || 0) >= 0 ? (
                       <TrendingUp className="w-5 h-5 text-primary" />
                     ) : (
