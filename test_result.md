@@ -417,29 +417,35 @@ frontend:
 agent_communication:
   - agent: "main"
     message: |
-      BUG FIX: Layout quebra ao hover/click em gráficos e tabelas
+      BUG FIX: Layout quebra ao hover/click em gráficos (TENTATIVA 2)
       
-      PROBLEMA IDENTIFICADO:
-      - Dashboard.jsx tinha 11 instâncias separadas de TooltipProvider
-      - Múltiplos TooltipProvider aninhados causavam conflitos com o portal do Radix UI
-      - Isso resultava em layout shifts quando tooltips eram ativados
+      PROBLEMA IDENTIFICADO (pelas imagens do usuário):
+      - Uma barra cinza/branca aparece quando clica nos gráficos
+      - O Tooltip do Recharts estava causando layout shifts e overflow
       
-      CORREÇÃO APLICADA:
-      1. Adicionado um único TooltipProvider no Layout.jsx (wrapping todo o conteúdo)
-      2. Removido o import de TooltipProvider do Dashboard.jsx
-      3. Removidas todas as 5 instâncias de <TooltipProvider>...</TooltipProvider> wrapping individual no Dashboard.jsx
+      CORREÇÕES APLICADAS:
       
-      ARQUIVOS MODIFICADOS:
-      - /app/frontend/src/components/Layout.jsx (adicionado TooltipProvider com delayDuration=200)
-      - /app/frontend/src/pages/Dashboard.jsx (removidos TooltipProviders redundantes)
+      1. Dashboard.jsx - Gráficos corrigidos:
+         - Gráfico Evolução Patrimonial (AreaChart): cursor={{ fill: 'transparent' }}, wrapperStyle
+         - Gráfico Distribuição da Carteira (PieChart): wrapperStyle com zIndex e pointerEvents
+         - Gráfico Dividendos por Mês (AreaChart): cursor={{ fill: 'transparent' }}, wrapperStyle
+         - Containers com overflow-hidden
+      
+      2. Dividends.jsx - Gráficos corrigidos:
+         - Gráfico Proventos por Mês (BarChart): cursor={{ fill: 'transparent' }}, wrapperStyle
+         - Gráfico Proventos por Ação (PieChart): wrapperStyle com zIndex e pointerEvents
+         - Containers com overflow-hidden
+      
+      3. index.css - CSS Global adicionado:
+         - .recharts-wrapper { overflow: visible !important; }
+         - .recharts-tooltip-wrapper { z-index: 1000 !important; pointer-events: none !important; }
+         - .recharts-surface { overflow: visible !important; }
       
       TESTE NECESSÁRIO:
       - Login com Google
-      - Navegar para Dashboard
-      - Passar mouse sobre os gráficos (Evolução Patrimonial, Distribuição, Dividendos)
-      - Passar mouse sobre valores na tabela "Suas Ações" (Variação, Dividendos, Rentabilidade)
-      - Verificar que o layout NÃO quebra mais
-      - Testar página Dividendos também
+      - Dashboard: passar mouse e clicar nos 3 gráficos
+      - Dividendos: passar mouse e clicar nos 2 gráficos
+      - Verificar que NÃO aparece barra cinza/branca
       
   - agent: "testing"
     message: |
