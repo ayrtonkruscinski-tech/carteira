@@ -932,6 +932,124 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
+        {/* Proventos Evolution Chart */}
+        <Card className="bg-card border-border">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <CardTitle className="flex items-center gap-2">
+              <Coins className="w-5 h-5 text-purple-500" />
+              Evolução de Proventos
+            </CardTitle>
+            <div className="flex gap-1">
+              {PERIOD_OPTIONS.map((option) => (
+                <Button
+                  key={`proventos-${option.value}`}
+                  variant={evolutionPeriod === option.value ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setEvolutionPeriod(option.value)}
+                  className={evolutionPeriod === option.value 
+                    ? "bg-purple-600 text-white hover:bg-purple-700" 
+                    : "bg-transparent border-border text-muted-foreground hover:text-foreground"
+                  }
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {portfolioEvolution.length > 0 ? (
+              <div className="h-64 overflow-hidden">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={portfolioEvolution}>
+                    <defs>
+                      <linearGradient id="colorProventos" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#A855F7" stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor="#A855F7" stopOpacity={0.05}/>
+                      </linearGradient>
+                    </defs>
+                    <XAxis
+                      dataKey="date"
+                      stroke="#94A3B8"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        return evolutionPeriod === '1w' || evolutionPeriod === '1m' 
+                          ? date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+                          : date.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
+                      }}
+                    />
+                    <YAxis
+                      stroke="#94A3B8"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => value >= 1000 ? `R$${(value/1000).toFixed(1)}k` : `R$${value.toFixed(0)}`}
+                    />
+                    <Tooltip
+                      cursor={{ fill: 'transparent' }}
+                      wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }}
+                      contentStyle={{
+                        backgroundColor: '#121417',
+                        border: '1px solid #1E293B',
+                        borderRadius: '8px',
+                        color: '#E2E8F0',
+                      }}
+                      labelStyle={{ color: '#94A3B8' }}
+                      formatter={(value, name, props) => {
+                        if (name === 'dividends') {
+                          const periodValue = props?.payload?.dividends_period || 0;
+                          if (periodValue > 0) {
+                            return [
+                              `${formatCurrency(value)} (+${formatCurrency(periodValue)} no período)`,
+                              'Proventos Acumulados'
+                            ];
+                          }
+                          return [formatCurrency(value), 'Proventos Acumulados'];
+                        }
+                        return [formatCurrency(value), name];
+                      }}
+                      labelFormatter={(label) => new Date(label).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="dividends"
+                      stroke="#A855F7"
+                      strokeWidth={2}
+                      fill="url(#colorProventos)"
+                      dot={false}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-64 flex items-center justify-center text-muted-foreground">
+                <p>Nenhum dado de proventos disponível</p>
+              </div>
+            )}
+            {portfolioEvolution.length > 0 && (
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Total Acumulado</p>
+                  <p className="text-lg font-bold text-purple-400">
+                    {formatCurrency(portfolioEvolution[portfolioEvolution.length - 1]?.dividends || 0)}
+                  </p>
+                </div>
+                <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">No Período</p>
+                  <p className="text-lg font-bold text-purple-400">
+                    {formatCurrency(
+                      (portfolioEvolution[portfolioEvolution.length - 1]?.dividends || 0) - 
+                      (portfolioEvolution[0]?.dividends || 0)
+                    )}
+                  </p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Ad Banner */}
         <AdBannerHorizontal />
 
