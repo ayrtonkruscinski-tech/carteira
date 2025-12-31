@@ -1039,15 +1039,12 @@ async def get_portfolio_summary(user: User = Depends(get_current_user), portfoli
     gain_percent = (total_gain / total_invested * 100) if total_invested > 0 else 0
     
     # Calculate daily result (Resultado do Dia)
-    # B3 opens at 10:00 BRT (UTC-3), so we reset before that
+    # Reset daily at 00:01 BRT (UTC-3) as per B3 announcement
     # We use the previous_close price stored in stocks to calculate daily variation
     now_utc = datetime.now(timezone.utc)
     brt_offset = timedelta(hours=-3)
     now_brt = now_utc + brt_offset
-    
-    # B3 market hours: 10:00 - 17:55 BRT
-    market_open_hour = 10
-    is_before_market_open = now_brt.hour < market_open_hour
+    today_brt = now_brt.strftime("%Y-%m-%d")
     
     # Calculate daily result based on previous close prices
     daily_gain = 0.0
@@ -1056,18 +1053,22 @@ async def get_portfolio_summary(user: User = Depends(get_current_user), portfoli
     for s in stocks:
         quantity = s["quantity"]
         current_price = s.get("current_price") or s["average_price"]
-        # Use previous_close if available, otherwise use current_price (no change)
+        # Use previous_close if available and from a previous day, otherwise use current_price (no change)
         previous_close = s.get("previous_close") or current_price
+        previous_close_date = s.get("previous_close_date", "")
         
-        daily_gain += quantity * (current_price - previous_close)
+        # If the previous_close is from today, it means it was just reset, so no gain yet
+        # Only calculate gain if previous_close is from a previous day
+        if previous_close_date and previous_close_date == today_brt:
+            # Previous close was set today (at 00:01), use current as baseline
+            stock_daily_gain = 0.0
+        else:
+            stock_daily_gain = quantity * (current_price - previous_close)
+        
+        daily_gain += stock_daily_gain
         previous_total += quantity * previous_close
     
-    # If before market open, show zero (market hasn't moved yet today)
-    if is_before_market_open:
-        daily_gain = 0.0
-        daily_gain_percent = 0.0
-    else:
-        daily_gain_percent = (daily_gain / previous_total * 100) if previous_total > 0 else 0
+    daily_gain_percent = (daily_gain / previous_total * 100) if previous_total > 0 else 0
     
     # Get dividends and filter only those already paid
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
