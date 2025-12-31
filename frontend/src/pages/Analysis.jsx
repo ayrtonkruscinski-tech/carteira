@@ -516,15 +516,39 @@ export default function Analysis() {
                             </p>
                           </div>
                           <div className="bg-muted/50 rounded-lg p-3">
-                            <p className="text-xs text-muted-foreground">Dividendos</p>
+                            <p className="text-xs text-muted-foreground">Proventos Recebidos</p>
                             <p className="text-lg font-semibold text-accent">
-                              {formatCurrency(portfolioAnalysis.summary.total_dividends)}
+                              {formatCurrency(portfolioAnalysis.summary.proventos_received || portfolioAnalysis.summary.total_dividends || 0)}
+                            </p>
+                          </div>
+                          <div className="bg-muted/50 rounded-lg p-3">
+                            <p className="text-xs text-muted-foreground">Proventos a Receber</p>
+                            <p className="text-lg font-semibold text-purple-400">
+                              {formatCurrency(portfolioAnalysis.summary.proventos_pending || 0)}
+                            </p>
+                          </div>
+                          <div className="bg-muted/50 rounded-lg p-3">
+                            <p className="text-xs text-muted-foreground">Yield on Cost</p>
+                            <p className="text-lg font-semibold text-accent">
+                              {(portfolioAnalysis.summary.yield_on_cost || 0).toFixed(2)}%
+                            </p>
+                          </div>
+                          <div className="bg-muted/50 rounded-lg p-3">
+                            <p className="text-xs text-muted-foreground">Ganho de Capital</p>
+                            <p className={`text-lg font-semibold ${portfolioAnalysis.summary.total_gain_percent >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                              {portfolioAnalysis.summary.total_gain_percent >= 0 ? '+' : ''}{portfolioAnalysis.summary.total_gain_percent.toFixed(2)}%
                             </p>
                           </div>
                           <div className="bg-muted/50 rounded-lg p-3">
                             <p className="text-xs text-muted-foreground">Retorno Total</p>
                             <p className={`text-lg font-semibold ${portfolioAnalysis.summary.total_return_percent >= 0 ? 'text-primary' : 'text-destructive'}`}>
                               {portfolioAnalysis.summary.total_return_percent >= 0 ? '+' : ''}{portfolioAnalysis.summary.total_return_percent.toFixed(2)}%
+                            </p>
+                          </div>
+                          <div className="bg-muted/50 rounded-lg p-3">
+                            <p className="text-xs text-muted-foreground">Nº de Ativos</p>
+                            <p className="text-lg font-semibold text-foreground">
+                              {portfolioAnalysis.summary.stocks_count}
                             </p>
                           </div>
                         </div>
