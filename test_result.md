@@ -346,8 +346,7 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus:
-    - "Dashboard Cards Rename and Daily Result"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -358,6 +357,7 @@ test_plan:
     - "Multiple Portfolios Feature"
     - "Warren Buffett Valuation Pre-fill"
     - "Dividend payment_date in evolution"
+    - "Dashboard Cards Rename and Daily Result"
 
 frontend:
   - task: "Dashboard Cards Rename and Daily Result"
