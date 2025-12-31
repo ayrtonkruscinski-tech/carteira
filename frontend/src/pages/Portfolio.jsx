@@ -675,11 +675,10 @@ export default function Portfolio() {
               const gain = totalValue - totalInvested;
               const gainPercent = ((currentPrice / stock.average_price) - 1) * 100;
               const atCeiling = stock.ceiling_price && currentPrice >= stock.ceiling_price;
-              const hasMultipleEntries = stock.entries && stock.entries.length > 1;
 
               return (
                 <Card
-                  key={stock.stock_id}
+                  key={`${stock.stock_id}_${stock.purchase_date}`}
                   className={`bg-card border-border hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 ${atCeiling ? 'border-accent/50' : ''}`}
                   data-testid={`stock-card-${stock.ticker}`}
                 >
@@ -689,11 +688,6 @@ export default function Portfolio() {
                         <CardTitle className="font-mono text-xl text-foreground flex items-center gap-2">
                           {stock.ticker}
                           {atCeiling && <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded">Teto!</span>}
-                          {hasMultipleEntries && (
-                            <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">
-                              {stock.entries.length} lotes
-                            </span>
-                          )}
                         </CardTitle>
                         <p className="text-sm text-muted-foreground">
                           {stock.name}
