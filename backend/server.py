@@ -1032,6 +1032,17 @@ async def get_stock_quote(ticker: str):
     
     raise HTTPException(status_code=404, detail="Stock not found")
 
+
+@api_router.get("/stocks/detect-type/{ticker}")
+async def detect_ticker_type(ticker: str):
+    """
+    Detect if ticker is Ação or FII by checking on Investidor10.
+    Checks https://investidor10.com.br/acoes/ and https://investidor10.com.br/fiis/
+    """
+    result = detect_asset_type_from_investidor10(ticker)
+    return result
+
+
 @api_router.get("/stocks/valuation-data/{ticker}")
 async def get_valuation_data(ticker: str):
     """Get fundamental data for valuation from Investidor10 and other sources"""
