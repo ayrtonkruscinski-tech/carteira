@@ -979,6 +979,7 @@ async def add_stock(stock_data: StockCreate, user: User = Depends(get_current_us
         quantity=stock_data.quantity,
         average_price=stock_data.average_price,
         purchase_date=stock_data.purchase_date,
+        operation_type=stock_data.operation_type or "compra",  # Tipo de operação
         sector=stock_data.sector,
         current_price=stock_data.current_price,
         dividend_yield=stock_data.dividend_yield,
