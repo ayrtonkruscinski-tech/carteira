@@ -836,7 +836,17 @@ export default function Dashboard() {
                           dividends: 'Proventos Acumulados',
                           total: 'Total (Valor + Proventos)',
                         };
-                        // Show additional info for dividends
+                        // Show additional info for total return
+                        if (name === 'total' && props?.payload) {
+                          const data = props.payload;
+                          const totalReturn = data.total_return || 0;
+                          const totalReturnPercent = data.total_return_percent || 0;
+                          return [
+                            `${formatCurrency(value)} (Retorno: ${totalReturnPercent >= 0 ? '+' : ''}${totalReturnPercent.toFixed(2)}%)`,
+                            labels[name]
+                          ];
+                        }
+                        // Show dividends in period
                         if (name === 'dividends' && props?.payload?.dividends_period > 0) {
                           return [
                             `${formatCurrency(value)} (+${formatCurrency(props.payload.dividends_period)} no período)`,
@@ -845,25 +855,7 @@ export default function Dashboard() {
                         }
                         return [formatCurrency(value), labels[name] || name];
                       }}
-                      labelFormatter={(label, payload) => {
-                        const date = new Date(label).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
-                        if (payload && payload[0]?.payload) {
-                          const data = payload[0].payload;
-                          const totalReturn = data.total_return || 0;
-                          const totalReturnPercent = data.total_return_percent || 0;
-                          return (
-                            <div>
-                              <div>{date}</div>
-                              <div className="text-xs mt-1">
-                                Retorno Total: <span className={totalReturn >= 0 ? 'text-green-400' : 'text-red-400'}>
-                                  {formatCurrency(totalReturn)} ({totalReturnPercent >= 0 ? '+' : ''}{totalReturnPercent.toFixed(2)}%)
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        }
-                        return date;
-                      }}
+                      labelFormatter={(label) => new Date(label).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
                     />
                     <Area
                       type="monotone"
