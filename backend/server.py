@@ -1468,12 +1468,10 @@ async def get_portfolio_evolution(user: User = Depends(get_current_user), period
     Get portfolio evolution based on purchase dates.
     Period options: 1w (week), 1m (month), 12m (year), 5y (5 years), max (all time)
     
-    The evolution shows:
-    - invested: total amount invested (excluding bonificações)
-    - current: current market value of holdings
-    - dividends: cumulative dividends received up to that date
-    - total: current + dividends
-    - dividends_period: dividends received in that specific period
+    Proventos são acumulados corretamente por data de pagamento:
+    - Mês 1: R$ 0,10 → Total: R$ 0,10
+    - Mês 2: R$ 0,10 → Total: R$ 0,20 (0,10 + 0,10)
+    - Mês 3: R$ 0,10 → Total: R$ 0,30 (0,20 + 0,10)
     """
     query = {"user_id": user.user_id}
     if portfolio_id:
@@ -1485,21 +1483,14 @@ async def get_portfolio_evolution(user: User = Depends(get_current_user), period
     if not stocks:
         return []
     
-    # Calculate date range based on period
     today = datetime.now(timezone.utc).date()
     
-    period_days = {
-        "1w": 7,
-        "1m": 30,
-        "12m": 365,
-        "5y": 1825,
-        "max": 3650  # 10 years max
-    }
-    
+    # Determine date range based on period
+    period_days = {"1w": 7, "1m": 30, "12m": 365, "5y": 1825, "max": 3650}
     days_back = period_days.get(period, 30)
     start_date = today - timedelta(days=days_back)
     
-    # Find the earliest purchase date
+    # Find earliest purchase date
     earliest_purchase = None
     for stock in stocks:
         if stock.get("purchase_date"):
@@ -1510,114 +1501,100 @@ async def get_portfolio_evolution(user: User = Depends(get_current_user), period
             except:
                 pass
     
-    # If we have purchases, start from the earliest one (within our period)
     if earliest_purchase and earliest_purchase > start_date:
         start_date = earliest_purchase
     
-    # Create dividend lookup by payment_date (only include paid dividends)
-    # Also track dividends by ticker to see which stocks contributed
-    dividend_by_date = {}
-    dividend_details_by_date = {}
-    
+    # Organize ALL dividends by payment date
+    all_dividends_sorted = []
     for div in dividends:
         payment_date = div.get("payment_date", "")[:10]
         if payment_date:
             try:
                 payment_dt = datetime.strptime(payment_date, "%Y-%m-%d").date()
-                if payment_dt <= today:  # Only include already paid dividends
-                    dividend_by_date[payment_date] = dividend_by_date.get(payment_date, 0) + div["amount"]
-                    
-                    # Track details
-                    if payment_date not in dividend_details_by_date:
-                        dividend_details_by_date[payment_date] = []
-                    dividend_details_by_date[payment_date].append({
-                        "ticker": div.get("ticker"),
+                if payment_dt <= today:  # Only already paid
+                    all_dividends_sorted.append({
+                        "date": payment_dt,
                         "amount": div["amount"],
-                        "type": div.get("type", "Dividendo")
+                        "ticker": div.get("ticker", "")
                     })
             except:
                 pass
     
-    # Generate evolution data points
+    # Sort by date
+    all_dividends_sorted.sort(key=lambda x: x["date"])
+    
+    # Determine step size
+    step_days = {"1w": 1, "1m": 1, "12m": 7, "5y": 30, "max": 30}.get(period, 1)
+    
+    # Generate data points
     evolution = []
     current_date = start_date
-    cumulative_dividends = 0
-    
-    # Pre-calculate dividends received before start_date (only paid dividends)
-    for div in dividends:
-        payment_date = div.get("payment_date", "")[:10]
-        if payment_date:
-            try:
-                div_date = datetime.strptime(payment_date, "%Y-%m-%d").date()
-                # Only include if already paid AND before start_date
-                if div_date < start_date and div_date <= today:
-                    cumulative_dividends += div["amount"]
-            except:
-                pass
-    
-    # Determine step size for each period
-    if period == "1w":
-        step_days = 1
-    elif period == "1m":
-        step_days = 1
-    elif period == "12m":
-        step_days = 7  # Weekly for 12 months
-    elif period == "5y":
-        step_days = 30  # Monthly for 5 years
-    else:  # max
-        step_days = 30  # Monthly
-    
-    previous_dividends = cumulative_dividends
     
     while current_date <= today:
         date_str = current_date.strftime("%Y-%m-%d")
         next_date = current_date + timedelta(days=step_days)
+        if next_date > today:
+            next_date = today + timedelta(days=1)
         
-        # Calculate portfolio value on this date
-        # Only include stocks that were purchased on or before this date
+        # Calculate invested and current value for stocks owned on this date
         total_invested = 0
         total_current = 0
         
         for stock in stocks:
             is_bonificacao = stock.get("operation_type") == "bonificacao"
-            
             purchase_date = stock.get("purchase_date")
+            
+            # Check if stock was owned on current_date
+            owned = False
             if purchase_date:
                 try:
                     purchase_dt = datetime.strptime(purchase_date, "%Y-%m-%d").date()
-                    if purchase_dt <= current_date:
-                        # Stock was owned on this date
-                        current_value = stock["quantity"] * (stock.get("current_price") or stock["average_price"])
-                        total_current += current_value
-                        if not is_bonificacao:
-                            invested = stock["quantity"] * stock["average_price"]
-                            total_invested += invested
+                    owned = purchase_dt <= current_date
                 except:
-                    total_current += stock["quantity"] * (stock.get("current_price") or stock["average_price"])
-                    if not is_bonificacao:
-                        total_invested += stock["quantity"] * stock["average_price"]
+                    owned = True
             else:
-                total_current += stock["quantity"] * (stock.get("current_price") or stock["average_price"])
+                owned = True
+            
+            if owned:
+                current_value = stock["quantity"] * (stock.get("current_price") or stock["average_price"])
+                total_current += current_value
                 if not is_bonificacao:
-                    total_invested += stock["quantity"] * stock["average_price"]
+                    invested = stock["quantity"] * stock["average_price"]
+                    total_invested += invested
         
-        # Add dividends received in this period (from current_date to next_date)
-        period_dividends = 0
-        check_date = current_date
-        while check_date < next_date and check_date <= today:
-            check_str = check_date.strftime("%Y-%m-%d")
-            if check_str in dividend_by_date:
-                period_dividends += dividend_by_date[check_str]
-                cumulative_dividends += dividend_by_date[check_str]
-            check_date += timedelta(days=1)
+        # Calculate cumulative dividends UP TO current_date (inclusive)
+        # This is the KEY: sum ALL dividends with payment_date <= current_date
+        cumulative_dividends = sum(
+            d["amount"] for d in all_dividends_sorted 
+            if d["date"] <= current_date
+        )
         
-        # Only add data points where we have investments
+        # Calculate dividends received in THIS PERIOD (current_date to next_date - 1 day)
+        period_dividends = sum(
+            d["amount"] for d in all_dividends_sorted 
+            if current_date <= d["date"] < next_date
+        )
+        
         if total_invested > 0:
-            # Calculate gain from appreciation
             appreciation_gain = total_current - total_invested
+            total_return = appreciation_gain + cumulative_dividends
             
             evolution.append({
                 "date": date_str,
+                "invested": round(total_invested, 2),
+                "current": round(total_current, 2),
+                "dividends": round(cumulative_dividends, 2),
+                "dividends_period": round(period_dividends, 2),
+                "total": round(total_current + cumulative_dividends, 2),
+                "gain": round(appreciation_gain, 2),
+                "gain_percent": round((appreciation_gain / total_invested) * 100, 2) if total_invested > 0 else 0,
+                "total_return": round(total_return, 2),
+                "total_return_percent": round((total_return / total_invested) * 100, 2) if total_invested > 0 else 0
+            })
+        
+        current_date = next_date
+    
+    return evolution
                 "invested": round(total_invested, 2),
                 "current": round(total_current, 2),
                 "dividends": round(cumulative_dividends, 2),
