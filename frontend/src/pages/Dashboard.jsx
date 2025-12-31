@@ -1190,9 +1190,10 @@ export default function Dashboard() {
                             }}
                             labelStyle={{ color: '#94A3B8' }}
                             itemStyle={{ color: '#E2E8F0' }}
-                            formatter={(value) => {
+                            formatter={(value, name, props) => {
                               const percent = totalPortfolioValue > 0 ? ((value / totalPortfolioValue) * 100).toFixed(1) : 0;
-                              return [`${formatCurrency(value)} (${percent}%)`];
+                              const itemName = props?.payload?.name || name;
+                              return [`${formatCurrency(value)} (${percent}%)`, itemName];
                             }}
                           />
                         </RechartsPie>
