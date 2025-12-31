@@ -109,12 +109,20 @@ export default function Dashboard() {
       if (alertsRes.ok) setAlerts(await alertsRes.json());
       if (evolutionRes.ok) setPortfolioEvolution(await evolutionRes.json());
       
-      // Calculate dividends per stock
+      // Calculate dividends per stock (received and pending)
       if (allDividendsRes.ok) {
         const dividends = await allDividendsRes.json();
+        const today = new Date().toISOString().split('T')[0];
         const divByTicker = {};
         dividends.forEach(d => {
-          divByTicker[d.ticker] = (divByTicker[d.ticker] || 0) + d.amount;
+          if (!divByTicker[d.ticker]) {
+            divByTicker[d.ticker] = { received: 0, pending: 0 };
+          }
+          if (d.payment_date <= today) {
+            divByTicker[d.ticker].received += d.amount;
+          } else {
+            divByTicker[d.ticker].pending += d.amount;
+          }
         });
         setStockDividends(divByTicker);
       }
