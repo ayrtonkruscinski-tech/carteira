@@ -756,7 +756,7 @@ export default function Dashboard() {
                             <span className="font-mono font-semibold text-foreground">{stock.ticker}</span>
                             {atCeiling && <span className="ml-2 text-xs text-accent">⚠️</span>}
                           </td>
-                          <td className="py-3 px-4 text-right font-mono text-foreground">{stock.quantity}</td>
+                          <td className="py-3 px-4 text-right font-mono text-foreground">{stock.quantity.toFixed(2)}</td>
                           <td className="py-3 px-4 text-right font-mono text-foreground">
                             {formatCurrency(stock.average_price)}
                           </td>
