@@ -17,6 +17,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "./ui/dialog";
+import { TooltipProvider } from "./ui/tooltip";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { toast } from "sonner";
