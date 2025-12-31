@@ -139,6 +139,7 @@ class DividendCreate(BaseModel):
     ticker: str
     amount: float
     payment_date: str
+    ex_date: Optional[str] = None  # Data Com
     type: str = "dividendo"
     portfolio_id: Optional[str] = None  # ID da carteira
 
