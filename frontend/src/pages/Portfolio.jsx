@@ -799,14 +799,15 @@ export default function Portfolio() {
               const totalValue = stock.quantity * currentPrice;
               const totalInvested = stock.quantity * stock.average_price;
               const gain = totalValue - totalInvested;
-              const gainPercent = ((currentPrice / stock.average_price) - 1) * 100;
+              const gainPercent = stock.average_price > 0 ? ((currentPrice / stock.average_price) - 1) * 100 : 0;
               const atCeiling = stock.ceiling_price && currentPrice >= stock.ceiling_price;
               const isVenda = stock.operation_type === "venda";
+              const isBonificacao = stock.operation_type === "bonificacao";
 
               return (
                 <Card
                   key={`${stock.stock_id}_${stock.purchase_date}_${stock.operation_type}`}
-                  className={`bg-card border-border hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 ${atCeiling ? 'border-accent/50' : ''} ${isVenda ? 'border-l-4 border-l-destructive' : ''}`}
+                  className={`bg-card border-border hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 ${atCeiling ? 'border-accent/50' : ''} ${isVenda ? 'border-l-4 border-l-destructive' : ''} ${isBonificacao ? 'border-l-4 border-l-purple-500' : ''}`}
                   data-testid={`stock-card-${stock.ticker}`}
                 >
                   <CardHeader className="pb-2">
@@ -814,8 +815,9 @@ export default function Portfolio() {
                       <div>
                         <CardTitle className="font-mono text-xl text-foreground flex items-center gap-2">
                           {stock.ticker}
+                          {isBonificacao && <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">Bonificação</span>}
                           {isVenda && <span className="text-xs bg-destructive/20 text-destructive px-2 py-0.5 rounded">Venda</span>}
-                          {atCeiling && !isVenda && <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded">Teto!</span>}
+                          {atCeiling && !isVenda && !isBonificacao && <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded">Teto!</span>}
                         </CardTitle>
                         <p className="text-sm text-muted-foreground">
                           {stock.name}
