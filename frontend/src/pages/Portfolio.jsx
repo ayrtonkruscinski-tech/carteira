@@ -712,15 +712,20 @@ export default function Portfolio() {
                         disabled={editingStock}
                         className="bg-input border-input font-mono"
                         data-testid="ticker-input"
+                        placeholder="Ex: PETR4, MXRF11"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="asset_type">Tipo de Ativo</Label>
+                      <Label htmlFor="asset_type">
+                        Tipo de Ativo
+                        {detectingType && <span className="ml-2 text-xs text-muted-foreground">(detectando...)</span>}
+                      </Label>
                       <Select
                         value={formData.asset_type}
                         onValueChange={(value) => setFormData({ ...formData, asset_type: value })}
+                        disabled={detectingType}
                       >
-                        <SelectTrigger className="bg-input border-input">
+                        <SelectTrigger className={`bg-input border-input ${detectingType ? 'opacity-50' : ''}`}>
                           <SelectValue placeholder="Selecione o tipo" />
                         </SelectTrigger>
                         <SelectContent className="bg-popover border-border">
