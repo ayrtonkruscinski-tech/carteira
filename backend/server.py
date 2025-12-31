@@ -985,7 +985,7 @@ async def get_valuation_data(ticker: str):
         fundamentals["current_price"] = yahoo_data["price"]
     
     # Get dividend info from dividend history
-    dividends = fetch_investidor10_dividends(ticker_upper)
+    dividends = fetch_investidor10_dividends_sync(ticker_upper)
     if dividends:
         # Calculate annual dividend (sum of dividends from last 12 months by date)
         from datetime import datetime, timedelta
