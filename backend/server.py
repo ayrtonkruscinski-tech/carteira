@@ -1370,28 +1370,36 @@ async def get_portfolio_evolution(user: User = Depends(get_current_user), period
         
         # Calculate portfolio value on this date
         # Only include stocks that were purchased on or before this date
+        # Exclude bonificações from invested value calculations
         total_invested = 0
         total_current = 0
         
         for stock in stocks:
+            # Skip bonificações for invested value calculation
+            is_bonificacao = stock.get("operation_type") == "bonificacao"
+            
             purchase_date = stock.get("purchase_date")
             if purchase_date:
                 try:
                     purchase_dt = datetime.strptime(purchase_date, "%Y-%m-%d").date()
                     if purchase_dt <= current_date:
                         # Stock was owned on this date
-                        invested = stock["quantity"] * stock["average_price"]
                         current_value = stock["quantity"] * (stock.get("current_price") or stock["average_price"])
-                        total_invested += invested
                         total_current += current_value
+                        # Only add to invested if NOT bonificação
+                        if not is_bonificacao:
+                            invested = stock["quantity"] * stock["average_price"]
+                            total_invested += invested
                 except:
                     # If date parsing fails, include the stock
-                    total_invested += stock["quantity"] * stock["average_price"]
                     total_current += stock["quantity"] * (stock.get("current_price") or stock["average_price"])
+                    if not is_bonificacao:
+                        total_invested += stock["quantity"] * stock["average_price"]
             else:
                 # No purchase date, include the stock
-                total_invested += stock["quantity"] * stock["average_price"]
                 total_current += stock["quantity"] * (stock.get("current_price") or stock["average_price"])
+                if not is_bonificacao:
+                    total_invested += stock["quantity"] * stock["average_price"]
         
         # Add dividends received on this date
         if date_str in dividend_by_date:
