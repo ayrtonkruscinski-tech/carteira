@@ -157,7 +157,8 @@ export default function Portfolio() {
       quantity: parseFloat(formData.quantity),
       average_price: parseFloat(formData.average_price),
       purchase_date: formData.purchase_date || null,
-      operation_type: formData.operation_type || "compra",  // Tipo de operação
+      operation_type: formData.operation_type || "compra",
+      include_in_results: formData.include_in_results,
       current_price: formData.current_price ? parseFloat(formData.current_price) : null,
       dividend_yield: formData.dividend_yield ? parseFloat(formData.dividend_yield) : null,
       sector: formData.sector || null,
@@ -165,6 +166,17 @@ export default function Portfolio() {
       portfolio_id: currentPortfolio?.portfolio_id || null,
     };
 
+    // Se for venda e não está editando, perguntar sobre incluir no dashboard
+    if (payload.operation_type === "venda" && !editingStock) {
+      setPendingSalePayload(payload);
+      setSaleConfirmDialogOpen(true);
+      return;
+    }
+
+    await submitStock(payload);
+  };
+
+  const submitStock = async (payload) => {
     try {
       if (editingStock) {
         const response = await fetch(
@@ -178,6 +190,7 @@ export default function Portfolio() {
               average_price: payload.average_price,
               purchase_date: payload.purchase_date,
               operation_type: payload.operation_type,
+              include_in_results: payload.include_in_results,
               current_price: payload.current_price,
               dividend_yield: payload.dividend_yield,
               ceiling_price: payload.ceiling_price,
@@ -206,6 +219,15 @@ export default function Portfolio() {
       toast.error("Erro ao salvar operação");
       console.error("Error saving stock:", error);
     }
+  };
+
+  const handleSaleConfirm = async (includeInResults) => {
+    if (pendingSalePayload) {
+      const payload = { ...pendingSalePayload, include_in_results: includeInResults };
+      await submitStock(payload);
+    }
+    setSaleConfirmDialogOpen(false);
+    setPendingSalePayload(null);
   };
 
   const handleDelete = async (stockId) => {
