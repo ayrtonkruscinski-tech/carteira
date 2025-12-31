@@ -396,9 +396,31 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Dividendos Recebidos</p>
-                  <p className="text-2xl font-bold font-mono text-accent" data-testid="total-dividends">
-                    {formatCurrency(summary?.total_dividends || 0)}
-                  </p>
+                  <TooltipProvider>
+                    <TooltipUI>
+                      <TooltipTrigger asChild>
+                        <p className="text-2xl font-bold font-mono text-accent cursor-help" data-testid="total-dividends">
+                          {formatCurrency(summary?.total_dividends || 0)}
+                        </p>
+                      </TooltipTrigger>
+                      <TooltipContent className="p-3">
+                        <div className="space-y-2">
+                          <div className="flex justify-between gap-4">
+                            <span className="text-muted-foreground">Recebido:</span>
+                            <span className="font-mono text-accent">{formatCurrency(summary?.total_dividends || 0)}</span>
+                          </div>
+                          <div className="flex justify-between gap-4">
+                            <span className="text-muted-foreground">A Receber:</span>
+                            <span className="font-mono text-blue-400">{formatCurrency(summary?.total_dividends_pending || 0)}</span>
+                          </div>
+                          <div className="border-t border-border pt-2 flex justify-between gap-4">
+                            <span className="text-muted-foreground font-medium">Total:</span>
+                            <span className="font-mono font-bold">{formatCurrency((summary?.total_dividends || 0) + (summary?.total_dividends_pending || 0))}</span>
+                          </div>
+                        </div>
+                      </TooltipContent>
+                    </TooltipUI>
+                  </TooltipProvider>
                   {summary?.total_dividends_pending > 0 && (
                     <p className="text-xs text-blue-400 mt-1">
                       + {formatCurrency(summary.total_dividends_pending)} a receber
