@@ -930,9 +930,12 @@ async def get_portfolio(portfolio_id: str, user: User = Depends(get_current_user
     stocks = await db.stocks.find({"portfolio_id": portfolio_id, "user_id": user.user_id}, {"_id": 0}).to_list(1000)
     dividends = await db.dividends.find({"portfolio_id": portfolio_id, "user_id": user.user_id}, {"_id": 0}).to_list(10000)
     
+    # Filter out bonificações from value calculations
+    stocks_for_value = [s for s in stocks if s.get("operation_type") != "bonificacao"]
+    
     portfolio["stocks_count"] = len(stocks)
-    portfolio["total_invested"] = sum(s["quantity"] * s["average_price"] for s in stocks)
-    portfolio["total_current"] = sum(s["quantity"] * (s.get("current_price") or s["average_price"]) for s in stocks)
+    portfolio["total_invested"] = sum(s["quantity"] * s["average_price"] for s in stocks_for_value)
+    portfolio["total_current"] = sum(s["quantity"] * (s.get("current_price") or s["average_price"]) for s in stocks_for_value)
     portfolio["total_dividends"] = sum(d["amount"] for d in dividends)
     
     return portfolio
