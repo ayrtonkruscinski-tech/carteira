@@ -48,11 +48,24 @@ export default function Analysis() {
     if (savedHistory) {
       setHistory(JSON.parse(savedHistory));
     }
-    // Load portfolio analysis from localStorage
-    const savedPortfolioAnalysis = localStorage.getItem("portfolio_analysis");
-    if (savedPortfolioAnalysis) {
-      setPortfolioAnalysis(JSON.parse(savedPortfolioAnalysis));
-    }
+    
+    // Cleanup function - clear data when leaving the page
+    return () => {
+      // Clear analysis states
+      setAnalysis(null);
+      setPortfolioAnalysis(null);
+      setFormData({
+        ticker: "",
+        current_price: "",
+        sector: "",
+        dividend_yield: "",
+        pe_ratio: "",
+        question: "",
+      });
+      // Clear localStorage
+      localStorage.removeItem("portfolio_analysis");
+      localStorage.removeItem("analysis_history");
+    };
   }, []);
 
   const fetchStocks = async () => {
