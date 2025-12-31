@@ -359,6 +359,18 @@ test_plan:
     - "Dividend payment_date in evolution"
 
 frontend:
+  - task: "Dashboard Cards Rename and Daily Result"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Dashboard.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "ALTERAÇÕES NOS CARDS DO DASHBOARD: 1) Card 'Lucro/Prejuízo' renomeado para 'Resultado Total' - mostra R$ e %, 2) Card 'Rentabilidade' renomeado para 'Resultado do Dia' - mostra R$ e %, zerado antes da abertura da B3 (10h), 3) Backend retorna daily_gain e daily_gain_percent, 4) Tooltips explicativos adicionados aos cards."
+
   - task: "Tooltip Layout Bug Fix"
     implemented: true
     working: true
