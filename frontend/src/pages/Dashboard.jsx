@@ -453,7 +453,7 @@ export default function Dashboard() {
     ];
     
     groupedStocks.forEach(stock => {
-      const sector = stock.sector || 'Não classificado';
+      const sector = stock.sector || 'Outros';
       const value = stock.quantity * (stock.current_price || stock.average_price);
       
       if (!sectorMap[sector]) {
