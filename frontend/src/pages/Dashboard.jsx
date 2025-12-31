@@ -769,7 +769,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               {dividendSummary?.by_month?.length > 0 ? (
-                <div className="h-64">
+                <div className="h-64 overflow-hidden">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={dividendSummary.by_month}>
                       <defs>
@@ -793,6 +793,8 @@ export default function Dashboard() {
                         tickFormatter={(value) => `R$${value}`}
                       />
                       <Tooltip
+                        cursor={{ fill: 'transparent' }}
+                        wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }}
                         contentStyle={{
                           backgroundColor: '#121417',
                           border: '1px solid #1E293B',
