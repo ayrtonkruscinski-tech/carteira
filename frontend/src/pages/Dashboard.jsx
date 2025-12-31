@@ -783,7 +783,31 @@ export default function Dashboard() {
                             </TooltipProvider>
                           </td>
                           <td className="py-3 px-4 text-right font-mono text-accent">
-                            {formatCurrency(stock.dividendsReceived)}
+                            <TooltipProvider>
+                              <TooltipUI>
+                                <TooltipTrigger asChild>
+                                  <span className="cursor-help border-b border-dashed border-accent">
+                                    {formatCurrency(stock.dividendsReceived)}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent className="p-3">
+                                  <div className="space-y-2">
+                                    <div className="flex justify-between gap-4">
+                                      <span className="text-muted-foreground">Recebido:</span>
+                                      <span className="font-mono text-accent">{formatCurrency(stock.dividendsReceived)}</span>
+                                    </div>
+                                    <div className="flex justify-between gap-4">
+                                      <span className="text-muted-foreground">A Receber:</span>
+                                      <span className="font-mono text-blue-400">{formatCurrency(stock.dividendsPending)}</span>
+                                    </div>
+                                    <div className="border-t border-border pt-2 flex justify-between gap-4">
+                                      <span className="text-muted-foreground font-medium">Total:</span>
+                                      <span className="font-mono font-bold">{formatCurrency(stock.totalDividends)}</span>
+                                    </div>
+                                  </div>
+                                </TooltipContent>
+                              </TooltipUI>
+                            </TooltipProvider>
                           </td>
                           <td className={`py-3 px-4 text-right font-mono font-medium ${stock.profitability >= 0 ? 'text-primary' : 'text-destructive'}`}>
                             <TooltipProvider>
