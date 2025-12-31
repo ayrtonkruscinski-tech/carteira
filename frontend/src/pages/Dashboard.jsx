@@ -933,7 +933,7 @@ export default function Dashboard() {
                   }`}
                 >
                   <div className={`w-3 h-3 rounded-full ${chartVisibility.total ? 'bg-amber-500' : 'bg-muted'}`}></div>
-                  <span className={chartVisibility.total ? 'text-amber-400' : 'text-muted-foreground line-through'}>Total (c/ Dividendos)</span>
+                  <span className={chartVisibility.total ? 'text-amber-400' : 'text-muted-foreground line-through'}>Total (c/ Proventos)</span>
                 </button>
               </div>
             )}
