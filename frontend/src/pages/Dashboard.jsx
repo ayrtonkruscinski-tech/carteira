@@ -1240,7 +1240,16 @@ export default function Dashboard() {
                               borderRadius: '8px',
                               color: '#E2E8F0',
                             }}
-                            formatter={(value, name, props) => [`${value}%`, props.payload.name]}
+                            labelStyle={{ color: '#E2E8F0' }}
+                            itemStyle={{ color: '#E2E8F0' }}
+                            formatter={(value, name, props) => {
+                              const itemName = props?.payload?.name || name;
+                              const current = props?.payload?.current;
+                              if (current !== undefined) {
+                                return [`${value}% (atual: ${current}%)`, itemName];
+                              }
+                              return [`${value}%`, itemName];
+                            }}
                           />
                         </RechartsPie>
                       </ResponsiveContainer>
