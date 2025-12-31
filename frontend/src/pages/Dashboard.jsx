@@ -545,6 +545,7 @@ export default function Dashboard() {
                       strokeWidth={2}
                       fill="url(#colorInvested)"
                       dot={false}
+                      hide={!chartVisibility.invested}
                     />
                     <Area
                       type="monotone"
@@ -553,6 +554,7 @@ export default function Dashboard() {
                       strokeWidth={2}
                       fill="url(#colorCurrent)"
                       dot={false}
+                      hide={!chartVisibility.current}
                     />
                     <Area
                       type="monotone"
@@ -561,6 +563,7 @@ export default function Dashboard() {
                       strokeWidth={2}
                       fill="url(#colorTotal)"
                       dot={false}
+                      hide={!chartVisibility.total}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -571,19 +574,40 @@ export default function Dashboard() {
               </div>
             )}
             {portfolioEvolution.length > 0 && (
-              <div className="flex justify-center gap-6 mt-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                  <span className="text-muted-foreground">Investido</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-primary"></div>
-                  <span className="text-muted-foreground">Valor Atual</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                  <span className="text-muted-foreground">Total (c/ Dividendos)</span>
-                </div>
+              <div className="flex justify-center gap-4 mt-4 text-sm">
+                <button
+                  onClick={() => setChartVisibility(prev => ({ ...prev, invested: !prev.invested }))}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${
+                    chartVisibility.invested 
+                      ? 'border-blue-500 bg-blue-500/10' 
+                      : 'border-muted bg-muted/20 opacity-50'
+                  }`}
+                >
+                  <div className={`w-3 h-3 rounded-full ${chartVisibility.invested ? 'bg-blue-500' : 'bg-muted'}`}></div>
+                  <span className={chartVisibility.invested ? 'text-blue-400' : 'text-muted-foreground line-through'}>Investido</span>
+                </button>
+                <button
+                  onClick={() => setChartVisibility(prev => ({ ...prev, current: !prev.current }))}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${
+                    chartVisibility.current 
+                      ? 'border-primary bg-primary/10' 
+                      : 'border-muted bg-muted/20 opacity-50'
+                  }`}
+                >
+                  <div className={`w-3 h-3 rounded-full ${chartVisibility.current ? 'bg-primary' : 'bg-muted'}`}></div>
+                  <span className={chartVisibility.current ? 'text-primary' : 'text-muted-foreground line-through'}>Valor Atual</span>
+                </button>
+                <button
+                  onClick={() => setChartVisibility(prev => ({ ...prev, total: !prev.total }))}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${
+                    chartVisibility.total 
+                      ? 'border-amber-500 bg-amber-500/10' 
+                      : 'border-muted bg-muted/20 opacity-50'
+                  }`}
+                >
+                  <div className={`w-3 h-3 rounded-full ${chartVisibility.total ? 'bg-amber-500' : 'bg-muted'}`}></div>
+                  <span className={chartVisibility.total ? 'text-amber-400' : 'text-muted-foreground line-through'}>Total (c/ Dividendos)</span>
+                </button>
               </div>
             )}
           </CardContent>
