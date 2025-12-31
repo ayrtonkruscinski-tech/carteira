@@ -359,6 +359,7 @@ test_plan:
     - "Dividend payment_date in evolution"
     - "Dashboard Cards Rename and Daily Result"
     - "Proventos Evolution Chart"
+    - "Tutorial de Importação na Página Carteira"
 
 frontend:
   - task: "Dashboard Cards Rename and Daily Result"
