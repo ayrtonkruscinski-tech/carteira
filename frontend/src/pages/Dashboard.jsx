@@ -219,11 +219,20 @@ export default function Dashboard() {
           current_price: stock.current_price,
           ceiling_price: stock.ceiling_price,
           sector: stock.sector,
-          stock_id: stock.stock_id, // Keep first stock_id for reference
+          asset_type: stock.asset_type || 'acao',
+          fixed_income_type: stock.fixed_income_type,
+          maturity_date: stock.maturity_date,
+          rate: stock.rate,
+          rate_type: stock.rate_type,
+          issuer: stock.issuer,
+          stock_id: stock.stock_id,
         };
       }
       acc[ticker].quantity += stock.quantity;
-      acc[ticker].totalInvested += stock.quantity * stock.average_price;
+      // Don't count bonificações in invested
+      if (stock.operation_type !== 'bonificacao') {
+        acc[ticker].totalInvested += stock.quantity * stock.average_price;
+      }
       // Update current_price if this entry has one
       if (stock.current_price) {
         acc[ticker].current_price = stock.current_price;
@@ -233,7 +242,7 @@ export default function Dashboard() {
   ).map(stock => ({
     ...stock,
     // Calculate weighted average price
-    average_price: stock.totalInvested / stock.quantity,
+    average_price: stock.quantity > 0 ? stock.totalInvested / stock.quantity : 0,
   }));
 
   const portfolioData = groupedStocks.map((stock, index) => ({
@@ -250,9 +259,9 @@ export default function Dashboard() {
   // Enrich grouped stocks with calculated metrics
   const enrichedStocks = groupedStocks.map(stock => {
     const currentPrice = stock.current_price || stock.average_price;
-    const investedValue = stock.quantity * stock.average_price;
+    const investedValue = stock.totalInvested;
     const currentValue = stock.quantity * currentPrice;
-    const variation = ((currentPrice / stock.average_price) - 1) * 100;
+    const variation = stock.average_price > 0 ? ((currentPrice / stock.average_price) - 1) * 100 : 0;
     const gain = currentValue - investedValue;
     const stockDividendData = stockDividends[stock.ticker] || { received: 0, pending: 0 };
     const dividendsReceived = stockDividendData.received || 0;
@@ -277,6 +286,25 @@ export default function Dashboard() {
       portfolioPercent,
     };
   });
+
+  // Separate stocks by asset type
+  const stocksByType = {
+    acao: enrichedStocks.filter(s => s.asset_type === 'acao'),
+    fii: enrichedStocks.filter(s => s.asset_type === 'fii'),
+    renda_fixa: enrichedStocks.filter(s => s.asset_type === 'renda_fixa'),
+  };
+
+  // Asset type labels with invested percentage
+  const getAssetTypeLabel = (type) => {
+    const breakdown = summary?.breakdown?.[type] || {};
+    const percent = breakdown.invested_percent || 0;
+    const labels = {
+      acao: `Ações (Renda Variável) - ${percent.toFixed(1)}%`,
+      fii: `Fundos Imobiliários (FIIs) - ${percent.toFixed(1)}%`,
+      renda_fixa: `Renda Fixa (Tesouro) - ${percent.toFixed(1)}%`,
+    };
+    return labels[type] || type;
+  };
 
   // Sort stocks based on selected criteria
   const sortedStocks = [...enrichedStocks].sort((a, b) => {
