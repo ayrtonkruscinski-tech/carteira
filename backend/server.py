@@ -2495,11 +2495,26 @@ async def import_file(file: UploadFile = File(...), portfolio_id: Optional[str] 
     for s in stocks[:5]:  # Log first 5 entries
         logger.info(f"  Parsed: {s['ticker']} qty={s['quantity']} price={s['average_price']} date={s.get('purchase_date')}")
     
+    # Cache for detected asset types/sectors to avoid repeated API calls for same ticker
+    detected_info_cache = {}
+    
     for stock_data in stocks:
         ticker = stock_data["ticker"]
         purchase_date = stock_data.get("purchase_date")
         
         logger.info(f"Importing {ticker} with date={purchase_date}")
+        
+        # Detect asset type and sector (use cache if available)
+        if ticker not in detected_info_cache:
+            detected_info = detect_asset_type_from_investidor10(ticker)
+            detected_info_cache[ticker] = detected_info
+            logger.info(f"Detected {ticker}: type={detected_info.get('asset_type')}, sector={detected_info.get('sector')}")
+        else:
+            detected_info = detected_info_cache[ticker]
+        
+        asset_type = detected_info.get("asset_type", "acao")
+        detected_sector = detected_info.get("sector")
+        detected_name = detected_info.get("name")
         
         # Check if stock already exists with same ticker AND purchase_date AND portfolio_id
         # This allows multiple entries for the same stock bought on different dates
@@ -2512,11 +2527,11 @@ async def import_file(file: UploadFile = File(...), portfolio_id: Optional[str] 
         
         existing = await db.stocks.find_one(query, {"_id": 0})
         
-        # Get additional info
+        # Get additional info from cache
         stock_info = BRAZILIAN_STOCKS.get(ticker, {})
         
         if existing:
-            # Update existing stock (same ticker + same date)
+            # Update existing stock (same ticker + same date) - also update asset_type and sector
             await db.stocks.update_one(
                 {"stock_id": existing["stock_id"]},
                 {"$set": {
@@ -2524,21 +2539,24 @@ async def import_file(file: UploadFile = File(...), portfolio_id: Optional[str] 
                     "average_price": stock_data["average_price"],
                     "purchase_date": purchase_date,
                     "portfolio_id": portfolio_id,
+                    "asset_type": asset_type,
+                    "sector": detected_sector or existing.get("sector"),
                     "updated_at": datetime.now(timezone.utc).isoformat()
                 }}
             )
             updated += 1
         else:
-            # Create new stock entry
+            # Create new stock entry with detected asset_type and sector
             new_stock = Stock(
                 user_id=user.user_id,
                 portfolio_id=portfolio_id,
                 ticker=ticker,
-                name=stock_data.get("name") or stock_info.get("name", ticker),
+                name=stock_data.get("name") or detected_name or stock_info.get("name", ticker),
                 quantity=stock_data["quantity"],
                 average_price=stock_data["average_price"],
                 purchase_date=purchase_date,
-                sector=stock_data.get("sector") or stock_info.get("sector"),
+                sector=detected_sector or stock_data.get("sector") or stock_info.get("sector"),
+                asset_type=asset_type,
                 current_price=stock_info.get("current_price"),
                 dividend_yield=stock_info.get("dividend_yield")
             )
