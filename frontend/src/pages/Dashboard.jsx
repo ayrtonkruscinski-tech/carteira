@@ -191,6 +191,9 @@ export default function Dashboard() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(null);
   const [distributionFilter, setDistributionFilter] = useState('all');
+  const [idealDistribution, setIdealDistribution] = useState(null);
+  const [loadingIdeal, setLoadingIdeal] = useState(false);
+  const [showIdealDistribution, setShowIdealDistribution] = useState(false);
   const [chartVisibility, setChartVisibility] = useState({
     invested: true,
     current: true,
