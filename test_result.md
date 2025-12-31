@@ -856,5 +856,34 @@ agent_communication:
          - Código já usa payment_date corretamente (linha 1200-1206)
          - Apenas dividendos com payment_date <= today são incluídos
       
-      TESTES VIA CURL:
-      - PETR4: Ações 12.89 bi, Lucro 77.99 bi, ROE 18.33%, Payout 61%
+  - agent: "main"
+    message: |
+      ALTERAÇÕES NOS CARDS DO DASHBOARD IMPLEMENTADAS:
+      
+      BACKEND (/app/backend/server.py):
+      - Endpoint GET /api/portfolio/summary agora retorna campos adicionais:
+        * daily_gain: valor em R$ do resultado do dia
+        * daily_gain_percent: % do resultado do dia
+      - Lógica de cálculo baseada no previous_close das ações
+      - Se antes das 10h (horário BRT), retorna 0 para daily_gain e daily_gain_percent
+      
+      FRONTEND (/app/frontend/src/pages/Dashboard.jsx):
+      - Card "Resultado do Dia" mostra:
+        * Valor em R$ (formatCurrency)
+        * Percentual abaixo (ex: +1.25%)
+        * Tooltip explicando "Variação desde a abertura da B3 (10h)" e "Zerado diariamente antes do pregão"
+      - Card "Resultado Total" mostra:
+        * Valor em R$ (formatCurrency)
+        * Percentual abaixo (ex: +5.50%)
+        * Tooltip explicando "Ganho/Perda total desde o início"
+      
+      PRECISA TESTAR:
+      1. Login com Google Auth
+      2. Navegar para Dashboard
+      3. Verificar os 4 cards:
+         - "Patrimônio Total" (R$)
+         - "Resultado do Dia" (R$ + %)
+         - "Resultado Total" (R$ + %)
+         - "Dividendos Recebidos" (R$)
+      4. Passar o mouse sobre os cards para ver tooltips
+      5. Verificar que a API retorna os campos daily_gain e daily_gain_percent
