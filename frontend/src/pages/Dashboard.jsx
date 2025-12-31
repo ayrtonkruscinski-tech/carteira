@@ -1001,136 +1001,58 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Stocks Table */}
-        <Card className="bg-card border-border">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <CardTitle>Suas Ações</CardTitle>
-            <div className="flex items-center gap-2">
-              <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-[180px] bg-input border-input">
-                  <SelectValue placeholder="Ordenar por" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border-border">
-                  {SORT_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {sortedStocks.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full" data-testid="stocks-table">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Ticker</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Qtd</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">PM</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Atual</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Valor</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Variação</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Dividendos</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Rentab.</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">% Cart.</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedStocks.map((stock) => {
-                      const atCeiling = stock.ceiling_price && stock.currentPrice >= stock.ceiling_price;
-                      return (
-                        <tr key={stock.stock_id} className={`border-b border-border/50 hover:bg-muted/30 transition-colors ${atCeiling ? 'bg-accent/5' : ''}`}>
-                          <td className="py-3 px-4">
-                            <span className="font-mono font-semibold text-foreground">{stock.ticker}</span>
-                            {atCeiling && <span className="ml-2 text-xs text-accent">⚠️</span>}
-                          </td>
-                          <td className="py-3 px-4 text-right font-mono text-foreground">{stock.quantity.toFixed(2)}</td>
-                          <td className="py-3 px-4 text-right font-mono text-foreground">
-                            {formatCurrency(stock.average_price)}
-                          </td>
-                          <td className="py-3 px-4 text-right font-mono text-foreground">
-                            {formatCurrency(stock.currentPrice)}
-                          </td>
-                          <td className="py-3 px-4 text-right font-mono text-foreground">
-                            {formatCurrency(stock.currentValue)}
-                          </td>
-                          <td className={`py-3 px-4 text-right font-mono font-medium ${stock.variation >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                            <TooltipUI>
-                              <TooltipTrigger asChild>
-                                <span className="cursor-help border-b border-dashed border-current">
-                                  {stock.variation >= 0 ? '+' : ''}{stock.variation.toFixed(2)}%
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p className="font-mono">
-                                  {stock.gain >= 0 ? '+' : ''}{formatCurrency(stock.gain)}
-                                </p>
-                              </TooltipContent>
-                            </TooltipUI>
-                          </td>
-                          <td className="py-3 px-4 text-right font-mono text-accent">
-                            <TooltipUI>
-                              <TooltipTrigger asChild>
-                                <span className="cursor-help border-b border-dashed border-accent">
-                                  {formatCurrency(stock.dividendsReceived)}
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent className="p-3">
-                                <div className="space-y-2">
-                                  <div className="flex justify-between gap-4">
-                                    <span className="text-muted-foreground">Recebido:</span>
-                                    <span className="font-mono text-accent">{formatCurrency(stock.dividendsReceived)}</span>
-                                  </div>
-                                  <div className="flex justify-between gap-4">
-                                    <span className="text-muted-foreground">A Receber:</span>
-                                    <span className="font-mono text-blue-400">{formatCurrency(stock.dividendsPending)}</span>
-                                  </div>
-                                  <div className="border-t border-border pt-2 flex justify-between gap-4">
-                                    <span className="text-muted-foreground font-medium">Total:</span>
-                                    <span className="font-mono font-bold">{formatCurrency(stock.totalDividends)}</span>
-                                  </div>
-                                </div>
-                              </TooltipContent>
-                            </TooltipUI>
-                          </td>
-                          <td className={`py-3 px-4 text-right font-mono font-medium ${stock.profitability >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                            <TooltipUI>
-                              <TooltipTrigger asChild>
-                                <span className="cursor-help border-b border-dashed border-current">
-                                  {stock.profitability >= 0 ? '+' : ''}{stock.profitability.toFixed(2)}%
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p className="font-mono">
-                                  {stock.totalReturn >= 0 ? '+' : ''}{formatCurrency(stock.totalReturn)}
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  (Ganho + Dividendos)
-                                </p>
-                              </TooltipContent>
-                            </TooltipUI>
-                          </td>
-                          <td className="py-3 px-4 text-right font-mono text-muted-foreground">
-                            {stock.portfolioPercent.toFixed(1)}%
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-12 text-muted-foreground">
+        {/* Sort Controls */}
+        <div className="flex items-center justify-end gap-2 mb-4">
+          <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-[180px] bg-input border-input">
+              <SelectValue placeholder="Ordenar por" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover border-border">
+              {SORT_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Asset Type Tables */}
+        <div className="space-y-6">
+          {/* Ações (Renda Variável) */}
+          <StocksTable 
+            stocks={sortedStocksByType.acao} 
+            title={getAssetTypeLabel('acao')}
+            assetType="acao"
+          />
+          
+          {/* Fundos Imobiliários (FIIs) */}
+          <StocksTable 
+            stocks={sortedStocksByType.fii} 
+            title={getAssetTypeLabel('fii')}
+            assetType="fii"
+          />
+          
+          {/* Renda Fixa (Tesouro) */}
+          <StocksTable 
+            stocks={sortedStocksByType.renda_fixa} 
+            title={getAssetTypeLabel('renda_fixa')}
+            assetType="renda_fixa"
+            showFixedIncomeColumns={true}
+          />
+
+          {/* Empty State */}
+          {sortedStocks.length === 0 && (
+            <Card className="bg-card border-border">
+              <CardContent className="text-center py-12 text-muted-foreground">
                 <PieChart className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>Você ainda não tem ações na carteira</p>
-                <p className="text-sm mt-2">Vá para a página Carteira para adicionar suas ações</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                <p>Você ainda não tem ativos na carteira</p>
+                <p className="text-sm mt-2">Vá para a página Carteira para adicionar seus ativos</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </Layout>
   );
