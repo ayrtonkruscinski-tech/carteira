@@ -1392,14 +1392,16 @@ def parse_cei_csv(content: str) -> List[dict]:
                         elif qtd_col is None:
                             qtd_col = h
                 
-                # Look for price column
+                # Look for price column - including "Preco medio" from XP
                 if preco_col is None:
-                    if 'preco' in h_normalized or 'preço' in h_normalized:
-                        preco_col = h
+                    if 'medio' in h_normalized or 'médio' in h_normalized:
+                        preco_col = h  # Prioritize "Preço médio" / "Preco medio"
+                    elif 'preco' in h_normalized or 'preço' in h_normalized:
+                        if preco_col is None:  # Only set if not already set by "medio"
+                            preco_col = h
                     elif 'unitario' in h_normalized or 'unitário' in h_normalized:
-                        preco_col = h
-                    elif 'medio' in h_normalized or 'médio' in h_normalized:
-                        preco_col = h
+                        if preco_col is None:
+                            preco_col = h
                 
                 # Look for date columns - "Data do Negócio" or "Data e Hora"
                 if data_col is None:
