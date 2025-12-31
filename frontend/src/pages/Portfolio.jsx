@@ -212,8 +212,8 @@ export default function Portfolio() {
           sector: detectedSector || data.sector || "",
           ceiling_price: "",
         });
-        if (data.source === "alpha_vantage") {
-          toast.success(`Cotação em tempo real: R$ ${data.current_price?.toFixed(2)}`);
+        if (data.current_price) {
+          toast.success(`Cotação carregada: R$ ${data.current_price?.toFixed(2)}`);
         }
       }
     } catch (error) {
