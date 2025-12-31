@@ -532,7 +532,6 @@ export default function Portfolio() {
               const typeLabel = data.asset_type === "fii" ? "FII" : "Ação";
               toast.success(`${ticker} detectado como ${typeLabel}${data.sector ? ` - ${data.sector}` : ''}`);
             }
-            }
           } else {
             console.log(`Detection failed with status: ${response.status}`);
             // Fallback to pattern-based detection
