@@ -721,13 +721,42 @@ export default function Dashboard() {
                             {formatCurrency(stock.currentValue)}
                           </td>
                           <td className={`py-3 px-4 text-right font-mono font-medium ${stock.variation >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                            {stock.variation >= 0 ? '+' : ''}{stock.variation.toFixed(2)}%
+                            <TooltipProvider>
+                              <TooltipUI>
+                                <TooltipTrigger asChild>
+                                  <span className="cursor-help border-b border-dashed border-current">
+                                    {stock.variation >= 0 ? '+' : ''}{stock.variation.toFixed(2)}%
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="font-mono">
+                                    {stock.gain >= 0 ? '+' : ''}{formatCurrency(stock.gain)}
+                                  </p>
+                                </TooltipContent>
+                              </TooltipUI>
+                            </TooltipProvider>
                           </td>
                           <td className="py-3 px-4 text-right font-mono text-accent">
                             {formatCurrency(stock.dividendsReceived)}
                           </td>
                           <td className={`py-3 px-4 text-right font-mono font-medium ${stock.profitability >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                            {stock.profitability >= 0 ? '+' : ''}{stock.profitability.toFixed(2)}%
+                            <TooltipProvider>
+                              <TooltipUI>
+                                <TooltipTrigger asChild>
+                                  <span className="cursor-help border-b border-dashed border-current">
+                                    {stock.profitability >= 0 ? '+' : ''}{stock.profitability.toFixed(2)}%
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="font-mono">
+                                    {stock.totalReturn >= 0 ? '+' : ''}{formatCurrency(stock.totalReturn)}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    (Ganho + Dividendos)
+                                  </p>
+                                </TooltipContent>
+                              </TooltipUI>
+                            </TooltipProvider>
                           </td>
                           <td className="py-3 px-4 text-right font-mono text-muted-foreground">
                             {stock.portfolioPercent.toFixed(1)}%
