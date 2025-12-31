@@ -509,7 +509,7 @@ export default function Portfolio() {
             const data = await response.json();
             console.log(`Detection result:`, data);
             
-            // Update form with detected type
+            // Update form with detected type and sector
             setFormData(prev => {
               const newData = {
                 ...prev,
@@ -519,14 +519,19 @@ export default function Portfolio() {
               if (data.name && !prev.name) {
                 newData.name = data.name;
               }
-              console.log(`Updating formData asset_type to: ${newData.asset_type}`);
+              // Set sector if detected
+              if (data.sector) {
+                newData.sector = data.sector;
+              }
+              console.log(`Updating formData asset_type to: ${newData.asset_type}, sector: ${newData.sector}`);
               return newData;
             });
             
             // Show toast for successful detection
             if (data.source && data.source !== "pattern_fallback") {
               const typeLabel = data.asset_type === "fii" ? "FII" : "Ação";
-              toast.success(`${ticker} detectado como ${typeLabel}`);
+              toast.success(`${ticker} detectado como ${typeLabel}${data.sector ? ` - ${data.sector}` : ''}`);
+            }
             }
           } else {
             console.log(`Detection failed with status: ${response.status}`);
