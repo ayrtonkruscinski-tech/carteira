@@ -57,6 +57,11 @@ export default function Dashboard() {
   const [sortBy, setSortBy] = useState('ticker');
   const [stockDividends, setStockDividends] = useState({});
   const [evolutionPeriod, setEvolutionPeriod] = useState('1m');
+  const [chartVisibility, setChartVisibility] = useState({
+    invested: true,
+    current: true,
+    total: true,
+  });
 
   // Get current portfolio
   const portfolioContext = usePortfolioSafe();
