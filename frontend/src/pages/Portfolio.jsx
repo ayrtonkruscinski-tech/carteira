@@ -84,6 +84,7 @@ export default function Portfolio() {
     quantity: "",
     average_price: "",
     purchase_date: "",
+    operation_type: "compra",  // "compra" ou "venda"
     current_price: "",
     dividend_yield: "",
     sector: "",
