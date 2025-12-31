@@ -560,7 +560,7 @@ export default function Portfolio() {
                   className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_15px_rgba(0,229,153,0.3)]"
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Adicionar Ação
+                  Adicionar Lançamento
                 </Button>
               </DialogTrigger>
               <DialogContent className="bg-card border-border max-w-lg">
@@ -935,7 +935,7 @@ export default function Portfolio() {
                   data-testid="add-first-stock-btn"
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Adicionar Ação
+                  Adicionar Lançamento
                 </Button>
               </div>
             </CardContent>
