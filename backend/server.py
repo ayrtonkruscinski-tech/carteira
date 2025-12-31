@@ -2398,21 +2398,29 @@ async def sync_dividends(user: User = Depends(get_current_user), portfolio_id: O
     
     stocks = await db.stocks.find(query, {"_id": 0}).to_list(1000)
     if not stocks:
-        return {"message": "Nenhuma ação na carteira", "synced": 0}
+        return {"message": "Nenhum ativo na carteira", "synced": 0}
 
-    unique_tickers = list(set(s["ticker"] for s in stocks if s.get("operation_type") != "bonificacao"))
+    # Separa ações e FIIs para usar funções diferentes
+    acoes_tickers = list(set(s["ticker"] for s in stocks if s.get("operation_type") != "bonificacao" and s.get("asset_type", "acao") == "acao"))
+    fii_tickers = list(set(s["ticker"] for s in stocks if s.get("operation_type") != "bonificacao" and s.get("asset_type") == "fii"))
+    
     today = datetime.now(timezone.utc).date()
     synced, updated, bonificacoes_aplicadas = 0, 0, 0
+    synced_fiis = 0
     sem = asyncio.Semaphore(5) 
 
     async with httpx.AsyncClient(follow_redirects=True) as client:
-        async def process_ticker(ticker):
-            nonlocal synced, updated, bonificacoes_aplicadas
+        async def process_ticker(ticker, is_fii=False):
+            nonlocal synced, updated, bonificacoes_aplicadas, synced_fiis
             async with sem:
                 user_stocks = [s for s in stocks if s["ticker"] == ticker]
                 page = 1
                 while page <= 10:
-                    data = await fetch_investidor10_dividends_async(client, ticker, page)
+                    # Usa função apropriada baseada no tipo de ativo
+                    if is_fii:
+                        data = await fetch_investidor10_fii_dividends_async(client, ticker, page)
+                    else:
+                        data = await fetch_investidor10_dividends_async(client, ticker, page)
                     if not data: break
                     
                     for div in data:
