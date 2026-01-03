@@ -481,7 +481,7 @@ export default function Dividends() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <Card className="bg-card border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -490,6 +490,7 @@ export default function Dividends() {
                   <p className="text-2xl font-bold font-mono text-accent" data-testid="total-dividends">
                     {formatCurrency(totalReceived)}
                   </p>
+                  <p className="text-xs text-muted-foreground">{receivedDividends.length} registro(s)</p>
                 </div>
                 <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
                   <Coins className="w-6 h-6 text-accent" />
@@ -504,11 +505,29 @@ export default function Dividends() {
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">A Receber</p>
                   <p className="text-2xl font-bold font-mono text-blue-400">
-                    {formatCurrency(totalPending)}
+                    {formatCurrency(totalPendingWithDate)}
                   </p>
+                  <p className="text-xs text-muted-foreground">{pendingWithDateDividends.length} registro(s)</p>
                 </div>
                 <div className="w-12 h-12 rounded-lg bg-blue-400/10 flex items-center justify-center">
                   <TrendingUp className="w-6 h-6 text-blue-400" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-border border-amber-500/30">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">A Definir</p>
+                  <p className="text-2xl font-bold font-mono text-amber-400">
+                    {formatCurrency(totalUndefined)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{undefinedDateDividends.length} registro(s)</p>
+                </div>
+                <div className="w-12 h-12 rounded-lg bg-amber-400/10 flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-amber-400" />
                 </div>
               </div>
             </CardContent>
@@ -518,11 +537,11 @@ export default function Dividends() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Registros</p>
+                  <p className="text-sm text-muted-foreground mb-1">Total Geral</p>
                   <p className="text-2xl font-bold font-mono text-foreground">
-                    {dividends.length}
+                    {formatCurrency(totalReceived + totalPending)}
                   </p>
-                  <p className="text-xs text-muted-foreground">{receivedDividends.length} recebidos / {pendingDividends.length} a receber</p>
+                  <p className="text-xs text-muted-foreground">{dividends.length} registro(s)</p>
                 </div>
                 <div className="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center">
                   <TrendingUp className="w-6 h-6 text-secondary" />
