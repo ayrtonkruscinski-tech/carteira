@@ -690,7 +690,7 @@ export default function Portfolio() {
   // Mesma data = agrupa no mesmo card
   // Datas diferentes = cards separados
   // Operações diferentes (compra/venda) também ficam separadas
-  const groupedStocks = stocks.reduce((acc, stock) => {
+  const displayGroupedStocks = stocks.reduce((acc, stock) => {
     // Chave de agrupamento: ticker + data + tipo de operação
     const opType = stock.operation_type || "compra";
     const key = `${stock.ticker}_${stock.purchase_date || 'sem_data'}_${opType}`;
@@ -725,7 +725,7 @@ export default function Portfolio() {
   }, []);
 
   // Ordenar os stocks
-  const sortedStocks = [...groupedStocks].sort((a, b) => {
+  const sortedStocks = [...displayGroupedStocks].sort((a, b) => {
     switch (sortBy) {
       case "ticker_asc":
         return a.ticker.localeCompare(b.ticker);
