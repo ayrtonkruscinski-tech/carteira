@@ -453,6 +453,29 @@ export default function Dashboard() {
       .sort((a, b) => b.value - a.value);
   })();
 
+  // Mapeamento de cores por setor - para sincronizar cores entre gráficos
+  const sectorColorMap = useMemo(() => {
+    const colorMap = {};
+    distributionBySector.forEach(item => {
+      colorMap[item.name] = item.color;
+    });
+    return colorMap;
+  }, [distributionBySector]);
+
+  // Ideal distribution com cores sincronizadas
+  const syncedIdealDistribution = useMemo(() => {
+    if (!idealDistribution) return null;
+    
+    return {
+      ...idealDistribution,
+      distribution: idealDistribution.distribution.map(item => ({
+        ...item,
+        // Usa a cor do sectorColorMap se existir, senão usa a cor original
+        color: sectorColorMap[item.name] || item.color
+      }))
+    };
+  }, [idealDistribution, sectorColorMap]);
+
   // Filtered portfolio data for chart
   const filteredPortfolioData = (() => {
     if (distributionFilter === 'by_type') {
