@@ -1020,34 +1020,36 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Proventos Evolution Chart */}
-        <Card className="bg-card border-border">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <CardTitle className="flex items-center gap-2">
-              <Coins className="w-5 h-5 text-purple-500" />
-              Evolução de Proventos
-            </CardTitle>
-            <div className="flex gap-1">
-              {PERIOD_OPTIONS.map((option) => (
-                <Button
-                  key={`proventos-${option.value}`}
-                  variant={evolutionPeriod === option.value ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setEvolutionPeriod(option.value)}
-                  className={evolutionPeriod === option.value 
-                    ? "bg-purple-600 text-white hover:bg-purple-700" 
-                    : "bg-transparent border-border text-muted-foreground hover:text-foreground"
-                  }
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {portfolioEvolution.length > 0 ? (
-              <div className="h-64 overflow-hidden">
-                <ResponsiveContainer width="100%" height="100%">
+        {/* Grid: Evolução de Proventos + Dividendos por Mês */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Proventos Evolution Chart */}
+          <Card className="bg-card border-border">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <CardTitle className="flex items-center gap-2">
+                <Coins className="w-5 h-5 text-purple-500" />
+                Evolução de Proventos
+              </CardTitle>
+              <div className="flex gap-1">
+                {PERIOD_OPTIONS.map((option) => (
+                  <Button
+                    key={`proventos-${option.value}`}
+                    variant={evolutionPeriod === option.value ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setEvolutionPeriod(option.value)}
+                    className={evolutionPeriod === option.value 
+                      ? "bg-purple-600 text-white hover:bg-purple-700" 
+                      : "bg-transparent border-border text-muted-foreground hover:text-foreground"
+                    }
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {portfolioEvolution.length > 0 ? (
+                <div className="h-64 overflow-hidden">
+                  <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={portfolioEvolution}>
                     <defs>
                       <linearGradient id="colorProventos" x1="0" y1="0" x2="0" y2="1">
