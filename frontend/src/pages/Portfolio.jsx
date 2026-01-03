@@ -251,13 +251,48 @@ export default function Portfolio() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Se for venda com a nova lógica
+    if (formData.operation_type === "venda" && selectedStockForSale && !editingStock) {
+      const quantity = parseFloat(formData.quantity);
+      const salePrice = parseFloat(formData.current_price);
+      
+      // Validações
+      if (quantity > selectedStockForSale.quantity) {
+        toast.error(`Quantidade máxima disponível: ${selectedStockForSale.quantity}`);
+        return;
+      }
+      
+      if (quantity <= 0 || salePrice <= 0) {
+        toast.error("Quantidade e preço devem ser maiores que zero");
+        return;
+      }
+
+      // Calcular lucro/prejuízo
+      const profit = (salePrice - selectedStockForSale.average_price) * quantity;
+      
+      const payload = {
+        stock_id: selectedStockForSale.stock_id,
+        ticker: selectedStockForSale.ticker,
+        quantity_sold: quantity,
+        sale_price: salePrice,
+        sale_date: formData.purchase_date || new Date().toISOString().split('T')[0],
+        profit: profit,
+        average_price: selectedStockForSale.average_price,
+        portfolio_id: currentPortfolio?.portfolio_id || null,
+      };
+
+      await processSale(payload);
+      return;
+    }
+
+    // Lógica de compra normal
     const payload = {
       ticker: formData.ticker,
       name: formData.name,
       quantity: parseFloat(formData.quantity),
-      average_price: parseFloat(formData.average_price),
+      average_price: parseFloat(formData.average_price || formData.current_price),
       purchase_date: formData.purchase_date || null,
-      operation_type: formData.operation_type || "compra",
+      operation_type: "compra",
       include_in_results: formData.include_in_results,
       asset_type: formData.asset_type || "acao",
       // Fixed income fields
@@ -274,14 +309,34 @@ export default function Portfolio() {
       portfolio_id: currentPortfolio?.portfolio_id || null,
     };
 
-    // Se for venda e não está editando, perguntar sobre incluir no dashboard
-    if (payload.operation_type === "venda" && !editingStock) {
-      setPendingSalePayload(payload);
-      setSaleConfirmDialogOpen(true);
-      return;
-    }
-
     await submitStock(payload);
+  };
+
+  // Processar venda
+  const processSale = async (payload) => {
+    try {
+      const response = await fetch(`${API}/portfolio/stocks/${payload.stock_id}/sell`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        const profitLabel = payload.profit >= 0 ? "Lucro" : "Prejuízo";
+        const profitValue = Math.abs(payload.profit).toFixed(2);
+        toast.success(`Venda realizada! ${profitLabel}: R$ ${profitValue}`);
+        fetchStocks();
+        resetForm();
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || "Erro ao processar venda");
+      }
+    } catch (error) {
+      toast.error("Erro ao processar venda");
+      console.error("Error processing sale:", error);
+    }
   };
 
   const submitStock = async (payload) => {
