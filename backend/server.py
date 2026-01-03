@@ -692,6 +692,14 @@ def fetch_investidor10_dividends_sync(ticker: str) -> List[dict]:
         return []
 
 
+def is_undefined_payment_date(pagamento_str: str) -> bool:
+    """Verifica se a data de pagamento é indefinida (a definir, provisionado, etc.)"""
+    if not pagamento_str:
+        return True
+    pagamento_lower = pagamento_str.lower().strip()
+    undefined_terms = ['a definir', 'provisionado', 'sem data', '-', '--', 'n/a', 'n/d', '']
+    return any(term in pagamento_lower for term in undefined_terms) or not pagamento_str.strip()
+
 async def fetch_investidor10_dividends_async(client: httpx.AsyncClient, ticker: str, page: int = 1) -> List[dict]:
     """Busca histórico de dividendos e bonificações de forma rápida e assíncrona."""
     url = f"https://investidor10.com.br/acoes/{ticker.lower()}/?page={page}"
@@ -722,16 +730,20 @@ async def fetch_investidor10_dividends_async(client: httpx.AsyncClient, ticker: 
             pagamento_str = cells[2].get_text(strip=True)
             valor_raw = cells[3].get_text(strip=True).replace('.', '').replace(',', '.')
             
-            # Pula se estiver apenas provisionado sem data ou valor
-            if 'provisionado' in pagamento_str.lower() or not data_com_str: continue
+            # Pula apenas se não tiver data_com (sem data_com não conseguimos validar elegibilidade)
+            if not data_com_str: continue
             
             try:
                 # Conversão de datas DD/MM/YYYY -> YYYY-MM-DD
                 d_c = data_com_str.split('/')
                 data_com = f"{d_c[2]}-{d_c[1]}-{d_c[0]}"
                 
-                d_p = pagamento_str.split('/')
-                data_pag = f"{d_p[2]}-{d_p[1]}-{d_p[0]}" if len(d_p) == 3 else data_com
+                # Verifica se data de pagamento é indefinida
+                if is_undefined_payment_date(pagamento_str):
+                    data_pag = "A_DEFINIR"
+                else:
+                    d_p = pagamento_str.split('/')
+                    data_pag = f"{d_p[2]}-{d_p[1]}-{d_p[0]}" if len(d_p) == 3 else data_com
                 
                 # Limpa valor (remove R$, espaços, etc)
                 valor = float(re.sub(r'[^\d.]', '', valor_raw))
