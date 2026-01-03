@@ -557,11 +557,15 @@ export default function Portfolio() {
       dividend_yield: "",
       sector: "",
       ceiling_price: "",
+      sale_price: "",
+      selected_stock_id: "",
     });
     setEditingStock(null);
     setSearchResult(null);
     setSearchTicker("");
     setIsAddDialogOpen(false);
+    setSelectedStockForSale(null);
+    setSaleProfit(null);
   };
 
   // Auto-detect asset type when ticker changes by checking Investidor10
