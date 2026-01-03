@@ -739,18 +739,21 @@ export default function Dividends() {
                   Nenhum provento encontrado para os filtros selecionados
                 </div>
               )}
-              {/* Legend - Mostra tickers com suas cores */}
+              {/* Legend - Mostra tickers com suas cores (mesmas do gráfico de pizza) */}
               {filteredChartData.length > 0 && uniqueTickers.length > 0 && (
                 <div className="flex flex-wrap justify-center gap-4 mt-4">
-                  {uniqueTickers.map((ticker, index) => (
-                    <div key={ticker} className="flex items-center gap-2">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                      />
-                      <span className="text-sm text-muted-foreground">{ticker}</span>
-                    </div>
-                  ))}
+                  {uniqueTickers.map((ticker, index) => {
+                    const tickerColor = tickerColorMap[ticker] || COLORS[index % COLORS.length];
+                    return (
+                      <div key={ticker} className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: tickerColor }}
+                        />
+                        <span className="text-sm text-muted-foreground">{ticker}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
