@@ -903,7 +903,7 @@ export default function Portfolio() {
                           📤 Venda
                         </Button>
                       </div>
-                      {stocks.filter(s => s.quantity > 0 && s.asset_type !== "renda_fixa").length === 0 && (
+                      {groupedStocks.filter(s => s.quantity > 0 && s.asset_type !== "renda_fixa").length === 0 && (
                         <p className="text-xs text-muted-foreground">Você não possui ativos para vender</p>
                       )}
                     </div>
@@ -915,19 +915,19 @@ export default function Portfolio() {
                       <div className="space-y-2">
                         <Label>Selecione o Ativo para Vender *</Label>
                         <Select
-                          value={formData.selected_stock_id}
-                          onValueChange={(stockId) => {
-                            const stock = stocks.find(s => s.stock_id === stockId);
-                            if (stock) {
-                              setSelectedStockForSale(stock);
+                          value={formData.ticker}
+                          onValueChange={(ticker) => {
+                            const groupedStock = groupedStocks.find(s => s.ticker === ticker);
+                            if (groupedStock) {
+                              setSelectedStockForSale(groupedStock);
                               setFormData({
                                 ...formData,
-                                selected_stock_id: stockId,
-                                ticker: stock.ticker,
-                                name: stock.name,
-                                asset_type: stock.asset_type,
-                                average_price: stock.average_price?.toString() || "",
-                                sector: stock.sector || "",
+                                selected_stock_id: groupedStock.stock_ids[0], // ID do primeiro lançamento
+                                ticker: groupedStock.ticker,
+                                name: groupedStock.name,
+                                asset_type: groupedStock.asset_type,
+                                average_price: groupedStock.average_price?.toString() || "",
+                                sector: groupedStock.sector || "",
                                 quantity: "",
                                 current_price: "",
                               });
@@ -939,10 +939,10 @@ export default function Portfolio() {
                             <SelectValue placeholder="Selecione um ativo da sua carteira" />
                           </SelectTrigger>
                           <SelectContent className="bg-popover border-border max-h-[300px]">
-                            {stocks
+                            {groupedStocks
                               .filter(s => s.quantity > 0 && s.asset_type !== "renda_fixa")
                               .map((stock) => (
-                                <SelectItem key={stock.stock_id} value={stock.stock_id}>
+                                <SelectItem key={stock.ticker} value={stock.ticker}>
                                   <div className="flex items-center justify-between w-full gap-4">
                                     <span className="font-mono font-bold">{stock.ticker}</span>
                                     <span className="text-muted-foreground text-sm">
