@@ -226,26 +226,40 @@ export default function Dividends() {
     }).format(value);
   };
 
-  // Separar proventos recebidos e a receber
+  // Helper para verificar se é data indefinida
+  const isUndefinedDate = (dateStr) => {
+    return !dateStr || dateStr === "A_DEFINIR" || dateStr.includes("A_DEFINIR");
+  };
+
+  // Formatar data com tratamento especial para "A Definir"
+  const formatPaymentDate = (dateStr) => {
+    if (isUndefinedDate(dateStr)) {
+      return "A Definir";
+    }
+    return formatDateBR(dateStr);
+  };
+
+  // Separar proventos recebidos e a receber (excluindo "A Definir" dos recebidos)
   const today = new Date().toISOString().split("T")[0];
-  const receivedDividends = dividends.filter((d) => d.payment_date <= today);
-  const pendingDividends = dividends.filter((d) => d.payment_date > today);
+  const receivedDividends = dividends.filter((d) => !isUndefinedDate(d.payment_date) && d.payment_date <= today);
+  const pendingDividends = dividends.filter((d) => isUndefinedDate(d.payment_date) || d.payment_date > today);
   
   const totalReceived = receivedDividends.reduce((acc, d) => acc + d.amount, 0);
   const totalPending = pendingDividends.reduce((acc, d) => acc + d.amount, 0);
 
-  // Filtrar dados do gráfico por status e período
+  // Filtrar dados do gráfico por status e período (EXCLUINDO "A Definir")
  const filteredChartData = useMemo(() => {
   const now = new Date();
   const todayStr = now.toISOString().split("T")[0];
   
-  let filteredDividends = [...dividends];
+  // IMPORTANTE: Filtrar dividendos com data indefinida ANTES de qualquer processamento de gráfico
+  let filteredDividends = dividends.filter((d) => !isUndefinedDate(d.payment_date));
 
   // 1. Filtrar por Status
   if (chartStatusFilter === "received") {
-    filteredDividends = dividends.filter((d) => d.payment_date <= todayStr);
+    filteredDividends = filteredDividends.filter((d) => d.payment_date <= todayStr);
   } else if (chartStatusFilter === "pending") {
-    filteredDividends = dividends.filter((d) => d.payment_date > todayStr);
+    filteredDividends = filteredDividends.filter((d) => d.payment_date > todayStr);
   }
 
   // 2. Filtrar por Período (Corrigido para não esconder o futuro se houver pendentes)
@@ -290,10 +304,19 @@ export default function Dividends() {
     });
 }, [dividends, chartStatusFilter, chartPeriodFilter]);
   
-  // Paginação - ordenar por data de pagamento (mais recente primeiro)
-  const sortedDividends = [...dividends].sort((a, b) => 
-    new Date(b.payment_date) - new Date(a.payment_date)
-  );
+  // Paginação - ordenar por data de pagamento (mais recente primeiro, "A Definir" no topo)
+  const sortedDividends = [...dividends].sort((a, b) => {
+    const aIsUndefined = isUndefinedDate(a.payment_date);
+    const bIsUndefined = isUndefinedDate(b.payment_date);
+    
+    // "A Definir" sempre no topo
+    if (aIsUndefined && !bIsUndefined) return -1;
+    if (!aIsUndefined && bIsUndefined) return 1;
+    if (aIsUndefined && bIsUndefined) return 0;
+    
+    // Ordenação normal por data (mais recente primeiro)
+    return new Date(b.payment_date) - new Date(a.payment_date);
+  });
   const totalPages = Math.ceil(sortedDividends.length / ITEMS_PER_PAGE);
   const paginatedDividends = sortedDividends.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
