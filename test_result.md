@@ -1223,3 +1223,47 @@ agent_communication:
       - working: true
         agent: "testing"
         comment: "✅ TUTORIAL IMPLEMENTADO CORRETAMENTE - Análise de código confirma todos os elementos do review request presentes: 1) Fundo verde claro (bg-primary/10 border border-primary/30) ✅, 2) Ícone de lâmpada (💡) ✅, 3) Título 'Como obter o arquivo da B3:' ✅, 4) Texto exato conforme especificação ✅, 5) Posicionamento correto no modal de importação ✅, 6) Modal contém todos elementos requeridos (título, formatos aceitos, tutorial, upload) ✅. LIMITAÇÃO: Não foi possível testar funcionalmente devido ao Google Auth (aplicação corretamente protegida), mas código implementado corretamente."
+
+  - agent: "main"
+    message: |
+      NOVA FUNCIONALIDADE: PROVENTOS COM DATA "A DEFINIR"
+      
+      IMPLEMENTAÇÃO BACKEND:
+      - Adicionada função is_undefined_payment_date() para identificar datas indefinidas
+      - Termos identificados: "a definir", "provisionado", "sem data", "-", "--", "n/a", "n/d"
+      - Proventos com data indefinida são salvos com payment_date="A_DEFINIR"
+      - Na próxima sincronização, se a data for definida, o provento é atualizado automaticamente
+      - Modificadas funções: fetch_investidor10_dividends_async, fetch_investidor10_fii_dividends_async
+      - Modificada lógica de sync para atualizar proventos "A_DEFINIR" quando data é definida
+      
+      IMPLEMENTAÇÃO FRONTEND:
+      - Dividends.jsx: Proventos com "A_DEFINIR" são exibidos como "A Definir" na tabela
+      - Ordenação: "A Definir" sempre aparece no TOPO da lista
+      - Gráficos: Proventos com data indefinida são EXCLUÍDOS dos gráficos (não causam "Invalid Date")
+      - Status: Badge amarelo "A Definir" para esses proventos
+      - Dashboard.jsx: Também filtra proventos indefinidos dos cálculos de dividendos
+      
+      ARQUIVOS MODIFICADOS:
+      - /app/backend/server.py (funções de scraping e sync)
+      - /app/frontend/src/pages/Dividends.jsx
+      - /app/frontend/src/pages/Dashboard.jsx
+      
+      PRECISA TESTAR:
+      1. Login com Google
+      2. Navegar para Proventos
+      3. Sincronizar proventos
+      4. Verificar se proventos "A Definir" aparecem no topo da lista
+      5. Verificar se gráfico NÃO mostra "Invalid Date"
+      6. Verificar se na próxima sincronização, datas são atualizadas
+
+  - task: "Proventos com Data A Definir"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py, /app/frontend/src/pages/Dividends.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implementado suporte para proventos com data de pagamento indefinida (provisionado, a definir, etc). Backend identifica e salva como 'A_DEFINIR'. Frontend exibe como 'A Definir' no topo da lista e exclui dos gráficos. Na próxima sincronização, se data for definida, o provento é atualizado."
