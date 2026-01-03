@@ -1140,6 +1140,71 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
+          {/* Dividends Chart - Dentro do mesmo grid */}
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Coins className="w-5 h-5 text-accent" />
+                Dividendos por Mês
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {dividendSummary?.by_month?.length > 0 ? (
+                <div className="h-64 overflow-hidden">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={dividendSummary.by_month}>
+                      <defs>
+                        <linearGradient id="colorDividend" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#F59E0B" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <XAxis
+                        dataKey="month"
+                        stroke="#94A3B8"
+                        fontSize={12}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        stroke="#94A3B8"
+                        fontSize={12}
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(value) => `R$${value}`}
+                      />
+                      <Tooltip
+                        cursor={{ fill: 'transparent' }}
+                        wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }}
+                        contentStyle={{
+                          backgroundColor: '#121417',
+                          border: '1px solid #1E293B',
+                          borderRadius: '8px',
+                          color: '#E2E8F0',
+                        }}
+                        labelStyle={{ color: '#94A3B8' }}
+                        itemStyle={{ color: '#E2E8F0' }}
+                        formatter={(value) => formatCurrency(value)}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="amount"
+                        stroke="#F59E0B"
+                        fillOpacity={1}
+                        fill="url(#colorDividend)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="h-64 flex items-center justify-center text-muted-foreground">
+                  Registre dividendos para ver o histórico
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Ad Banner */}
         <AdBannerHorizontal />
 
