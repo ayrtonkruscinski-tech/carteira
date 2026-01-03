@@ -31,7 +31,7 @@ import {
 } from "../components/ui/select";
 import { Plus, Coins, TrendingUp, RefreshCw, Trash2, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LabelList } from "recharts";
 import { usePortfolioSafe } from "../context/PortfolioContext";
 import { AdBannerHorizontal } from "../components/AdBanner";
 
