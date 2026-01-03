@@ -170,6 +170,41 @@ export default function Portfolio() {
   const currentPortfolio = portfolioContext?.currentPortfolio;
   const portfolioLoading = portfolioContext?.loading;
 
+  // Agrupar stocks por ticker (para dropdowns sem duplicatas)
+  const groupedStocks = useMemo(() => {
+    const grouped = {};
+    stocks.forEach(stock => {
+      const ticker = stock.ticker;
+      if (!grouped[ticker]) {
+        grouped[ticker] = {
+          ticker: ticker,
+          name: stock.name,
+          asset_type: stock.asset_type,
+          sector: stock.sector,
+          quantity: 0,
+          total_invested: 0,
+          stock_ids: [],
+          purchases: [],
+        };
+      }
+      grouped[ticker].quantity += stock.quantity;
+      grouped[ticker].total_invested += stock.quantity * stock.average_price;
+      grouped[ticker].stock_ids.push(stock.stock_id);
+      grouped[ticker].purchases.push({
+        stock_id: stock.stock_id,
+        quantity: stock.quantity,
+        average_price: stock.average_price,
+        purchase_date: stock.purchase_date,
+      });
+    });
+    
+    // Calcular preço médio ponderado
+    return Object.values(grouped).map(g => ({
+      ...g,
+      average_price: g.quantity > 0 ? g.total_invested / g.quantity : 0,
+    }));
+  }, [stocks]);
+
   useEffect(() => {
     if (!portfolioLoading) {
       fetchStocks();
