@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { Layout } from "../components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
@@ -234,58 +235,61 @@ export default function Dividends() {
   const totalPending = pendingDividends.reduce((acc, d) => acc + d.amount, 0);
 
   // Filtrar dados do gráfico por status e período
-  const filteredChartData = useMemo(() => {
-    const now = new Date();
-    const todayStr = now.toISOString().split("T")[0];
+ const filteredChartData = useMemo(() => {
+  const now = new Date();
+  const todayStr = now.toISOString().split("T")[0];
+  
+  let filteredDividends = [...dividends];
+
+  // 1. Filtrar por Status
+  if (chartStatusFilter === "received") {
+    filteredDividends = dividends.filter((d) => d.payment_date <= todayStr);
+  } else if (chartStatusFilter === "pending") {
+    filteredDividends = dividends.filter((d) => d.payment_date > todayStr);
+  }
+
+  // 2. Filtrar por Período (Corrigido para não esconder o futuro se houver pendentes)
+  if (chartPeriodFilter !== "max") {
+    const months = parseInt(chartPeriodFilter);
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - months);
+    const startStr = startDate.toISOString().split("T")[0];
     
-    // Filtrar por status
-    let filteredDividends = [...dividends];
-    if (chartStatusFilter === "received") {
-      filteredDividends = dividends.filter((d) => d.payment_date <= todayStr);
-    } else if (chartStatusFilter === "pending") {
-      filteredDividends = dividends.filter((d) => d.payment_date > todayStr);
+    filteredDividends = filteredDividends.filter((d) => d.payment_date >= startStr);
+  }
+
+  // 3. Agrupar por mês
+  const byMonth = {};
+  filteredDividends.forEach((d) => {
+    const month = d.payment_date.substring(0, 7); // YYYY-MM
+    const isReceived = d.payment_date <= todayStr;
+    
+    if (!byMonth[month]) {
+      byMonth[month] = { month, received: 0, pending: 0 };
     }
-
-    // Filtrar por período - últimas X semanas/meses
-    if (chartPeriodFilter !== "max") {
-      const months = parseInt(chartPeriodFilter);
-      const daysBack = months * 30; // 1 mês = 30 dias, 6 meses = 180 dias, etc.
-      
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - daysBack);
-      const startStr = startDate.toISOString().split("T")[0];
-      
-      filteredDividends = filteredDividends.filter((d) => {
-        return d.payment_date >= startStr && d.payment_date <= todayStr;
-      });
+    
+    if (isReceived) {
+      byMonth[month].received += d.amount;
+    } else {
+      byMonth[month].pending += d.amount;
     }
+  });
 
-    // Agrupar por mês
-    const byMonth = {};
-    filteredDividends.forEach((d) => {
-      const month = d.payment_date.substring(0, 7); // YYYY-MM
-      const isReceived = d.payment_date <= todayStr;
+  return Object.values(byMonth)
+    .sort((a, b) => a.month.localeCompare(b.month))
+    .map((item) => {
+      // CORREÇÃO DO FUSO HORÁRIO AQUI:
+      // Usamos split para evitar que o JS aplique timezone
+      const [year, month] = item.month.split("-");
+      const date = new Date(year, month - 1, 1); // mês no JS começa em 0
       
-      if (!byMonth[month]) {
-        byMonth[month] = { month, received: 0, pending: 0 };
-      }
-      
-      if (isReceived) {
-        byMonth[month].received += d.amount;
-      } else {
-        byMonth[month].pending += d.amount;
-      }
-    });
-
-    // Converter para array e ordenar por mês
-    return Object.values(byMonth)
-      .sort((a, b) => a.month.localeCompare(b.month))
-      .map((item) => ({
+      return {
         ...item,
-        monthLabel: new Date(item.month + "-01").toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }),
-      }));
-  }, [dividends, chartStatusFilter, chartPeriodFilter]);
-
+        monthLabel: date.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }),
+      };
+    });
+}, [dividends, chartStatusFilter, chartPeriodFilter]);
+  
   // Paginação - ordenar por data de pagamento (mais recente primeiro)
   const sortedDividends = [...dividends].sort((a, b) => 
     new Date(b.payment_date) - new Date(a.payment_date)

@@ -47,7 +47,6 @@ db = client[os.environ['DB_NAME']]
 ALPHA_VANTAGE_KEY = os.environ.get('ALPHA_VANTAGE_KEY', 'demo')
 ALPHA_VANTAGE_BASE = "https://www.alphavantage.co/query"
 
-app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
 # Configure logging
@@ -3403,29 +3402,52 @@ Seja objetivo e direto, use linguagem acessível."""
 async def root():
     return {"message": "Stock Portfolio API"}
 
-@api_router.get("/health")
-async def health_check():
-    """Health check endpoint for Kubernetes liveness/readiness probes"""
+from contextlib import asynccontextmanager
+from zoneinfo import ZoneInfo
+
+BRASIL_TZ = ZoneInfo("America/Sao_Paulo")
+
+# Health check comum (raiz e /api)
+async def _health_check():
     try:
-        # Ping MongoDB to verify connection
         await client.admin.command('ping')
         return {
             "status": "healthy",
             "database": "connected",
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(BRASIL_TZ).isoformat()
         }
     except Exception as e:
         logger.error(f"Health check failed: {e}")
-        return {
-            "status": "unhealthy",
-            "database": "disconnected",
-            "error": str(e),
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }
+        raise HTTPException(status_code=503, detail="Database unavailable")
 
-# Include router
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    try:
+        await client.admin.command('ping')
+        logger.info("Successfully connected to MongoDB")
+    except Exception as e:
+        logger.warning(f"MongoDB connection warning on startup: {e}")
+    yield
+    # Shutdown
+    client.close()
+
+# === CRIA O APP UMA ÚNICA VEZ ===
+app = FastAPI(lifespan=lifespan)
+
+# === ROTAS NA RAIZ (depois da criação do app) ===
+@app.get("/health")
+async def root_health_check():
+    return await _health_check()
+
+@app.get("/")
+async def root():
+    return {"message": "API de Carteira de Ações - Rodando!"}
+
+# === INCLUI O ROUTER COM /api ===
 app.include_router(api_router)
 
+# === MIDDLEWARE ===
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
@@ -3433,18 +3455,3 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.on_event("startup")
-async def startup_db_client():
-    """Verify MongoDB connection on startup"""
-    try:
-        # Ping the database to verify connection
-        await client.admin.command('ping')
-        logger.info("Successfully connected to MongoDB")
-    except Exception as e:
-        logger.warning(f"MongoDB connection warning on startup: {e}")
-        # Don't raise - let the app start and retry connections
-
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()

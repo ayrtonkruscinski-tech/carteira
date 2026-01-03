@@ -185,7 +185,7 @@ export default function Landing() {
               <span className="font-semibold text-foreground">Carteira Inteligente</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              © 2025 Carteira de Investimentos Inteligente. Feito para investidores brasileiros.
+              © 2026 Carteira de Investimentos Inteligente. Feito para investidores brasileiros.
             </p>
           </div>
         </div>
