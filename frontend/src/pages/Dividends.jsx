@@ -707,12 +707,14 @@ export default function Dividends() {
                       />
                       {uniqueTickers.map((ticker, index) => {
                         const isLast = index === uniqueTickers.length - 1;
+                        // Usa a cor do mapeamento (mesma do gráfico de pizza)
+                        const tickerColor = tickerColorMap[ticker] || COLORS[index % COLORS.length];
                         return (
                           <Bar 
                             key={ticker}
                             dataKey={ticker} 
                             name={ticker}
-                            fill={COLORS[index % COLORS.length]} 
+                            fill={tickerColor} 
                             radius={isLast ? [4, 4, 0, 0] : [0, 0, 0, 0]} 
                             stackId="stack"
                           >
