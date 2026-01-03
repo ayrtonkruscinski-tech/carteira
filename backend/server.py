@@ -1713,36 +1713,60 @@ async def get_portfolio_summary(user: User = Depends(get_current_user), portfoli
     
     # Calculate daily result (Resultado do Dia)
     # Reset daily at 00:01 BRT (UTC-3) as per B3 announcement
-    # We use the previous_close price stored in stocks to calculate daily variation
     now_utc = datetime.now(timezone.utc)
     brt_offset = timedelta(hours=-3)
     now_brt = now_utc + brt_offset
     today_brt = now_brt.strftime("%Y-%m-%d")
     
-    # Calculate daily result based on previous close prices (all stocks including bonificações)
-    daily_gain = 0.0
-    previous_total = 0.0
+    # Buscar ou criar snapshot do dia para calcular resultado do dia
+    # O snapshot armazena o "Resultado Total" no início do dia
+    snapshot_query = {"user_id": user.user_id, "date": today_brt}
+    if portfolio_id:
+        snapshot_query["portfolio_id"] = portfolio_id
     
-    # Use all stocks for daily gain calculation (bonificações also have daily variation)
-    for s in stocks:
-        quantity = s["quantity"]
-        current_price = s.get("current_price") or s["average_price"]
-        # Use previous_close if available and from a previous day, otherwise use current_price (no change)
-        previous_close = s.get("previous_close") or current_price
-        previous_close_date = s.get("previous_close_date", "")
-        
-        # If the previous_close is from today, it means it was just reset, so no gain yet
-        # Only calculate gain if previous_close is from a previous day
-        if previous_close_date and previous_close_date == today_brt:
-            # Previous close was set today (at 00:01), use current as baseline
-            stock_daily_gain = 0.0
-        else:
-            stock_daily_gain = quantity * (current_price - previous_close)
-        
-        daily_gain += stock_daily_gain
-        previous_total += quantity * previous_close
+    today_snapshot = await db.portfolio_snapshots.find_one(snapshot_query, {"_id": 0})
     
-    daily_gain_percent = (daily_gain / previous_total * 100) if previous_total > 0 else 0
+    if not today_snapshot:
+        # Se não existe snapshot do dia, buscar o último snapshot disponível
+        last_snapshot_query = {"user_id": user.user_id}
+        if portfolio_id:
+            last_snapshot_query["portfolio_id"] = portfolio_id
+        
+        last_snapshot = await db.portfolio_snapshots.find_one(
+            last_snapshot_query,
+            {"_id": 0},
+            sort=[("date", -1)]
+        )
+        
+        # Usar o total_gain do último snapshot como base, ou 0 se não houver histórico
+        initial_total_gain = last_snapshot.get("total_gain", 0) if last_snapshot else 0
+        
+        # Criar snapshot do dia com o resultado total atual como base
+        # Se for a primeira vez, o resultado do dia será 0
+        new_snapshot = {
+            "snapshot_id": f"snap_{uuid.uuid4().hex[:12]}",
+            "user_id": user.user_id,
+            "date": today_brt,
+            "total_invested": round(total_invested, 2),
+            "total_current": round(total_current, 2),
+            "total_gain": round(total_gain, 2),  # Resultado total no momento da criação
+            "total_dividends": 0,  # Será atualizado depois
+            "stocks_count": len(stocks),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        if portfolio_id:
+            new_snapshot["portfolio_id"] = portfolio_id
+            
+        await db.portfolio_snapshots.insert_one(new_snapshot)
+        today_snapshot = new_snapshot
+    
+    # Calcular resultado do dia: diferença entre resultado atual e resultado no início do dia
+    snapshot_total_gain = today_snapshot.get("total_gain", 0)
+    daily_gain = total_gain - snapshot_total_gain
+    
+    # Calcular percentual do resultado do dia em relação ao valor inicial do dia
+    snapshot_total_current = today_snapshot.get("total_current", total_current)
+    daily_gain_percent = (daily_gain / snapshot_total_current * 100) if snapshot_total_current > 0 else 0
     
     # Calculate breakdown by asset type
     asset_types = ["acao", "fii", "renda_fixa"]
