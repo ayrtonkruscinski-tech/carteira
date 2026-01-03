@@ -1141,10 +1141,8 @@ export default function Dashboard() {
         {/* Ad Banner */}
         <AdBannerHorizontal />
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Portfolio Distribution */}
-          <Card className="bg-card border-border">
+        {/* Portfolio Distribution - Linha exclusiva */}
+        <Card className="bg-card border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="flex items-center gap-2">
                 <PieChart className="w-5 h-5 text-primary" />
