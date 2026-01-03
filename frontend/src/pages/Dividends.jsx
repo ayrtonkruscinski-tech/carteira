@@ -768,9 +768,10 @@ export default function Dividends() {
                     </thead>
                     <tbody>
                       {paginatedDividends.map((dividend) => {
-                        const isPaid = dividend.payment_date <= today;
+                        const dateIsUndefined = isUndefinedDate(dividend.payment_date);
+                        const isPaid = !dateIsUndefined && dividend.payment_date <= today;
                         // Formata data sem problemas de timezone (usa split ao invés de Date)
-                        const formatDateBR = (dateStr) => {
+                        const formatDateBRLocal = (dateStr) => {
                           if (!dateStr) return "-";
                           const parts = dateStr.split("-");
                           if (parts.length === 3) {
@@ -781,13 +782,17 @@ export default function Dividends() {
                         return (
                           <tr
                             key={dividend.dividend_id}
-                            className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                            className={`border-b border-border/50 hover:bg-muted/30 transition-colors ${dateIsUndefined ? 'bg-amber-500/5' : ''}`}
                           >
                             <td className="py-3 px-4 font-mono text-muted-foreground">
-                              {formatDateBR(dividend.ex_date)}
+                              {formatDateBRLocal(dividend.ex_date)}
                             </td>
                             <td className="py-3 px-4 font-mono text-foreground">
-                              {formatDateBR(dividend.payment_date)}
+                              {dateIsUndefined ? (
+                                <span className="text-amber-400 font-semibold">A Definir</span>
+                              ) : (
+                                formatDateBRLocal(dividend.payment_date)
+                              )}
                             </td>
                             <td className="py-3 px-4">
                               <span className="font-mono font-semibold text-foreground">
@@ -801,11 +806,13 @@ export default function Dividends() {
                             </td>
                             <td className="py-3 px-4">
                               <span className={`text-xs px-2 py-1 rounded-full ${
-                                isPaid 
-                                  ? "bg-accent/20 text-accent" 
-                                  : "bg-blue-500/20 text-blue-400"
+                                dateIsUndefined
+                                  ? "bg-amber-500/20 text-amber-400"
+                                  : isPaid 
+                                    ? "bg-accent/20 text-accent" 
+                                    : "bg-blue-500/20 text-blue-400"
                               }`}>
-                                {isPaid ? "Recebido" : "A Receber"}
+                                {dateIsUndefined ? "A Definir" : isPaid ? "Recebido" : "A Receber"}
                               </span>
                             </td>
                             <td className={`py-3 px-4 text-right font-mono font-semibold ${
