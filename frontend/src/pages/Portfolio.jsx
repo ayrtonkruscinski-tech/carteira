@@ -156,7 +156,14 @@ export default function Portfolio() {
     dividend_yield: "",
     sector: "",
     ceiling_price: "",
+    // Sale specific fields
+    sale_price: "",
+    selected_stock_id: "",
   });
+
+  // Estado para venda - estoque selecionado
+  const [selectedStockForSale, setSelectedStockForSale] = useState(null);
+  const [saleProfit, setSaleProfit] = useState(null);
 
   // Get current portfolio
   const portfolioContext = usePortfolioSafe();
