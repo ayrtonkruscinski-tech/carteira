@@ -63,12 +63,15 @@ const SECTORS = [
   "Lajes Corporativas",
   "Logística",
   "Shoppings",
+  "Shoppings / Varejo",
   "Títulos e Val. Mob.",
   "Híbrido",
   "Recebíveis",
   "Hospital",
   "Hotel",
   "Residencial",
+  "Agências de Bancos",
+  "Fundo de Fundos",
   "Outros",
 ];
 
