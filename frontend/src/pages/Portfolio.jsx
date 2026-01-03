@@ -1371,7 +1371,7 @@ export default function Portfolio() {
         <AdBannerHorizontal />
 
         {/* Filtros e Ordenação */}
-        {groupedStocks.length > 0 && (
+        {displayGroupedStocks.length > 0 && (
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-card p-4 rounded-lg border border-border">
             <div className="flex items-center gap-2">
               <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
