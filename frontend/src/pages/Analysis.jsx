@@ -286,8 +286,8 @@ export default function Analysis() {
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
                       <SelectContent className="bg-popover border-border">
-                        {stocks.map((stock) => (
-                          <SelectItem key={stock.stock_id} value={stock.ticker}>
+                        {groupedStocks.map((stock) => (
+                          <SelectItem key={stock.ticker} value={stock.ticker}>
                             {stock.ticker}
                           </SelectItem>
                         ))}
