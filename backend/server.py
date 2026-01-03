@@ -3025,6 +3025,17 @@ async def sync_dividends(user: User = Depends(get_current_user), portfolio_id: O
                             "type": div["tipo"]
                         })
                         
+                        # Se não encontrou exato, verifica se existe com "A_DEFINIR" para atualizar
+                        existing_undefined = None
+                        if not existing and div["data_pagamento"] != "A_DEFINIR":
+                            existing_undefined = await db.dividends.find_one({
+                                "user_id": user.user_id,
+                                "ticker": ticker,
+                                "ex_date": div["data_com"],
+                                "payment_date": "A_DEFINIR",
+                                "type": div["tipo"]
+                            })
+                        
                         if existing:
                             if abs(existing.get("amount", 0) - total_amount) > 0.01:
                                 await db.dividends.update_one(
@@ -3032,6 +3043,17 @@ async def sync_dividends(user: User = Depends(get_current_user), portfolio_id: O
                                     {"$set": {"amount": total_amount}}
                                 )
                                 updated += 1
+                        elif existing_undefined:
+                            # Atualiza provento que estava "A Definir" com a data real
+                            await db.dividends.update_one(
+                                {"_id": existing_undefined["_id"]}, 
+                                {"$set": {
+                                    "payment_date": div["data_pagamento"],
+                                    "amount": total_amount
+                                }}
+                            )
+                            updated += 1
+                            logger.info(f"Provento {ticker} atualizado: A_DEFINIR -> {div['data_pagamento']}")
                         else:
                             await db.dividends.insert_one({
                                 "dividend_id": f"div_{uuid.uuid4().hex[:12]}",
