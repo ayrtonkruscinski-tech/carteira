@@ -1719,38 +1719,42 @@ async def get_portfolio_summary(user: User = Depends(get_current_user), portfoli
     today_brt = now_brt.strftime("%Y-%m-%d")
     
     # Buscar ou criar snapshot do dia para calcular resultado do dia
-    # O snapshot armazena o "Resultado Total" no início do dia
+    # O snapshot armazena o "Resultado Total" de REFERÊNCIA (fechamento anterior)
     snapshot_query = {"user_id": user.user_id, "date": today_brt}
     if portfolio_id:
         snapshot_query["portfolio_id"] = portfolio_id
     
     today_snapshot = await db.portfolio_snapshots.find_one(snapshot_query, {"_id": 0})
     
+    # Buscar o último snapshot para usar como referência
+    last_snapshot_query = {"user_id": user.user_id, "date": {"$lt": today_brt}}
+    if portfolio_id:
+        last_snapshot_query["portfolio_id"] = portfolio_id
+    
+    last_snapshot = await db.portfolio_snapshots.find_one(
+        last_snapshot_query,
+        {"_id": 0},
+        sort=[("date", -1)]
+    )
+    
+    # O valor de referência é o resultado total do ÚLTIMO snapshot (fechamento anterior)
+    # Se não houver snapshot anterior, usa o resultado atual como base (variação = 0)
+    reference_total_gain = last_snapshot.get("total_gain", total_gain) if last_snapshot else total_gain
+    reference_total_current = last_snapshot.get("total_current", total_current) if last_snapshot else total_current
+    
     if not today_snapshot:
-        # Se não existe snapshot do dia, buscar o último snapshot disponível
-        last_snapshot_query = {"user_id": user.user_id}
-        if portfolio_id:
-            last_snapshot_query["portfolio_id"] = portfolio_id
-        
-        last_snapshot = await db.portfolio_snapshots.find_one(
-            last_snapshot_query,
-            {"_id": 0},
-            sort=[("date", -1)]
-        )
-        
-        # Usar o total_gain do último snapshot como base, ou 0 se não houver histórico
-        initial_total_gain = last_snapshot.get("total_gain", 0) if last_snapshot else 0
-        
-        # Criar snapshot do dia com o resultado total atual como base
-        # Se for a primeira vez, o resultado do dia será 0
+        # Criar snapshot do dia com o RESULTADO DE REFERÊNCIA (fechamento anterior)
+        # Isso permite calcular a variação mesmo que o usuário só abra o app agora
         new_snapshot = {
             "snapshot_id": f"snap_{uuid.uuid4().hex[:12]}",
             "user_id": user.user_id,
             "date": today_brt,
             "total_invested": round(total_invested, 2),
             "total_current": round(total_current, 2),
-            "total_gain": round(total_gain, 2),  # Resultado total no momento da criação
-            "total_dividends": 0,  # Será atualizado depois
+            "total_gain": round(total_gain, 2),  # Resultado atual (para usar amanhã como referência)
+            "reference_gain": round(reference_total_gain, 2),  # Referência do dia anterior
+            "reference_current": round(reference_total_current, 2),
+            "total_dividends": 0,
             "stocks_count": len(stocks),
             "created_at": datetime.now(timezone.utc).isoformat()
         }
@@ -1759,14 +1763,27 @@ async def get_portfolio_summary(user: User = Depends(get_current_user), portfoli
             
         await db.portfolio_snapshots.insert_one(new_snapshot)
         today_snapshot = new_snapshot
+    else:
+        # Atualizar o snapshot atual com o resultado mais recente
+        # (para que o fechamento do dia seja salvo corretamente)
+        await db.portfolio_snapshots.update_one(
+            {"snapshot_id": today_snapshot["snapshot_id"]},
+            {"$set": {
+                "total_invested": round(total_invested, 2),
+                "total_current": round(total_current, 2),
+                "total_gain": round(total_gain, 2),
+                "stocks_count": len(stocks)
+            }}
+        )
     
-    # Calcular resultado do dia: diferença entre resultado atual e resultado no início do dia
-    snapshot_total_gain = today_snapshot.get("total_gain", 0)
-    daily_gain = total_gain - snapshot_total_gain
+    # Calcular resultado do dia: diferença entre resultado ATUAL e resultado de REFERÊNCIA
+    # A referência é o fechamento do dia anterior (armazenado em reference_gain)
+    snapshot_reference_gain = today_snapshot.get("reference_gain", reference_total_gain)
+    daily_gain = total_gain - snapshot_reference_gain
     
-    # Calcular percentual do resultado do dia em relação ao valor inicial do dia
-    snapshot_total_current = today_snapshot.get("total_current", total_current)
-    daily_gain_percent = (daily_gain / snapshot_total_current * 100) if snapshot_total_current > 0 else 0
+    # Calcular percentual em relação ao valor de referência
+    snapshot_reference_current = today_snapshot.get("reference_current", reference_total_current)
+    daily_gain_percent = (daily_gain / snapshot_reference_current * 100) if snapshot_reference_current > 0 else 0
     
     # Calculate breakdown by asset type
     asset_types = ["acao", "fii", "renda_fixa"]
