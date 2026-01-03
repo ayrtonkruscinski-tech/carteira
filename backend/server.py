@@ -694,11 +694,28 @@ def fetch_investidor10_dividends_sync(ticker: str) -> List[dict]:
 
 def is_undefined_payment_date(pagamento_str: str) -> bool:
     """Verifica se a data de pagamento é indefinida (a definir, provisionado, etc.)"""
-    if not pagamento_str:
+    if not pagamento_str or not pagamento_str.strip():
         return True
     pagamento_lower = pagamento_str.lower().strip()
-    undefined_terms = ['a definir', 'provisionado', 'sem data', '-', '--', 'n/a', 'n/d', '']
-    return any(term in pagamento_lower for term in undefined_terms) or not pagamento_str.strip()
+    
+    # Termos que indicam data indefinida
+    undefined_terms = ['a definir', 'provisionado', 'sem data', 'n/a', 'n/d']
+    
+    # Verifica se é exatamente "-" ou "--" (não como substring)
+    if pagamento_lower in ['-', '--', '---']:
+        return True
+    
+    # Verifica se contém algum termo de data indefinida
+    for term in undefined_terms:
+        if term in pagamento_lower:
+            return True
+    
+    # Verifica se é uma data válida (formato DD/MM/YYYY)
+    parts = pagamento_str.strip().split('/')
+    if len(parts) != 3:
+        return True  # Não é formato de data válido
+    
+    return False
 
 async def fetch_investidor10_dividends_async(client: httpx.AsyncClient, ticker: str, page: int = 1) -> List[dict]:
     """Busca histórico de dividendos e bonificações de forma rápida e assíncrona."""
