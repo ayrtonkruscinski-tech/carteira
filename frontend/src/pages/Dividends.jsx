@@ -755,7 +755,9 @@ export default function Dividends() {
                         <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Ticker</th>
                         <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Tipo</th>
                         <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
-                        <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Valor</th>
+                        <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Valor Unit.</th>
+                        <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Qtd</th>
+                        <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Valor Total</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -807,8 +809,14 @@ export default function Dividends() {
                                 {dateIsUndefined ? "A Definir" : isPaid ? "Recebido" : "A Receber"}
                               </span>
                             </td>
+                            <td className="py-3 px-4 text-right font-mono text-muted-foreground">
+                              {dividend.unit_value ? `R$ ${dividend.unit_value.toFixed(4)}` : "-"}
+                            </td>
+                            <td className="py-3 px-4 text-right font-mono text-muted-foreground">
+                              {dividend.quantity ? dividend.quantity.toLocaleString('pt-BR') : "-"}
+                            </td>
                             <td className={`py-3 px-4 text-right font-mono font-semibold ${
-                              isPaid ? "text-accent" : "text-blue-400"
+                              dateIsUndefined ? "text-amber-400" : isPaid ? "text-accent" : "text-blue-400"
                             }`}>
                               {formatCurrency(dividend.amount)}
                             </td>
