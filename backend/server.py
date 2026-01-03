@@ -1498,6 +1498,80 @@ async def resync_dividends_for_ticker(user_id: str, ticker: str, portfolio_id: s
         "message": f"Proventos recalculados: {synced} sincronizados"
     }
 
+@api_router.post("/portfolio/stocks/{stock_id}/sell")
+async def sell_stock(stock_id: str, sale_data: dict, user: User = Depends(get_current_user)):
+    """
+    Process a stock sale:
+    - Validates quantity available
+    - Calculates profit/loss based on average price
+    - Updates stock quantity (or removes if fully sold)
+    - Records the sale transaction
+    """
+    # Find the stock
+    stock = await db.stocks.find_one({"stock_id": stock_id, "user_id": user.user_id})
+    if not stock:
+        raise HTTPException(status_code=404, detail="Ativo não encontrado")
+    
+    quantity_sold = sale_data.get("quantity_sold", 0)
+    sale_price = sale_data.get("sale_price", 0)
+    sale_date = sale_data.get("sale_date") or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    # Validate
+    if quantity_sold <= 0:
+        raise HTTPException(status_code=400, detail="Quantidade deve ser maior que zero")
+    
+    if quantity_sold > stock["quantity"]:
+        raise HTTPException(status_code=400, detail=f"Quantidade disponível: {stock['quantity']}")
+    
+    if sale_price <= 0:
+        raise HTTPException(status_code=400, detail="Preço de venda deve ser maior que zero")
+    
+    # Calculate profit/loss
+    average_price = stock.get("average_price", 0)
+    profit = (sale_price - average_price) * quantity_sold
+    
+    # Calculate new quantity
+    new_quantity = stock["quantity"] - quantity_sold
+    
+    # Record the sale transaction
+    sale_record = {
+        "sale_id": f"sale_{uuid.uuid4().hex[:12]}",
+        "user_id": user.user_id,
+        "stock_id": stock_id,
+        "ticker": stock["ticker"],
+        "quantity_sold": quantity_sold,
+        "sale_price": sale_price,
+        "average_price": average_price,
+        "profit": profit,
+        "sale_date": sale_date,
+        "portfolio_id": stock.get("portfolio_id"),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.sales.insert_one(sale_record)
+    
+    if new_quantity <= 0:
+        # Remove the stock entirely
+        await db.stocks.delete_one({"stock_id": stock_id, "user_id": user.user_id})
+        logger.info(f"Stock {stock['ticker']} fully sold and removed")
+    else:
+        # Update the stock quantity
+        await db.stocks.update_one(
+            {"stock_id": stock_id, "user_id": user.user_id},
+            {"$set": {"quantity": new_quantity}}
+        )
+        logger.info(f"Stock {stock['ticker']} updated: {stock['quantity']} -> {new_quantity}")
+    
+    return {
+        "message": "Venda processada com sucesso",
+        "ticker": stock["ticker"],
+        "quantity_sold": quantity_sold,
+        "sale_price": sale_price,
+        "average_price": average_price,
+        "profit": round(profit, 2),
+        "remaining_quantity": new_quantity
+    }
+
+
 @api_router.delete("/portfolio/stocks/all")
 async def delete_all_stocks(user: User = Depends(get_current_user)):
     """Delete all stocks for the current user"""
