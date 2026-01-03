@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Layout } from "../components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -40,6 +40,40 @@ export default function Analysis() {
     pe_ratio: "",
     question: "",
   });
+
+  // Agrupar stocks por ticker (sem duplicatas)
+  const groupedStocks = useMemo(() => {
+    const grouped = {};
+    stocks.forEach(stock => {
+      const ticker = stock.ticker;
+      if (!grouped[ticker]) {
+        grouped[ticker] = {
+          ticker: ticker,
+          name: stock.name,
+          asset_type: stock.asset_type,
+          sector: stock.sector,
+          current_price: stock.current_price,
+          dividend_yield: stock.dividend_yield,
+          quantity: 0,
+          total_invested: 0,
+        };
+      }
+      grouped[ticker].quantity += stock.quantity;
+      grouped[ticker].total_invested += stock.quantity * stock.average_price;
+      // Usar o preço mais recente
+      if (stock.current_price) {
+        grouped[ticker].current_price = stock.current_price;
+      }
+      if (stock.dividend_yield) {
+        grouped[ticker].dividend_yield = stock.dividend_yield;
+      }
+    });
+    
+    return Object.values(grouped).map(g => ({
+      ...g,
+      average_price: g.quantity > 0 ? g.total_invested / g.quantity : 0,
+    }));
+  }, [stocks]);
 
   useEffect(() => {
     fetchStocks();
