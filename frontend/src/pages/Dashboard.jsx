@@ -1138,8 +1138,9 @@ export default function Dashboard() {
                       setShowIdealDistribution(!showIdealDistribution);
                     }
                   }}
-                  disabled={loadingIdeal}
+                  disabled={loadingIdeal || distributionFilter !== 'by_sector'}
                   className={showIdealDistribution ? "bg-purple-600 hover:bg-purple-700" : ""}
+                  title={distributionFilter !== 'by_sector' ? "Disponível apenas para filtro '% por Segmento/Setor'" : ""}
                 >
                   {loadingIdeal ? (
                     <RefreshCw className="w-4 h-4 animate-spin mr-1" />
@@ -1148,7 +1149,16 @@ export default function Dashboard() {
                   )}
                   {loadingIdeal ? 'Analisando...' : 'Ideal IA'}
                 </Button>
-                <Select value={distributionFilter} onValueChange={setDistributionFilter}>
+                <Select 
+                  value={distributionFilter} 
+                  onValueChange={(value) => {
+                    setDistributionFilter(value);
+                    // Se mudar para outro filtro que não seja 'by_sector', desativa o Ideal IA
+                    if (value !== 'by_sector' && showIdealDistribution) {
+                      setShowIdealDistribution(false);
+                    }
+                  }}
+                >
                   <SelectTrigger className="w-[180px] bg-input border-input text-sm">
                     <SelectValue placeholder="Filtrar por tipo" />
                   </SelectTrigger>
