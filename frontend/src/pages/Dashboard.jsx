@@ -1196,22 +1196,22 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className={`grid ${showIdealDistribution && idealDistribution ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
+              <div className={`grid ${showIdealDistribution && syncedIdealDistribution ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
                 {/* Current Distribution */}
                 <div>
                   <p className="text-sm text-muted-foreground text-center mb-2">
-                    {showIdealDistribution && idealDistribution ? 'Distribuição Atual' : ''}
+                    {showIdealDistribution && syncedIdealDistribution ? 'Distribuição Atual' : ''}
                   </p>
                   {filteredPortfolioData.length > 0 ? (
-                    <div className={showIdealDistribution && idealDistribution ? "h-48" : "h-64"} style={{ overflow: 'hidden' }}>
+                    <div className={showIdealDistribution && syncedIdealDistribution ? "h-48" : "h-64"} style={{ overflow: 'hidden' }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <RechartsPie>
                           <Pie
                             data={filteredPortfolioData}
                             cx="50%"
                             cy="50%"
-                            innerRadius={showIdealDistribution && idealDistribution ? 40 : 60}
-                            outerRadius={showIdealDistribution && idealDistribution ? 65 : 90}
+                            innerRadius={showIdealDistribution && syncedIdealDistribution ? 40 : 60}
+                            outerRadius={showIdealDistribution && syncedIdealDistribution ? 65 : 90}
                             paddingAngle={2}
                             dataKey="value"
                           >
