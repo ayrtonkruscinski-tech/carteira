@@ -118,7 +118,7 @@ export default function Analysis() {
   };
 
   const handleStockSelect = (ticker) => {
-    const stock = stocks.find((s) => s.ticker === ticker);
+    const stock = groupedStocks.find((s) => s.ticker === ticker);
     if (stock) {
       setFormData({
         ...formData,
