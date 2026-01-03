@@ -1502,72 +1502,98 @@ async def resync_dividends_for_ticker(user_id: str, ticker: str, portfolio_id: s
 async def sell_stock(stock_id: str, sale_data: dict, user: User = Depends(get_current_user)):
     """
     Process a stock sale:
-    - Validates quantity available
-    - Calculates profit/loss based on average price
-    - Updates stock quantity (or removes if fully sold)
+    - Validates quantity available (across all purchases of the same ticker)
+    - Calculates profit/loss based on weighted average price
+    - Updates stock quantities using FIFO (oldest first)
     - Records the sale transaction
     """
-    # Find the stock
-    stock = await db.stocks.find_one({"stock_id": stock_id, "user_id": user.user_id})
-    if not stock:
-        raise HTTPException(status_code=404, detail="Ativo não encontrado")
-    
+    ticker = sale_data.get("ticker")
     quantity_sold = sale_data.get("quantity_sold", 0)
     sale_price = sale_data.get("sale_price", 0)
     sale_date = sale_data.get("sale_date") or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    average_price = sale_data.get("average_price", 0)  # Preço médio ponderado já calculado pelo frontend
+    portfolio_id = sale_data.get("portfolio_id")
     
     # Validate
     if quantity_sold <= 0:
         raise HTTPException(status_code=400, detail="Quantidade deve ser maior que zero")
     
-    if quantity_sold > stock["quantity"]:
-        raise HTTPException(status_code=400, detail=f"Quantidade disponível: {stock['quantity']}")
-    
     if sale_price <= 0:
         raise HTTPException(status_code=400, detail="Preço de venda deve ser maior que zero")
     
-    # Calculate profit/loss
-    average_price = stock.get("average_price", 0)
+    # Find all stocks of this ticker for this user
+    query = {"ticker": ticker, "user_id": user.user_id, "quantity": {"$gt": 0}}
+    if portfolio_id:
+        query["portfolio_id"] = portfolio_id
+    
+    all_stocks = await db.stocks.find(query).sort("purchase_date", 1).to_list(1000)  # FIFO: oldest first
+    
+    if not all_stocks:
+        raise HTTPException(status_code=404, detail=f"Nenhum ativo {ticker} encontrado na carteira")
+    
+    # Calculate total quantity available
+    total_available = sum(s["quantity"] for s in all_stocks)
+    
+    if quantity_sold > total_available:
+        raise HTTPException(status_code=400, detail=f"Quantidade disponível: {total_available}")
+    
+    # Calculate profit/loss using the provided average price
     profit = (sale_price - average_price) * quantity_sold
     
-    # Calculate new quantity
-    new_quantity = stock["quantity"] - quantity_sold
-    
-    # Record the sale transaction
+    # Record the sale transaction first
     sale_record = {
         "sale_id": f"sale_{uuid.uuid4().hex[:12]}",
         "user_id": user.user_id,
-        "stock_id": stock_id,
-        "ticker": stock["ticker"],
-        "quantity_sold": quantity_sold,
-        "sale_price": sale_price,
-        "average_price": average_price,
-        "profit": profit,
-        "sale_date": sale_date,
-        "portfolio_id": stock.get("portfolio_id"),
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    await db.sales.insert_one(sale_record)
-    
-    if new_quantity <= 0:
-        # Remove the stock entirely
-        await db.stocks.delete_one({"stock_id": stock_id, "user_id": user.user_id})
-        logger.info(f"Stock {stock['ticker']} fully sold and removed")
-    else:
-        # Update the stock quantity
-        await db.stocks.update_one(
-            {"stock_id": stock_id, "user_id": user.user_id},
-            {"$set": {"quantity": new_quantity}}
-        )
-        logger.info(f"Stock {stock['ticker']} updated: {stock['quantity']} -> {new_quantity}")
-    
-    return {
-        "message": "Venda processada com sucesso",
-        "ticker": stock["ticker"],
+        "ticker": ticker,
         "quantity_sold": quantity_sold,
         "sale_price": sale_price,
         "average_price": average_price,
         "profit": round(profit, 2),
+        "sale_date": sale_date,
+        "portfolio_id": portfolio_id,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.sales.insert_one(sale_record)
+    
+    # Apply FIFO: sell from oldest purchases first
+    remaining_to_sell = quantity_sold
+    stocks_deleted = 0
+    stocks_updated = 0
+    
+    for stock in all_stocks:
+        if remaining_to_sell <= 0:
+            break
+        
+        stock_qty = stock["quantity"]
+        
+        if stock_qty <= remaining_to_sell:
+            # Sell entire position of this purchase
+            await db.stocks.delete_one({"stock_id": stock["stock_id"], "user_id": user.user_id})
+            remaining_to_sell -= stock_qty
+            stocks_deleted += 1
+            logger.info(f"Stock {ticker} purchase {stock['stock_id']} fully sold and removed ({stock_qty} units)")
+        else:
+            # Partial sell from this purchase
+            new_qty = stock_qty - remaining_to_sell
+            await db.stocks.update_one(
+                {"stock_id": stock["stock_id"], "user_id": user.user_id},
+                {"$set": {"quantity": new_qty}}
+            )
+            stocks_updated += 1
+            logger.info(f"Stock {ticker} purchase {stock['stock_id']} updated: {stock_qty} -> {new_qty}")
+            remaining_to_sell = 0
+    
+    return {
+        "message": "Venda processada com sucesso",
+        "ticker": ticker,
+        "quantity_sold": quantity_sold,
+        "sale_price": sale_price,
+        "average_price": average_price,
+        "profit": round(profit, 2),
+        "remaining_quantity": total_available - quantity_sold,
+        "stocks_deleted": stocks_deleted,
+        "stocks_updated": stocks_updated
+    }
         "remaining_quantity": new_quantity
     }
 
