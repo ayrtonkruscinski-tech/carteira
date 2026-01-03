@@ -898,7 +898,7 @@ export default function Portfolio() {
                             setSaleProfit(null);
                           }}
                           className={formData.operation_type === "venda" ? "bg-red-600 hover:bg-red-700" : ""}
-                          disabled={stocks.filter(s => s.quantity > 0 && s.asset_type !== "renda_fixa").length === 0}
+                          disabled={groupedStocks.filter(s => s.quantity > 0 && s.asset_type !== "renda_fixa").length === 0}
                         >
                           📤 Venda
                         </Button>
