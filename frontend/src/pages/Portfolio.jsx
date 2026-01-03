@@ -1264,6 +1264,8 @@ export default function Portfolio() {
                       {editingStock ? "Atualizar" : "Adicionar"}
                     </Button>
                   </div>
+                    </>
+                  )}
                 </form>
               </DialogContent>
             </Dialog>
