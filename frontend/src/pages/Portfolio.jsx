@@ -1005,23 +1005,25 @@ export default function Portfolio() {
 
                   {!editingStock && (
                     <div className="space-y-2">
-                      <Label htmlFor="sector">Setor</Label>
+                      <Label htmlFor="sector">Setor {formData.sector && <span className="text-xs text-muted-foreground">(detectado automaticamente)</span>}</Label>
                       <Select
                         value={formData.sector}
                         onValueChange={(value) => setFormData({ ...formData, sector: value })}
                       >
                         <SelectTrigger className="bg-input border-input" data-testid="sector-select">
-                          <SelectValue placeholder="Selecione o setor" />
+                          <SelectValue placeholder="Selecione o setor">
+                            {formData.sector || "Selecione o setor"}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent className="bg-popover border-border max-h-[300px]">
                           {/* Se o setor detectado não está na lista, mostra ele primeiro */}
                           {formData.sector && !SECTORS.includes(formData.sector) && (
-                            <SelectItem key={formData.sector} value={formData.sector}>
-                              {formData.sector} (detectado)
+                            <SelectItem key={`detected-${formData.sector}`} value={formData.sector}>
+                              {formData.sector} ✓
                             </SelectItem>
                           )}
                           {SECTORS.map((sector) => (
-                            <SelectItem key={sector} value={sector}>
+                            <SelectItem key={`sector-${sector}`} value={sector}>
                               {sector}
                             </SelectItem>
                           ))}
