@@ -306,6 +306,7 @@ class PortfolioSnapshot(BaseModel):
     date: str
     total_invested: float
     total_current: float
+    total_gain: float = 0.0  # Resultado total no momento do snapshot
     total_dividends: float
     stocks_count: int
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
