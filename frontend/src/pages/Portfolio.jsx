@@ -776,6 +776,233 @@ export default function Portfolio() {
                   </DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* Seletor de Tipo de Operação - Primeiro campo */}
+                  {!editingStock && (
+                    <div className="space-y-2">
+                      <Label>Tipo de Operação *</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          type="button"
+                          variant={formData.operation_type === "compra" ? "default" : "outline"}
+                          onClick={() => {
+                            setFormData({ ...formData, operation_type: "compra", selected_stock_id: "" });
+                            setSelectedStockForSale(null);
+                            setSaleProfit(null);
+                          }}
+                          className={formData.operation_type === "compra" ? "bg-green-600 hover:bg-green-700" : ""}
+                        >
+                          💰 Compra
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={formData.operation_type === "venda" ? "default" : "outline"}
+                          onClick={() => {
+                            setFormData({ ...formData, operation_type: "venda", ticker: "", quantity: "", current_price: "" });
+                            setSearchTicker("");
+                            setSearchResult(null);
+                            setSelectedStockForSale(null);
+                            setSaleProfit(null);
+                          }}
+                          className={formData.operation_type === "venda" ? "bg-red-600 hover:bg-red-700" : ""}
+                          disabled={stocks.filter(s => s.quantity > 0 && s.asset_type !== "renda_fixa").length === 0}
+                        >
+                          📤 Venda
+                        </Button>
+                      </div>
+                      {stocks.filter(s => s.quantity > 0 && s.asset_type !== "renda_fixa").length === 0 && (
+                        <p className="text-xs text-muted-foreground">Você não possui ativos para vender</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* FORMULÁRIO DE VENDA */}
+                  {formData.operation_type === "venda" && !editingStock && (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Selecione o Ativo para Vender *</Label>
+                        <Select
+                          value={formData.selected_stock_id}
+                          onValueChange={(stockId) => {
+                            const stock = stocks.find(s => s.stock_id === stockId);
+                            if (stock) {
+                              setSelectedStockForSale(stock);
+                              setFormData({
+                                ...formData,
+                                selected_stock_id: stockId,
+                                ticker: stock.ticker,
+                                name: stock.name,
+                                asset_type: stock.asset_type,
+                                average_price: stock.average_price?.toString() || "",
+                                sector: stock.sector || "",
+                                quantity: "",
+                                current_price: "",
+                              });
+                              setSaleProfit(null);
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="bg-input border-input">
+                            <SelectValue placeholder="Selecione um ativo da sua carteira" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover border-border max-h-[300px]">
+                            {stocks
+                              .filter(s => s.quantity > 0 && s.asset_type !== "renda_fixa")
+                              .map((stock) => (
+                                <SelectItem key={stock.stock_id} value={stock.stock_id}>
+                                  <div className="flex items-center justify-between w-full gap-4">
+                                    <span className="font-mono font-bold">{stock.ticker}</span>
+                                    <span className="text-muted-foreground text-sm">
+                                      {stock.quantity} un. | PM: R$ {stock.average_price?.toFixed(2)}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {selectedStockForSale && (
+                        <>
+                          {/* Info do ativo selecionado */}
+                          <div className="p-3 bg-muted/50 rounded-lg border border-border">
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <div>
+                                <span className="text-muted-foreground">Ativo:</span>
+                                <span className="ml-2 font-bold">{selectedStockForSale.ticker}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Em carteira:</span>
+                                <span className="ml-2 font-mono">{selectedStockForSale.quantity} un.</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Preço Médio:</span>
+                                <span className="ml-2 font-mono text-primary">R$ {selectedStockForSale.average_price?.toFixed(2)}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Valor Investido:</span>
+                                <span className="ml-2 font-mono">R$ {(selectedStockForSale.quantity * selectedStockForSale.average_price).toFixed(2)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="sale_quantity">Quantidade a Vender *</Label>
+                              <Input
+                                id="sale_quantity"
+                                type="number"
+                                step="1"
+                                min="1"
+                                max={selectedStockForSale.quantity}
+                                value={formData.quantity}
+                                onChange={(e) => {
+                                  const qty = parseFloat(e.target.value) || 0;
+                                  if (qty > selectedStockForSale.quantity) {
+                                    toast.error(`Quantidade máxima: ${selectedStockForSale.quantity}`);
+                                    return;
+                                  }
+                                  setFormData({ ...formData, quantity: e.target.value });
+                                  // Calcular lucro/prejuízo se tiver preço de venda
+                                  if (formData.current_price && qty > 0) {
+                                    const salePrice = parseFloat(formData.current_price);
+                                    const profit = (salePrice - selectedStockForSale.average_price) * qty;
+                                    setSaleProfit(profit);
+                                  }
+                                }}
+                                required
+                                className="bg-input border-input font-mono"
+                                placeholder={`Máx: ${selectedStockForSale.quantity}`}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="sale_price">Preço de Venda (R$) *</Label>
+                              <Input
+                                id="sale_price"
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                value={formData.current_price}
+                                onChange={(e) => {
+                                  setFormData({ ...formData, current_price: e.target.value });
+                                  // Calcular lucro/prejuízo
+                                  const salePrice = parseFloat(e.target.value) || 0;
+                                  const qty = parseFloat(formData.quantity) || 0;
+                                  if (salePrice > 0 && qty > 0) {
+                                    const profit = (salePrice - selectedStockForSale.average_price) * qty;
+                                    setSaleProfit(profit);
+                                  } else {
+                                    setSaleProfit(null);
+                                  }
+                                }}
+                                required
+                                className="bg-input border-input font-mono"
+                                placeholder="0,00"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="sale_date">Data da Venda</Label>
+                            <Input
+                              id="sale_date"
+                              type="date"
+                              value={formData.purchase_date}
+                              onChange={(e) => setFormData({ ...formData, purchase_date: e.target.value })}
+                              className="bg-input border-input"
+                            />
+                          </div>
+
+                          {/* Preview do resultado da venda */}
+                          {saleProfit !== null && (
+                            <div className={`p-4 rounded-lg border ${saleProfit >= 0 ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
+                              <p className="text-sm font-medium mb-2">📊 Prévia da Operação:</p>
+                              <div className="grid grid-cols-2 gap-2 text-sm">
+                                <div>
+                                  <span className="text-muted-foreground">Valor da Venda:</span>
+                                  <span className="ml-2 font-mono">R$ {(parseFloat(formData.current_price) * parseFloat(formData.quantity)).toFixed(2)}</span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Custo (PM):</span>
+                                  <span className="ml-2 font-mono">R$ {(selectedStockForSale.average_price * parseFloat(formData.quantity)).toFixed(2)}</span>
+                                </div>
+                              </div>
+                              <div className="mt-2 pt-2 border-t border-border">
+                                <span className="font-medium">{saleProfit >= 0 ? '✅ Lucro:' : '❌ Prejuízo:'}</span>
+                                <span className={`ml-2 font-mono font-bold text-lg ${saleProfit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                  R$ {Math.abs(saleProfit).toFixed(2)}
+                                </span>
+                                <span className={`ml-2 text-sm ${saleProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                  ({saleProfit >= 0 ? '+' : ''}{((saleProfit / (selectedStockForSale.average_price * parseFloat(formData.quantity))) * 100).toFixed(2)}%)
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex gap-3 pt-4">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={resetForm}
+                              className="flex-1"
+                            >
+                              Cancelar
+                            </Button>
+                            <Button
+                              type="submit"
+                              className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                              disabled={!formData.quantity || !formData.current_price || parseFloat(formData.quantity) > selectedStockForSale.quantity}
+                            >
+                              Confirmar Venda
+                            </Button>
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )}
+
+                  {/* FORMULÁRIO DE COMPRA (existente) */}
+                  {(formData.operation_type === "compra" || editingStock) && (
+                    <>
                   {!editingStock && (
                     <div className="flex gap-2">
                       <Input
