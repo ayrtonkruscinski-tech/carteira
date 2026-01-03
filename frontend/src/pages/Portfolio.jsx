@@ -226,14 +226,12 @@ export default function Portfolio() {
           rate: "",
           rate_type: "",
           issuer: "",
-          current_price: data.current_price?.toString() || "",
+          current_price: "",  // Deixar em branco - usuário deve preencher
           dividend_yield: data.dividend_yield?.toString() || "",
           sector: detectedSector || data.sector || "",
           ceiling_price: "",
         });
-        if (data.current_price) {
-          toast.success(`Cotação carregada: R$ ${data.current_price?.toFixed(2)}`);
-        }
+        // Não mostrar toast de cotação carregada, pois o preço deve ser informado manualmente
       }
     } catch (error) {
       console.error("Search error:", error);
