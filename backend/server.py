@@ -3035,7 +3035,8 @@ async def sync_dividends(user: User = Depends(get_current_user), portfolio_id: O
                             continue  # Bonificação processada, NÃO salva como dividendo
                         
                         # Processamento normal de dividendos (NÃO inclui bonificações)
-                        total_amount = round(div["valor"] * total_eligible_shares, 2)
+                        unit_value = div["valor"]  # Valor por ação
+                        total_amount = round(unit_value * total_eligible_shares, 2)
                         
                         # Verifica duplicidade considerando o Tipo e Data Com
                         existing = await db.dividends.find_one({
@@ -3058,10 +3059,15 @@ async def sync_dividends(user: User = Depends(get_current_user), portfolio_id: O
                             })
                         
                         if existing:
-                            if abs(existing.get("amount", 0) - total_amount) > 0.01:
+                            # Atualiza se o valor ou quantidade mudou
+                            if abs(existing.get("amount", 0) - total_amount) > 0.01 or existing.get("quantity") != total_eligible_shares:
                                 await db.dividends.update_one(
                                     {"_id": existing["_id"]}, 
-                                    {"$set": {"amount": total_amount}}
+                                    {"$set": {
+                                        "amount": total_amount,
+                                        "unit_value": unit_value,
+                                        "quantity": total_eligible_shares
+                                    }}
                                 )
                                 updated += 1
                         elif existing_undefined:
@@ -3070,7 +3076,9 @@ async def sync_dividends(user: User = Depends(get_current_user), portfolio_id: O
                                 {"_id": existing_undefined["_id"]}, 
                                 {"$set": {
                                     "payment_date": div["data_pagamento"],
-                                    "amount": total_amount
+                                    "amount": total_amount,
+                                    "unit_value": unit_value,
+                                    "quantity": total_eligible_shares
                                 }}
                             )
                             updated += 1
@@ -3082,6 +3090,8 @@ async def sync_dividends(user: User = Depends(get_current_user), portfolio_id: O
                                 "ticker": ticker,
                                 "portfolio_id": eligible_stocks[0].get("portfolio_id"),
                                 "amount": total_amount,
+                                "unit_value": unit_value,
+                                "quantity": total_eligible_shares,
                                 "payment_date": div["data_pagamento"],
                                 "ex_date": div["data_com"],
                                 "type": div["tipo"],
