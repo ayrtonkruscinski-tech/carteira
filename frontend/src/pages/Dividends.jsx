@@ -231,14 +231,6 @@ export default function Dividends() {
     return !dateStr || dateStr === "A_DEFINIR" || dateStr.includes("A_DEFINIR");
   };
 
-  // Formatar data com tratamento especial para "A Definir"
-  const formatPaymentDate = (dateStr) => {
-    if (isUndefinedDate(dateStr)) {
-      return "A Definir";
-    }
-    return formatDateBR(dateStr);
-  };
-
   // Separar proventos recebidos e a receber (excluindo "A Definir" dos recebidos)
   const today = new Date().toISOString().split("T")[0];
   const receivedDividends = dividends.filter((d) => !isUndefinedDate(d.payment_date) && d.payment_date <= today);
