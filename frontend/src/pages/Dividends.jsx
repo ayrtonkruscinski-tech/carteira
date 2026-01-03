@@ -251,6 +251,18 @@ export default function Dividends() {
   const totalUndefined = undefinedDateDividends.reduce((acc, d) => acc + d.amount, 0);
   const totalPending = totalPendingWithDate + totalUndefined;
 
+  // Mapeamento de cores por ticker - baseado na ordem do summary.by_ticker (gráfico de pizza)
+  // Isso garante que as cores sejam consistentes entre o gráfico de barras e o de pizza
+  const tickerColorMap = useMemo(() => {
+    const colorMap = {};
+    if (summary?.by_ticker) {
+      summary.by_ticker.forEach((item, index) => {
+        colorMap[item.ticker] = COLORS[index % COLORS.length];
+      });
+    }
+    return colorMap;
+  }, [summary]);
+
   // Filtrar dados do gráfico por status e período (EXCLUINDO "A Definir")
   // Agora agrupa por mês E por ticker para barras empilhadas
   const { filteredChartData, uniqueTickers } = useMemo(() => {
@@ -277,10 +289,21 @@ export default function Dividends() {
       filteredDividends = filteredDividends.filter((d) => d.payment_date >= startStr);
     }
 
-    // 3. Coletar todos os tickers únicos
+    // 3. Coletar todos os tickers únicos - ordenar pela ordem do summary.by_ticker para manter cores consistentes
     const tickersSet = new Set();
     filteredDividends.forEach((d) => tickersSet.add(d.ticker));
-    const uniqueTickers = Array.from(tickersSet).sort();
+    
+    // Ordenar tickers pela ordem do summary.by_ticker (mesma ordem do gráfico de pizza)
+    const summaryOrder = summary?.by_ticker?.map(item => item.ticker) || [];
+    const uniqueTickers = Array.from(tickersSet).sort((a, b) => {
+      const indexA = summaryOrder.indexOf(a);
+      const indexB = summaryOrder.indexOf(b);
+      // Se não estiver no summary, coloca no final
+      if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+      return indexA - indexB;
+    });
 
     // 4. Agrupar por mês com valores separados por ticker
     const byMonth = {};
@@ -312,7 +335,7 @@ export default function Dividends() {
       });
 
     return { filteredChartData: chartData, uniqueTickers };
-  }, [dividends, chartStatusFilter, chartPeriodFilter]);
+  }, [dividends, chartStatusFilter, chartPeriodFilter, summary]);
   
   // Paginação - ordenar por data de pagamento (mais recente primeiro, "A Definir" no topo)
   const sortedDividends = [...dividends].sort((a, b) => {
