@@ -1340,6 +1340,8 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
+        {/* Charts Section - Evolução Patrimonial + Dividendos por Mês */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Dividends Chart */}
           <Card className="bg-card border-border">
             <CardHeader>
@@ -1403,7 +1405,6 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
-        </div>
 
         {/* Sort Controls */}
         <div className="flex items-center justify-end gap-2 mb-4">
