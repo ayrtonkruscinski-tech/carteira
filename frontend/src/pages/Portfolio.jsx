@@ -350,7 +350,8 @@ export default function Portfolio() {
   // Processar venda
   const processSale = async (payload) => {
     try {
-      const response = await fetch(`${API}/portfolio/stocks/${payload.stock_id}/sell`, {
+      // Usa "sell" como identificador já que o backend usa o ticker do payload
+      const response = await fetch(`${API}/portfolio/stocks/sell/sell`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
