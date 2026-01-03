@@ -281,7 +281,9 @@ class Dividend(BaseModel):
     stock_id: str
     ticker: str
     portfolio_id: Optional[str] = None
-    amount: float
+    amount: float  # Valor total (unit_value * quantity)
+    unit_value: Optional[float] = None  # Valor por ação
+    quantity: Optional[float] = None  # Quantidade de ações
     payment_date: str
     ex_date: Optional[str] = None  # <--- ADICIONE ESTA LINHA (Data Com)
     type: str = "dividendo"
@@ -291,6 +293,8 @@ class DividendCreate(BaseModel):
     stock_id: str
     ticker: str
     amount: float
+    unit_value: Optional[float] = None  # Valor por ação
+    quantity: Optional[float] = None  # Quantidade de ações
     payment_date: str
     ex_date: Optional[str] = None  # Data Com
     type: str = "dividendo"
