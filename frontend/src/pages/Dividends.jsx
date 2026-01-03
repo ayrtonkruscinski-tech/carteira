@@ -631,10 +631,10 @@ export default function Dividends() {
               </div>
             </CardHeader>
             <CardContent>
-              {filteredChartData.length > 0 ? (
-                <div className="h-64 overflow-hidden">
+              {filteredChartData.length > 0 && uniqueTickers.length > 0 ? (
+                <div className="h-72 overflow-hidden">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={filteredChartData}>
+                    <BarChart data={filteredChartData} margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
                       <XAxis
                         dataKey="monthLabel"
                         stroke="#94A3B8"
@@ -647,41 +647,65 @@ export default function Dividends() {
                         fontSize={12}
                         tickLine={false}
                         axisLine={false}
-                        tickFormatter={(value) => `R$${value}`}
+                        tickFormatter={(value) => `R$${value.toFixed(0)}`}
                       />
                       <Tooltip
                         cursor={{ fill: 'transparent' }}
                         wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }}
-                        contentStyle={{
-                          backgroundColor: "#121417",
-                          border: "1px solid #1E293B",
-                          borderRadius: "8px",
-                          color: "#E2E8F0",
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length) {
+                            const total = payload[0]?.payload?.total || 0;
+                            return (
+                              <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-3 shadow-lg">
+                                <p className="text-zinc-300 font-semibold mb-2 border-b border-zinc-700 pb-2">{label}</p>
+                                {payload.map((entry, index) => (
+                                  entry.value > 0 && (
+                                    <div key={index} className="flex items-center justify-between gap-4 py-0.5">
+                                      <div className="flex items-center gap-2">
+                                        <div 
+                                          className="w-3 h-3 rounded-full" 
+                                          style={{ backgroundColor: entry.color }}
+                                        />
+                                        <span className="text-zinc-300 text-sm">{entry.dataKey}</span>
+                                      </div>
+                                      <span className="text-zinc-100 font-mono text-sm">{formatCurrency(entry.value)}</span>
+                                    </div>
+                                  )
+                                ))}
+                                <div className="flex items-center justify-between gap-4 pt-2 mt-2 border-t border-zinc-700">
+                                  <span className="text-zinc-400 font-semibold text-sm">TOTAL</span>
+                                  <span className="text-white font-mono font-bold">{formatCurrency(total)}</span>
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
                         }}
-                        labelStyle={{ color: "#94A3B8" }}
-                        formatter={(value, name) => [
-                          formatCurrency(value),
-                          name === "received" ? "Recebido" : "A Receber"
-                        ]}
                       />
-                      {(chartStatusFilter === "all" || chartStatusFilter === "received") && (
-                        <Bar 
-                          dataKey="received" 
-                          name="received"
-                          fill="#00E599" 
-                          radius={[4, 4, 0, 0]} 
-                          stackId="stack"
-                        />
-                      )}
-                      {(chartStatusFilter === "all" || chartStatusFilter === "pending") && (
-                        <Bar 
-                          dataKey="pending" 
-                          name="pending"
-                          fill="#3B82F6" 
-                          radius={[4, 4, 0, 0]} 
-                          stackId="stack"
-                        />
-                      )}
+                      {uniqueTickers.map((ticker, index) => {
+                        const isLast = index === uniqueTickers.length - 1;
+                        return (
+                          <Bar 
+                            key={ticker}
+                            dataKey={ticker} 
+                            name={ticker}
+                            fill={COLORS[index % COLORS.length]} 
+                            radius={isLast ? [4, 4, 0, 0] : [0, 0, 0, 0]} 
+                            stackId="stack"
+                          >
+                            {/* Mostrar total apenas na última barra (topo) */}
+                            {isLast && (
+                              <LabelList 
+                                dataKey="total" 
+                                position="top" 
+                                fill="#94A3B8"
+                                fontSize={11}
+                                formatter={(value) => `R$${value.toFixed(2)}`}
+                              />
+                            )}
+                          </Bar>
+                        );
+                      })}
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -690,17 +714,18 @@ export default function Dividends() {
                   Nenhum provento encontrado para os filtros selecionados
                 </div>
               )}
-              {/* Legend */}
-              {filteredChartData.length > 0 && chartStatusFilter === "all" && (
-                <div className="flex justify-center gap-6 mt-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-primary" />
-                    <span className="text-sm text-muted-foreground">Recebido</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-blue-500" />
-                    <span className="text-sm text-muted-foreground">A Receber</span>
-                  </div>
+              {/* Legend - Mostra tickers com suas cores */}
+              {filteredChartData.length > 0 && uniqueTickers.length > 0 && (
+                <div className="flex flex-wrap justify-center gap-4 mt-4">
+                  {uniqueTickers.map((ticker, index) => (
+                    <div key={ticker} className="flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                      />
+                      <span className="text-sm text-muted-foreground">{ticker}</span>
+                    </div>
+                  ))}
                 </div>
               )}
             </CardContent>
