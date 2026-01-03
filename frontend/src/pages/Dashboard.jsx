@@ -742,13 +742,18 @@ export default function Dashboard() {
                           </p>
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="text-xs text-muted-foreground">
-                          Variação do dia em relação ao fechamento anterior
+                      <TooltipContent className="max-w-[220px]">
+                        <p className="text-xs text-foreground font-medium mb-1">
+                          Como funciona?
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Zerado diariamente às 00:01 (BRT)
+                          Variação do Resultado Total desde o último fechamento registrado.
                         </p>
+                        <ul className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                          <li>• Referência: último dia que você acessou</li>
+                          <li>• Primeira vez: inicia em R$ 0,00</li>
+                          <li>• Atualiza a cada acesso</li>
+                        </ul>
                       </TooltipContent>
                     </TooltipUI>
                     {(summary?.daily_gain || 0) >= 0 ? (
