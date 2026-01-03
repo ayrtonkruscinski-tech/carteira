@@ -932,11 +932,13 @@ export default function Portfolio() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="current_price">Preço Compra/Venda (R$)</Label>
+                      <Label htmlFor="current_price">Preço Compra/Venda (R$) *</Label>
                       <Input
                         id="current_price"
                         type="number"
                         step="0.01"
+                        min="0.01"
+                        placeholder="0,00"
                         value={formData.current_price}
                         onChange={(e) => {
                           setFormData({ 
