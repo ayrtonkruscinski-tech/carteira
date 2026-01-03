@@ -1010,7 +1010,13 @@ export default function Portfolio() {
                         <SelectTrigger className="bg-input border-input" data-testid="sector-select">
                           <SelectValue placeholder="Selecione o setor" />
                         </SelectTrigger>
-                        <SelectContent className="bg-popover border-border">
+                        <SelectContent className="bg-popover border-border max-h-[300px]">
+                          {/* Se o setor detectado não está na lista, mostra ele primeiro */}
+                          {formData.sector && !SECTORS.includes(formData.sector) && (
+                            <SelectItem key={formData.sector} value={formData.sector}>
+                              {formData.sector} (detectado)
+                            </SelectItem>
+                          )}
                           {SECTORS.map((sector) => (
                             <SelectItem key={sector} value={sector}>
                               {sector}
