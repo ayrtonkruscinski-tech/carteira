@@ -1189,25 +1189,6 @@ export default function Portfolio() {
                         data-testid="current-price-input"
                       />
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="operation_type">Tipo de Operação *</Label>
-                      <Select
-                        value={formData.operation_type}
-                        onValueChange={(value) => setFormData({ ...formData, operation_type: value })}
-                        required
-                      >
-                        <SelectTrigger className="bg-input border-input">
-                          <SelectValue placeholder="Selecione" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="compra">Compra</SelectItem>
-                          <SelectItem value="venda">Venda</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
                     <div className="space-y-2">
                       <Label htmlFor="purchase_date">Data da Operação</Label>
                       <Input
