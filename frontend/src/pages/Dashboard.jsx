@@ -289,7 +289,13 @@ export default function Dashboard() {
         const dividends = await allDividendsRes.json();
         const today = new Date().toISOString().split('T')[0];
         const divByTicker = {};
+        // Helper para verificar data indefinida
+        const isUndefinedDate = (dateStr) => !dateStr || dateStr === "A_DEFINIR" || dateStr.includes("A_DEFINIR");
+        
         dividends.forEach(d => {
+          // Ignora dividendos com data indefinida para cálculos
+          if (isUndefinedDate(d.payment_date)) return;
+          
           if (!divByTicker[d.ticker]) {
             divByTicker[d.ticker] = { received: 0, pending: 0 };
           }
