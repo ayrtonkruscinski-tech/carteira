@@ -1315,17 +1315,17 @@ export default function Dashboard() {
               )}
 
               {/* AI Recommendation */}
-              {showIdealDistribution && idealDistribution && (
+              {showIdealDistribution && syncedIdealDistribution && (
                 <div className="mt-4 p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
                   <p className="text-xs text-purple-400 font-medium mb-2 flex items-center gap-1">
                     <Sparkles className="w-3 h-3" />
                     Recomendação da IA
                   </p>
-                  <p className="text-sm text-muted-foreground">{idealDistribution.recommendation}</p>
-                  {idealDistribution.adjustments && idealDistribution.adjustments.length > 0 && (
+                  <p className="text-sm text-muted-foreground">{syncedIdealDistribution.recommendation}</p>
+                  {syncedIdealDistribution.adjustments && syncedIdealDistribution.adjustments.length > 0 && (
                     <div className="mt-2 space-y-1">
                       <p className="text-xs text-muted-foreground font-medium">Ajustes sugeridos:</p>
-                      {idealDistribution.adjustments.map((adj, idx) => (
+                      {syncedIdealDistribution.adjustments.map((adj, idx) => (
                         <p key={idx} className={`text-xs ${adj.action === 'aumentar' ? 'text-green-400' : 'text-red-400'}`}>
                           • {adj.category}: {adj.action} de {adj.current}% para {adj.target}%
                         </p>
