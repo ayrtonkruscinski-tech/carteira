@@ -1249,7 +1249,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Ideal Distribution (AI) */}
-                {showIdealDistribution && idealDistribution && (
+                {showIdealDistribution && syncedIdealDistribution && (
                   <div>
                     <p className="text-sm text-purple-400 text-center mb-2 flex items-center justify-center gap-1">
                       <Sparkles className="w-3 h-3" />
@@ -1259,7 +1259,7 @@ export default function Dashboard() {
                       <ResponsiveContainer width="100%" height="100%">
                         <RechartsPie>
                           <Pie
-                            data={idealDistribution.distribution}
+                            data={syncedIdealDistribution.distribution}
                             cx="50%"
                             cy="50%"
                             innerRadius={40}
@@ -1267,7 +1267,7 @@ export default function Dashboard() {
                             paddingAngle={2}
                             dataKey="percent"
                           >
-                            {idealDistribution.distribution.map((entry, index) => (
+                            {syncedIdealDistribution.distribution.map((entry, index) => (
                               <Cell key={`cell-ideal-${index}`} fill={entry.color} />
                             ))}
                           </Pie>
