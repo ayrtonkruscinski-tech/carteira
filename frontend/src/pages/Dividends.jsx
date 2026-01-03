@@ -706,35 +706,7 @@ export default function Dividends() {
                       <Tooltip
                         cursor={{ fill: 'transparent' }}
                         wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }}
-                        content={({ active, payload, label }) => {
-                          if (active && payload && payload.length) {
-                            const total = payload[0]?.payload?.total || 0;
-                            return (
-                              <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-3 shadow-lg">
-                                <p className="text-zinc-300 font-semibold mb-2 border-b border-zinc-700 pb-2">{label}</p>
-                                {payload.map((entry, index) => (
-                                  entry.value > 0 && (
-                                    <div key={index} className="flex items-center justify-between gap-4 py-0.5">
-                                      <div className="flex items-center gap-2">
-                                        <div 
-                                          className="w-3 h-3 rounded-full" 
-                                          style={{ backgroundColor: entry.color }}
-                                        />
-                                        <span className="text-zinc-300 text-sm">{entry.dataKey}</span>
-                                      </div>
-                                      <span className="text-zinc-100 font-mono text-sm">{formatCurrency(entry.value)}</span>
-                                    </div>
-                                  )
-                                ))}
-                                <div className="flex items-center justify-between gap-4 pt-2 mt-2 border-t border-zinc-700">
-                                  <span className="text-zinc-400 font-semibold text-sm">TOTAL</span>
-                                  <span className="text-white font-mono font-bold">{formatCurrency(total)}</span>
-                                </div>
-                              </div>
-                            );
-                          }
-                          return null;
-                        }}
+                        content={<StackedBarTooltip formatCurrency={formatCurrency} />}
                       />
                       {uniqueTickers.map((ticker, index) => {
                         const isLast = index === uniqueTickers.length - 1;
