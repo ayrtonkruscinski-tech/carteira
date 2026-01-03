@@ -252,61 +252,67 @@ export default function Dividends() {
   const totalPending = totalPendingWithDate + totalUndefined;
 
   // Filtrar dados do gráfico por status e período (EXCLUINDO "A Definir")
- const filteredChartData = useMemo(() => {
-  const now = new Date();
-  const todayStr = now.toISOString().split("T")[0];
-  
-  // IMPORTANTE: Filtrar dividendos com data indefinida ANTES de qualquer processamento de gráfico
-  let filteredDividends = dividends.filter((d) => !isUndefinedDate(d.payment_date));
-
-  // 1. Filtrar por Status
-  if (chartStatusFilter === "received") {
-    filteredDividends = filteredDividends.filter((d) => d.payment_date <= todayStr);
-  } else if (chartStatusFilter === "pending") {
-    filteredDividends = filteredDividends.filter((d) => d.payment_date > todayStr);
-  }
-
-  // 2. Filtrar por Período (Corrigido para não esconder o futuro se houver pendentes)
-  if (chartPeriodFilter !== "max") {
-    const months = parseInt(chartPeriodFilter);
-    const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - months);
-    const startStr = startDate.toISOString().split("T")[0];
+  // Agora agrupa por mês E por ticker para barras empilhadas
+  const { filteredChartData, uniqueTickers } = useMemo(() => {
+    const now = new Date();
+    const todayStr = now.toISOString().split("T")[0];
     
-    filteredDividends = filteredDividends.filter((d) => d.payment_date >= startStr);
-  }
+    // IMPORTANTE: Filtrar dividendos com data indefinida ANTES de qualquer processamento de gráfico
+    let filteredDividends = dividends.filter((d) => !isUndefinedDate(d.payment_date));
 
-  // 3. Agrupar por mês
-  const byMonth = {};
-  filteredDividends.forEach((d) => {
-    const month = d.payment_date.substring(0, 7); // YYYY-MM
-    const isReceived = d.payment_date <= todayStr;
-    
-    if (!byMonth[month]) {
-      byMonth[month] = { month, received: 0, pending: 0 };
+    // 1. Filtrar por Status
+    if (chartStatusFilter === "received") {
+      filteredDividends = filteredDividends.filter((d) => d.payment_date <= todayStr);
+    } else if (chartStatusFilter === "pending") {
+      filteredDividends = filteredDividends.filter((d) => d.payment_date > todayStr);
     }
-    
-    if (isReceived) {
-      byMonth[month].received += d.amount;
-    } else {
-      byMonth[month].pending += d.amount;
-    }
-  });
 
-  return Object.values(byMonth)
-    .sort((a, b) => a.month.localeCompare(b.month))
-    .map((item) => {
-      // CORREÇÃO DO FUSO HORÁRIO AQUI:
-      // Usamos split para evitar que o JS aplique timezone
-      const [year, month] = item.month.split("-");
-      const date = new Date(year, month - 1, 1); // mês no JS começa em 0
+    // 2. Filtrar por Período
+    if (chartPeriodFilter !== "max") {
+      const months = parseInt(chartPeriodFilter);
+      const startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - months);
+      const startStr = startDate.toISOString().split("T")[0];
       
-      return {
-        ...item,
-        monthLabel: date.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }),
-      };
+      filteredDividends = filteredDividends.filter((d) => d.payment_date >= startStr);
+    }
+
+    // 3. Coletar todos os tickers únicos
+    const tickersSet = new Set();
+    filteredDividends.forEach((d) => tickersSet.add(d.ticker));
+    const uniqueTickers = Array.from(tickersSet).sort();
+
+    // 4. Agrupar por mês com valores separados por ticker
+    const byMonth = {};
+    filteredDividends.forEach((d) => {
+      const month = d.payment_date.substring(0, 7); // YYYY-MM
+      
+      if (!byMonth[month]) {
+        byMonth[month] = { month, total: 0 };
+        // Inicializa cada ticker com 0
+        uniqueTickers.forEach((ticker) => {
+          byMonth[month][ticker] = 0;
+        });
+      }
+      
+      byMonth[month][d.ticker] += d.amount;
+      byMonth[month].total += d.amount;
     });
-}, [dividends, chartStatusFilter, chartPeriodFilter]);
+
+    const chartData = Object.values(byMonth)
+      .sort((a, b) => a.month.localeCompare(b.month))
+      .map((item) => {
+        const [year, month] = item.month.split("-");
+        const date = new Date(year, month - 1, 1);
+        
+        return {
+          ...item,
+          monthLabel: date.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }),
+        };
+      });
+
+    return { filteredChartData: chartData, uniqueTickers };
+  }, [dividends, chartStatusFilter, chartPeriodFilter]);
   
   // Paginação - ordenar por data de pagamento (mais recente primeiro, "A Definir" no topo)
   const sortedDividends = [...dividends].sort((a, b) => {
