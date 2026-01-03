@@ -1594,8 +1594,6 @@ async def sell_stock(stock_id: str, sale_data: dict, user: User = Depends(get_cu
         "stocks_deleted": stocks_deleted,
         "stocks_updated": stocks_updated
     }
-        "remaining_quantity": new_quantity
-    }
 
 
 @api_router.delete("/portfolio/stocks/all")
