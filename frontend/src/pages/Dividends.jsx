@@ -231,13 +231,25 @@ export default function Dividends() {
     return !dateStr || dateStr === "A_DEFINIR" || dateStr.includes("A_DEFINIR");
   };
 
-  // Separar proventos recebidos e a receber (excluindo "A Definir" dos recebidos)
+  // Separar proventos por categoria
   const today = new Date().toISOString().split("T")[0];
+  
+  // Recebidos: Data definida E <= hoje
   const receivedDividends = dividends.filter((d) => !isUndefinedDate(d.payment_date) && d.payment_date <= today);
-  const pendingDividends = dividends.filter((d) => isUndefinedDate(d.payment_date) || d.payment_date > today);
+  
+  // A Receber (com data): Data definida E > hoje
+  const pendingWithDateDividends = dividends.filter((d) => !isUndefinedDate(d.payment_date) && d.payment_date > today);
+  
+  // A Definir: Sem data definida
+  const undefinedDateDividends = dividends.filter((d) => isUndefinedDate(d.payment_date));
+  
+  // Para compatibilidade, "pendingDividends" inclui A Receber + A Definir
+  const pendingDividends = [...pendingWithDateDividends, ...undefinedDateDividends];
   
   const totalReceived = receivedDividends.reduce((acc, d) => acc + d.amount, 0);
-  const totalPending = pendingDividends.reduce((acc, d) => acc + d.amount, 0);
+  const totalPendingWithDate = pendingWithDateDividends.reduce((acc, d) => acc + d.amount, 0);
+  const totalUndefined = undefinedDateDividends.reduce((acc, d) => acc + d.amount, 0);
+  const totalPending = totalPendingWithDate + totalUndefined;
 
   // Filtrar dados do gráfico por status e período (EXCLUINDO "A Definir")
  const filteredChartData = useMemo(() => {
